@@ -100,7 +100,7 @@
 3. **스토어가 유일한 부수효과 지점**: 비동기 호출·상태 변경은 Zustand 스토어에서만 일어난다.
 4. **타입 엄격성**: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` 모두 활성화.
 5. **정확성 우선**: 화학 도메인은 "그럴듯한" 근사보다 "명시적으로 불가능"을 반환하는 편을 택한다.
-6. **불변 데이터**: 분자/결합 데이터는 읽기 전용 구조로 관리, 수정은 새 객체 생성.
+6. **불변 데이터**: 분자/결합 데이터는 읽기 전용 구조로 관리, 수정은 새 객체 생성. 스토어 내부는 immer 의 mutable draft 패턴으로 작성하되, 결과물은 항상 새 참조의 immutable 값이다 (Phase 07 §3.2).
 
 ### 3.5 접근성(Accessibility)
 - 모든 주요 동작은 **키보드로 접근 가능**해야 한다 (3D 뷰포트 내 원자 선택 포함, Tab/방향키 지원).
@@ -124,7 +124,7 @@
 - 다음 동작은 **Undoable** 로 기록한다: 원자 추가/삭제, 결합 생성/분리, 원자 이동, 화학식·SMILES 입력으로 분자 생성·교체, 분자 삭제.
 - 다음은 **Undoable 에서 제외**: 반응 실행 결과(독립 이벤트), UI 상태 변경(선택, 패널 토글 등), 설정(`settingsStore`) 변경.
 - 기본 단축키: `Ctrl/Cmd+Z` (Undo), `Shift+Ctrl/Cmd+Z` 또는 `Ctrl/Cmd+Y` (Redo).
-- 히스토리 스택 용량 제한(예: 최근 N 스냅샷) 및 스냅샷 저장 전략(diff vs full)은 Phase 09 상세 설계에서 확정한다.
+- 히스토리 스택은 **capacity=50 FIFO**, **full `Molecule` snapshot per undoable action** (immer 구조적 공유로 메모리 절약), **200 ms 그룹 합치기 윈도우** (드래그 stream). 세부는 Phase 09 §6.1 / D1+D3.
 
 ### 3.9 배포 타깃 (Deployment)
 - 산출물은 `vite build` 로 생성되는 **순수 정적 번들**이다 (서버 런타임/SSR 없음).
@@ -254,8 +254,8 @@
 ### 5.1 핵심 엔티티 (세부 스키마는 `details/phase-01`/`02`/`03` 에서 정의)
 - `Element` — 원자번호, 기호, 이름(한/영), 원자량, 전기음성도, 전자배치, CPK 색상, 반지름(공유/판데르발스), 이온화에너지, 녹는점/끓는점 등
 - `Compound` — CID(PubChem), 식(molecular formula), SMILES, InChI, 분자량, 기본 3D 좌표(선택), 물성(존재 조건 등)
-- `Atom` — 원소 참조, 좌표, 포말 전하, 수소 수
-- `Bond` — 두 원자의 참조, 결합 차수(1/2/3/방향성), (선택) 결합 길이/각
+- `Atom` — 안정 ID (`Brand<string, 'AtomId'>`), 원소 참조, 좌표, 포말 전하, 수소 수
+- `Bond` — 안정 ID (`Brand<string, 'BondId'>`), 두 원자의 참조, 결합 차수(1/2/3/방향성), (선택) 결합 길이/각
 - `Molecule` — Atom/Bond 집합, 총 전하, 스핀 다중도(선택)
 - `ReactionRule` — Reaction SMARTS 패턴, 필요 조건 범위(T/P/pH), `ThermoFlag`, 출처/신뢰도
 - `Condition` — `{ temperatureK, pressureAtm, pH }`
@@ -287,7 +287,7 @@
 | 구성요소 | 책임 | 대응 Phase |
 |----------|------|------------|
 | **Chemistry Engine Core** | 분자/결합/반응 도메인 모델, 원자가 계산, 불변 데이터 API | 01, 02, 03 |
-| **RDKit Service** | RDKit.js WASM lazy init, SMILES/InChI/formula/SDF 파싱, 3D 임베드. 공통 인터페이스 `RdkitBackend` 를 노출하여 빌드타임(Phase 04 Node) 과 런타임(Phase 05 브라우저) 양쪽이 동일 시그니처 사용 | 03 |
+| **RDKit Service** | RDKit.js WASM lazy init, SMILES/InChI/formula/SDF 파싱, 3D 임베드. 공통 인터페이스 `RdkitBackend` 를 노출하여 빌드타임(Phase 04 Node) 과 런타임(Phase 05 브라우저) 양쪽이 동일 시그니처 사용. Web Worker 경계 준비 (실제 분리는 Phase 14 가 측정 후 결정 — D6) | 03 |
 | **Compound Data Pipeline** | 빌드타임 PubChem 수집/정규화/청크화 | 04 |
 | **Runtime Data Service** | PubChem 런타임 호출, IndexedDB 캐시 | 05 |
 | **Reaction Engine** | 규칙 DB 매칭 + valence 휴리스틱 fallback, 조건 평가, 열역학 플래그 판정 | 06 |
@@ -349,7 +349,7 @@
 |--------|------|
 | `moleculeStore` | 현재 뷰포트에 존재하는 분자들, 편집 상태, 원자/결합 조작 API, **편집 히스토리 (Undo/Redo 스택)** |
 | `reactionStore` | 반응물 선택, 조건(T/P/pH), 실행 상태, 결과 (실험적 플래그 포함) |
-| `uiStore` | 선택된 원자/결합, 활성 패널, 모달, 로딩/에러 상태, **뷰포트 표시 옵션**(원자 라벨 토글, 배경색 오버라이드 등) |
+| `uiStore` | 선택된 원자/결합, 활성 패널, 모달, 로딩/에러 상태, **뷰포트 표시 옵션**(원자 라벨 토글, 배경색 오버라이드 등), **전역 로딩 카운터**(`globalLoading.count`), **알림 큐**(`notifications` — 토스트 자료구조; 컴포넌트는 Phase 11), **화합물 검색 slice**(`compoundSearch`: query/mode/results/selectedCid) |
 | `settingsStore` | **렌더 모드** (`ball-and-stick` 시작, 확장 가능), **언어**(`ko`/`en`), **단위계**(K↔°C, atm↔Pa), **테마**(`light`/`dark`/`system`), 색약 모드, 기타 사용자 전역 설정 |
 
 ### 8.2 규칙
@@ -431,15 +431,17 @@
 1. **반응 예측의 근본 한계** — 본 프로젝트는 DB + 휴리스틱이지 ML 모델이 아님을 UI에서 **명시적으로 전달**해야 한다. Phase 06에서 "실험적 예측" 배지/모달 문구를 확정한다.
 2. **PubChem 빌드타임 수집 범위** — "수천 종"의 기준(유기물 우선순위, 산업/교과 빈출 분자 등)을 Phase 04에서 **큐레이션 정책**으로 명문화한다.
 3. **열역학 확장** — ΔH 값 도입 시 데이터 소스(NIST WebBook vs 결합에너지 근사)를 Phase 06 확장에서 결정한다.
-4. **RDKit 작업의 메인 스레드 차단** — 대용량 분자/반응 시 체감 지연이 발생하면 Web Worker로 이동한다 (Phase 03 또는 14).
+4. **RDKit 작업의 메인 스레드 차단** — Phase 03 가 `RdkitBackend` 인터페이스 경계만 준비 (D6). 실제 Worker 이동 결정은 Phase 14 의 성능 측정 결과에 따른다.
 5. **WebGL2 미지원 대응** — 안내 페이지와 최소 폴백(텍스트 정보만) 범위 정의 (Phase 10).
-6. **이온/하전 분자의 3D 임베드** — RDKit ETKDG가 이온에 대해 안정적인지 사전 테스트 필요 (Phase 03).
+6. **이온/하전 분자의 3D 임베드** — **[해결 — Phase 03]** ETKDG 사전 검증 케이스(`[OH-]` / `[H3O+]` / `[Na+].[Cl-]` / `[SO4-2]`) 통과. 임베드 실패는 `IonHandlingFailed` 로 명시 반환 (phase-03 §5.4).
 
 ---
 
 ## 13. 작업 단계 (Phases)
 
 전체 작업은 아래 **15개 Phase**로 나누어 진행한다. 각 Phase는 `details/phase-XX-*.md`에 상세 설계서를 가지며, architecture.md 승인 후 **번호 순서대로** 상세 문서 작성을 진행한다. 상세 문서 검토가 끝나야 해당 Phase의 구현을 시작한다.
+
+> *의존 Phase 칼럼은 **직접 import 또는 retrofit 대상**인 선행 Phase 만 표기한다 (전이 의존은 생략). 정확한 의존 면은 각 `phase-XX` §3.1 선행 Phase 표 참조.*
 
 | # | Phase 이름 | 목적 | 주요 산출물 | 의존 Phase |
 |---|-----------|------|-------------|------------|
@@ -448,14 +450,14 @@
 | 03 | **Chemistry Engine (RDKit)** | RDKit.js WASM lazy 래퍼, SMILES/InChI/formula 파싱, 3D 좌표 생성, 이온 지원 | `engine/rdkit/service.ts`, parser, geometry API | 01, 02 |
 | 04 | **Compound Data Pipeline (빌드타임)** | PubChem 수집 스크립트, 정규화, 카테고리 청크 | `scripts/pubchem-fetch/`, `data/compounds/*.json` | 03 |
 | 05 | **Runtime Data Layer (PubChem)** | 런타임 PubChem 클라이언트, IndexedDB 캐시 | `services/pubchem`, `services/cache` | 03 |
-| 06 | **Reaction Engine** | 규칙 DB + 휴리스틱, 조건 평가, 흡/발열 판정, "실험적" 라벨 | `engine/reaction/`, `data/reactions/` | 03, 04 |
-| 07 | **State Management (Stores)** | moleculeStore / reactionStore / uiStore / settingsStore | `stores/*.ts` | 03, 06 |
-| 08 | **3D Rendering Engine (R3F)** | Scene, Atom/Bond 렌더러, 카메라/조명, 다중 분자 레이아웃 | `viewport/scene/`, `viewport/renderers/` | 07 |
-| 09 | **3D Interaction System** | 원자 드래그, 선택, 결합 생성/분리, 애니메이션 | `viewport/interactions/`, `viewport/animations/` | 08 |
-| 10 | **UI Framework & Layout** | 앱 레이아웃, 리사이즈 패널 시스템, 공통 컴포넌트 뼈대 | `app/layout/`, `components/` | 07 |
-| 11 | **UI Panels** | 주기율표 / 화합물 검색 / 조건 / 분자 정보 / 반응 결과 / Toolbar(편리성 툴) | `panels/*` | 10 |
-| 12 | **Text Input Pipeline** | SMILES/화학식/InChI 입력 UI → 파싱 → 3D 생성 플로우 | `panels/...Input`, 통합 플로우 | 03, 08, 11 |
-| 13 | **Export / Import** | PNG(스크린샷), JSON(세션), SDF(구조) 내보내기, JSON 가져오기 | `io/*` | 08, 11 |
+| 06 | **Reaction Engine** | 규칙 DB + 휴리스틱, 조건 평가, 흡/발열 판정, "실험적" 라벨 | `engine/reaction/`, `data/reactions/` | 01, 02, 03, 04 |
+| 07 | **State Management (Stores)** | moleculeStore / reactionStore / uiStore / settingsStore | `stores/*.ts` | 01, 03, 06 |
+| 08 | **3D Rendering Engine (R3F)** | Scene, Atom/Bond 렌더러, 카메라/조명, 다중 분자 레이아웃 | `viewport/scene/`, `viewport/renderers/` | 01, 02, 03, 07 |
+| 09 | **3D Interaction System** | 원자 드래그, 선택, 결합 생성/분리, 애니메이션 | `viewport/interactions/`, `viewport/animations/` | 01, 03, 07, 08 |
+| 10 | **UI Framework & Layout** | 앱 레이아웃, 리사이즈 패널 시스템, 공통 컴포넌트 뼈대 | `app/layout/`, `components/` | 01, 07, 08, 09 |
+| 11 | **UI Panels** | 주기율표 / 화합물 검색 / 조건 / 분자 정보 / 반응 결과 / Toolbar(편리성 툴) | `panels/*` | 07, 09, 10 |
+| 12 | **Text Input Pipeline** | SMILES/화학식/InChI 입력 UI → 파싱 → 3D 생성 플로우 | `panels/...Input`, 통합 플로우 | 03, 07, 10, 11 |
+| 13 | **Export / Import** | PNG(스크린샷), JSON(세션), SDF(구조) 내보내기, JSON 가져오기 | `io/*` | 03, 07, 08, 11 |
 | 14 | **Performance Optimization** | 초기 로드 3초 달성, 렌더 LOD, 필요 시 Web Worker 분리 | 번들 분석 결과, LOD 구현 | 08, 11 |
 | 15 | **Testing & Polish** | E2E 시나리오, i18n 완성, 접근성 검증, 에러 경계, 최종 정리 | Playwright 시나리오, 접근성 리포트 | 전 Phase |
 
