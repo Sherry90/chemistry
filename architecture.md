@@ -118,7 +118,7 @@
 - **서비스 레이어 (PubChem / Cache)**: 네트워크 · HTTP 상태 · 스키마 불일치를 분류해 스토어로 전달. 재시도 정책(지수 백오프 등)은 Phase 05에서 상세 설계.
 - **UI 경계**: 최상위 React `ErrorBoundary`로 렌더 예외를 포착해 "오류 발생 — 새로고침" 화면을 표시. 패널별 보조 경계 도입 여부는 Phase 10에서 결정.
 - **사용자 피드백**: 실패 메시지는 구체적으로 제공한다 (예: `"SMILES 파싱 실패 — 3번째 문자 근처 괄호 불일치"`). "오류가 발생했습니다" 같은 모호한 문구 금지.
-- **로깅**: 개발 모드에서는 `console.*` 기반, 프로덕션 빌드에서는 경량 `logger` 추상화(`off | warn | error` 레벨)를 두고 외부 로깅 서비스 전송은 **비목표**.
+- **로깅**: `logger` 추상화(Phase 01 §4.4) 는 5단계 레벨 `off | error | warn | info | debug` 를 유니온으로 정의하며, 런타임 게이트는 하나의 상수 레벨로 필터링한다. **프로덕션 기본 레벨은 `warn`** (오류/경고만 노출, info/debug 는 억제). **개발 기본 레벨은 `debug`** (모든 로그 노출). 외부 로깅 서비스 전송은 **비목표**.
 
 ### 3.8 편집 히스토리 (Undo / Redo)
 - 다음 동작은 **Undoable** 로 기록한다: 원자 추가/삭제, 결합 생성/분리, 원자 이동, 화학식·SMILES 입력으로 분자 생성·교체, 분자 삭제.
@@ -287,7 +287,7 @@
 | 구성요소 | 책임 | 대응 Phase |
 |----------|------|------------|
 | **Chemistry Engine Core** | 분자/결합/반응 도메인 모델, 원자가 계산, 불변 데이터 API | 01, 02, 03 |
-| **RDKit Service** | RDKit.js WASM lazy init, SMILES/InChI/formula 파싱, 3D 임베드 | 03 |
+| **RDKit Service** | RDKit.js WASM lazy init, SMILES/InChI/formula/SDF 파싱, 3D 임베드. 공통 인터페이스 `RdkitBackend` 를 노출하여 빌드타임(Phase 04 Node) 과 런타임(Phase 05 브라우저) 양쪽이 동일 시그니처 사용 | 03 |
 | **Compound Data Pipeline** | 빌드타임 PubChem 수집/정규화/청크화 | 04 |
 | **Runtime Data Service** | PubChem 런타임 호출, IndexedDB 캐시 | 05 |
 | **Reaction Engine** | 규칙 DB 매칭 + valence 휴리스틱 fallback, 조건 평가, 열역학 플래그 판정 | 06 |
