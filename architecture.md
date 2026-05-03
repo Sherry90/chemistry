@@ -226,7 +226,7 @@
           app            (엔트리/조립)
            │
            ▼
-   viewport  panels  components   (UI / R3F 계층)
+   viewport  panels  io  components   (UI / R3F / IO 계층 — io 는 React 무관)
            │
            ▼
           stores         (Zustand — 유일한 부수효과 관리자)
@@ -242,7 +242,7 @@
 ```
 
 - **상위 → 하위 import 허용, 하위 → 상위 import 금지**.
-- `chemistry`, `data`, `engine`, `services` 는 **React / R3F / DOM에 의존하지 않는다** (순수 TypeScript, 브라우저 API 최소화).
+- `chemistry`, `data`, `engine`, `services`, `io` 는 **React / R3F / DOM에 의존하지 않는다** (순수 TypeScript, 브라우저 API 최소화). `io` 는 panels 와 동격 peer 이지만 UI 레이어가 아니다 — `panels/Io` 가 `@/io` 의 entry function 만 호출하고, `@/io/*` 는 stores + engine + viewport 타입만 참조한다 (세부는 `details/phase-13-export-import.md` §7.2).
 - UI 레이어 (`viewport`, `panels`, `components`) 는 도메인 상태에 **스토어를 거쳐서만** 접근한다.
 - 동일 레이어 내 모듈 간 참조는 허용하되 **순환 의존은 금지** (ESLint `import/no-cycle` 등으로 강제).
 - `data` 는 엔진·도메인이 읽는 **정적 자산 제공자** 이며 다른 레이어에 의존하지 않는다.
@@ -457,7 +457,7 @@
 | 10 | **UI Framework & Layout** | 앱 레이아웃, 리사이즈 패널 시스템, 공통 컴포넌트 뼈대 | `app/layout/`, `components/` | 01, 07, 08, 09 |
 | 11 | **UI Panels** | 주기율표 / 화합물 검색 / 조건 / 분자 정보 / 반응 결과 / Toolbar(편리성 툴) | `panels/*` | 07, 09, 10 |
 | 12 | **Text Input Pipeline** | SMILES/화학식/InChI 입력 UI → 파싱 → 3D 생성 플로우 | `panels/...Input`, 통합 플로우 | 03, 07, 10, 11 |
-| 13 | **Export / Import** | PNG(스크린샷), JSON(세션), SDF(구조) 내보내기, JSON 가져오기 | `io/*` | 03, 07, 08, 11 |
+| 13 | **Export / Import** | PNG(스크린샷), JSON(세션), SDF(구조) 내보내기, JSON 가져오기 | `io/*` | 03, 07, 08, 09, 10, 11, 12 |
 | 14 | **Performance Optimization** | 초기 로드 3초 달성, 렌더 LOD, 필요 시 Web Worker 분리 | 번들 분석 결과, LOD 구현 | 08, 11 |
 | 15 | **Testing & Polish** | E2E 시나리오, i18n 완성, 접근성 검증, 에러 경계, 최종 정리 | Playwright 시나리오, 접근성 리포트 | 전 Phase |
 
