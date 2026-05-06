@@ -1,0 +1,18 @@
+{
+  "collectedAt": "2026-05-06T00:00:00Z",
+  "pubchemApiVersion": "PUG REST",
+  "rdkitVersion": "2025.3.4-1.0.0",
+  "normalizeSchemaVersion": 1,
+  "embedSeed": 12648430,
+  "totals": {
+    "requestedCids": 5,
+    "successful": 5,
+    "droppedParse": 0,
+    "droppedEmbed": 0
+  },
+  "dropped": [],
+  "seedFiles": [{ "path": "seeds/inorganic-common.tsv", "entries": 5 }],
+  "koNameCoverage": { "total": 5, "withKo": 5, "withoutKo": 0 },
+  "formulaMapSkipped": [],
+  "smilesFallbacks": []
+}

@@ -1,0 +1,77 @@
+{
+  "version": "2026-05-06T00:00:00Z",
+  "totalCompounds": 5,
+  "categories": {
+    "inorganic-common": { "chunks": ["inorganic-common.json"], "count": 5 },
+    "salts-and-ions": { "chunks": [], "count": 0 },
+    "acids-and-bases": { "chunks": [], "count": 0 },
+    "alkanes": { "chunks": [], "count": 0 },
+    "alkenes-alkynes": { "chunks": [], "count": 0 },
+    "alcohols": { "chunks": [], "count": 0 },
+    "carboxylic-acids-esters": { "chunks": [], "count": 0 },
+    "aldehydes-ketones": { "chunks": [], "count": 0 },
+    "amines-amides": { "chunks": [], "count": 0 },
+    "aromatics": { "chunks": [], "count": 0 },
+    "heterocycles": { "chunks": [], "count": 0 },
+    "biomolecules-basic": { "chunks": [], "count": 0 },
+    "pharma-illustrative": { "chunks": [], "count": 0 },
+    "everyday-compounds": { "chunks": [], "count": 0 }
+  },
+  "entries": [
+    {
+      "cid": 962,
+      "name": { "ko": "물", "en": "Water" },
+      "formula": "H2O",
+      "inchiKey": "XLYOFNOQVPJJNP-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 0,
+      "molecularWeight": 18.015,
+      "searchTokens": ["water", "물", "h2o", "dihydrogen oxide", "oxidane"]
+    },
+    {
+      "cid": 280,
+      "name": { "ko": "이산화탄소", "en": "Carbon dioxide" },
+      "formula": "CO2",
+      "inchiKey": "CURLTUGMZLYLDI-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 1,
+      "molecularWeight": 44.01,
+      "searchTokens": ["carbon dioxide", "이산화탄소", "co2", "carbonic anhydride"]
+    },
+    {
+      "cid": 222,
+      "name": { "ko": "암모니아", "en": "Ammonia" },
+      "formula": "H3N",
+      "inchiKey": "QGZKDVFQNNGYKY-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 2,
+      "molecularWeight": 17.031,
+      "searchTokens": ["ammonia", "암모니아", "azane", "nitrogen trihydride"]
+    },
+    {
+      "cid": 977,
+      "name": { "ko": "산소", "en": "Oxygen" },
+      "formula": "O2",
+      "inchiKey": "MYMOFIZGZYHOMD-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 3,
+      "molecularWeight": 31.998,
+      "searchTokens": ["oxygen", "산소", "o2", "dioxygen", "molecular oxygen"]
+    },
+    {
+      "cid": 947,
+      "name": { "ko": "질소", "en": "Nitrogen" },
+      "formula": "N2",
+      "inchiKey": "IJGRMHOSHXDMSA-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 4,
+      "molecularWeight": 28.014,
+      "searchTokens": ["nitrogen", "질소", "n2", "dinitrogen", "molecular nitrogen"]
+    }
+  ]
+}
