@@ -1,0 +1,20 @@
+{
+  "sources": {
+    "atomicMass": "IUPAC 2021 standard atomic weights (via NIST)",
+    "electronegativity": "Pauling scale (CRC Handbook 103rd ed.)",
+    "ionizationEnergy": "NIST Atomic Spectra Database 2023",
+    "electronAffinity": "Andersen et al. / NIST",
+    "radii": "Cordero et al. 2008 (covalent), Bondi 1964 / Alvarez 2013 (vdW)",
+    "cpkColors": "Jmol/PyMOL CPK convention",
+    "koreanNames": "대한화학회 권장 표기 (IUPAC 한글 명칭 최신판)"
+  },
+  "sourceVersions": {
+    "atomicWeights": "IUPAC-2021",
+    "electronegativity": "CRC-103rd",
+    "ionizationEnergy": "NIST-ASD-2023",
+    "covalentRadii": "Cordero-2008",
+    "vdwRadii": "Alvarez-2013"
+  },
+  "fetchedAt": "2026-05-05T00:00:00Z",
+  "collector": "scripts/fetch-periodic-table (manual curation)"
+}
