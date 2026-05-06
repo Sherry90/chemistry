@@ -1,0 +1,9 @@
+{
+  "app.title": "화학 시뮬레이션 플랫폼",
+  "app.loading": "불러오는 중…",
+  "theme.light": "밝은 테마",
+  "theme.dark": "어두운 테마",
+  "theme.system": "시스템 설정",
+  "locale.ko": "한국어",
+  "locale.en": "English"
+}

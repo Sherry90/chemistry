@@ -1,0 +1,9 @@
+{
+  "app.title": "Chemistry Simulation Platform",
+  "app.loading": "Loading…",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+  "theme.system": "System",
+  "locale.ko": "한국어",
+  "locale.en": "English"
+}
