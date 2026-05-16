@@ -6,6 +6,9 @@ node_modules/
 dist/
 build/
 .vite/
+# ...but tests/build/ holds bundle-analysis TESTS, not build artifacts (Phase 05 §8.6).
+!tests/build/
+!tests/build/**
 
 # Test output
 coverage/
