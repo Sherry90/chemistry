@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
+    "check:schema-version": "node --experimental-strip-types scripts/check-schema-version.ts",
     "test": "vitest",
     "prepare": "simple-git-hooks"
   },
@@ -17,9 +18,11 @@
     "@rdkit/rdkit": "2025.3.4-1.0.0",
     "clsx": "^2.1.1",
     "i18next": "^24.2.0",
+    "idb": "^8.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^15.4.0",
+    "zod": "^4.4.3",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -41,9 +44,11 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^17.6.0",
     "jsdom": "^26.1.0",
     "lint-staged": "^15.5.1",
+    "msw": "^2.14.5",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "simple-git-hooks": "^2.13.0",

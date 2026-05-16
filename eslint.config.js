@@ -131,7 +131,89 @@ export default [
           patterns: [
             // Phase 03 에서 추가: @rdkit/rdkit 직접 import 금지 패턴
             // Phase 03 에서 추가: engine/rdkit 내부 경로 직접 import 금지 패턴
+            // Phase 05: idb는 services/cache/ 내부에서만 허용
+            {
+              group: ['idb'],
+              message:
+                'idb must only be imported from src/services/cache/. Use compoundCache from @/services/cache instead.',
+            },
           ],
+        },
+      ],
+    },
+  },
+
+  // Allow idb inside services/cache (the designated isolation boundary)
+  {
+    files: ['src/services/cache/**/*.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+
+  // Phase 05 §8.7 / DoD #11 — 서비스 레이어 가드.
+  // 비공개 서비스 모듈은 각 서비스 디렉터리 외부에서 import 금지 (공개 진입점은
+  // index.ts 배럴만). src/** 에만 적용 — tests/** 는 화이트박스 검증을 위해
+  // 내부 모듈 import 가 정당하므로 제외.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/services/pubchem/**', 'src/services/cache/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['idb'],
+              message:
+                'idb must only be imported from src/services/cache/. Use compoundCache from @/services/cache instead.',
+            },
+            {
+              group: [
+                '@/services/pubchem/*',
+                '@/services/cache/*',
+                '**/services/pubchem/client',
+                '**/services/pubchem/tokenBucket',
+                '**/services/pubchem/inflightDedup',
+                '**/services/pubchem/endpoints',
+                '**/services/pubchem/schemas',
+                '**/services/pubchem/readiness',
+                '**/services/cache/db',
+                '**/services/cache/compoundStore',
+                '**/services/cache/schema',
+              ],
+              message:
+                'Private service modules are internal. Import the public barrel only: @/services/pubchem or @/services/cache.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Phase 05 §7.1 / §8.7 — engine/pubchem 은 프레임워크/브라우저 비의존
+  // (순수 함수, Node + 브라우저 양쪽 동작). DOM / IndexedDB 글로벌 사용 금지.
+  {
+    files: ['src/engine/pubchem/**/*.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'window', message: 'engine/pubchem must be browser-independent (no DOM globals).' },
+        {
+          name: 'document',
+          message: 'engine/pubchem must be browser-independent (no DOM globals).',
+        },
+        {
+          name: 'indexedDB',
+          message: 'engine/pubchem must not touch IndexedDB — it is a pure normalize layer.',
+        },
+        {
+          name: 'IDBDatabase',
+          message: 'engine/pubchem must not touch IndexedDB — it is a pure normalize layer.',
+        },
+        {
+          name: 'localStorage',
+          message: 'engine/pubchem must be browser-independent (no Web Storage).',
         },
       ],
     },

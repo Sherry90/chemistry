@@ -1,8 +1,144 @@
-import type { Compound } from '@/chemistry/compounds/types';
+import type { Compound, CoordinateSource } from '@/chemistry/compounds/types';
 import type { CompoundCategory } from '@/chemistry/compounds/categories';
 import type { PhysicalState } from '@/chemistry/compounds/types';
+import { asCompoundId, moleculeIdForCid } from '@/chemistry/compounds/ids';
+import type { RdkitBackend } from '@/engine/rdkit/backend';
+import type { Result } from '@/types/result';
+import { EMBED_SEED_PRIMARY } from '@/engine/geometry/types';
 
-export const NORMALIZE_SCHEMA_VERSION = 1;
+export const NORMALIZE_SCHEMA_VERSION = 2 as const;
+
+// ── Phase 05: PubChem response → Compound (shared build-time + runtime) ──────
+
+export interface PubChemPropertyRow {
+  readonly CID: number;
+  readonly MolecularFormula: string;
+  readonly MolecularWeight: string | number;
+  readonly CanonicalSMILES?: string;
+  readonly IsomericSMILES?: string;
+  readonly InChI?: string;
+  readonly InChIKey?: string;
+  readonly IUPACName?: string;
+  readonly XLogP?: number | string;
+  readonly Complexity?: number | string;
+}
+
+export type NormalizeError =
+  | { readonly kind: 'SmilesParseFailed'; readonly cid: number; readonly detail: string }
+  | { readonly kind: 'EmbedFailed'; readonly cid: number; readonly detail: string }
+  | { readonly kind: 'SdfParseFailed'; readonly cid: number; readonly detail: string }
+  | { readonly kind: 'MissingRequiredField'; readonly cid: number; readonly field: string };
+
+export interface NormalizeOptions {
+  readonly rdkit: RdkitBackend;
+  readonly fillRuntimeDefaults: boolean;
+}
+
+export async function normalizePubChemResponse(
+  row: PubChemPropertyRow,
+  sdf: string | null,
+  opts: NormalizeOptions,
+): Promise<Result<Compound, NormalizeError>> {
+  const { rdkit, fillRuntimeDefaults } = opts;
+  const cid = row.CID;
+
+  if (!row.MolecularFormula) {
+    return {
+      ok: false,
+      error: { kind: 'MissingRequiredField', cid, field: 'MolecularFormula' },
+    };
+  }
+
+  const rawSmiles = row.IsomericSMILES ?? row.CanonicalSMILES;
+  if (!rawSmiles) {
+    return {
+      ok: false,
+      error: { kind: 'SmilesParseFailed', cid, detail: 'No SMILES available in response' },
+    };
+  }
+
+  const parsed = await rdkit.parseSmiles(rawSmiles);
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      error: { kind: 'SmilesParseFailed', cid, detail: parsed.error.message },
+    };
+  }
+
+  const canonical = await rdkit.toCanonical(parsed.value);
+
+  let defaultMolecule = null;
+  let coordinateSource: CoordinateSource = 'rdkit-etkdg';
+
+  if (sdf) {
+    const sdfParsed = await rdkit.parseSdfBlock(sdf);
+    if (sdfParsed.ok) {
+      const embedded = await rdkit.embed(sdfParsed.value, {
+        seed: EMBED_SEED_PRIMARY,
+        maxIters: 2000,
+        useRandomCoords: false,
+        optimize: 'mmff94',
+        timeoutMs: 4000,
+      });
+      if (embedded.ok) {
+        defaultMolecule = { ...embedded.value, id: moleculeIdForCid(cid) };
+        coordinateSource = 'pubchem-3d';
+      }
+    }
+  }
+
+  if (!defaultMolecule) {
+    const embedded = await rdkit.embed(parsed.value, {
+      seed: EMBED_SEED_PRIMARY,
+      maxIters: 2000,
+      useRandomCoords: false,
+      optimize: 'mmff94',
+      timeoutMs: 4000,
+    });
+    if (!embedded.ok) {
+      return {
+        ok: false,
+        error: { kind: 'EmbedFailed', cid, detail: embedded.error.code },
+      };
+    }
+    defaultMolecule = { ...embedded.value, id: moleculeIdForCid(cid) };
+  }
+
+  const mw = normalizeMolecularWeight(row.MolecularWeight);
+  const logP =
+    row.XLogP == null
+      ? null
+      : typeof row.XLogP === 'number'
+        ? row.XLogP
+        : parseFloat(row.XLogP) || null;
+
+  const compound: Compound = {
+    cid: asCompoundId(cid),
+    provenance: fillRuntimeDefaults ? 'runtime-fetch' : 'manifest',
+    name: { ko: null, en: row.IUPACName ?? row.MolecularFormula },
+    molecularFormula: row.MolecularFormula,
+    molecularWeight: mw,
+    smiles: canonical.smiles,
+    inchi: canonical.inchi || row.InChI || null,
+    inchiKey: canonical.inchiKey || row.InChIKey || null,
+    iupacName: row.IUPACName ?? null,
+    synonyms: [],
+    category: (fillRuntimeDefaults ? 'inorganic-common' : 'inorganic-common') as CompoundCategory,
+    priority: fillRuntimeDefaults ? 9999 : 0,
+    properties: {
+      meltingPointK: null,
+      boilingPointK: null,
+      densityGPerCm3: null,
+      standardState: 'unknown' as PhysicalState,
+      waterSolubility: 'unknown',
+      logP,
+    },
+    coordinateSource,
+    defaultMolecule,
+  };
+
+  return { ok: true, value: compound };
+}
 
 export interface PubchemProperties {
   readonly CID: number;
@@ -98,7 +234,8 @@ export function normalizeCompound(
   const mw = normalizeMolecularWeight(props.MolecularWeight);
 
   return {
-    cid: props.CID,
+    cid: asCompoundId(props.CID),
+    provenance: 'manifest',
     name: { ko: nameKo, en: props.IUPACName ?? props.MolecularFormula },
     molecularFormula: props.MolecularFormula,
     molecularWeight: mw,
