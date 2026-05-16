@@ -11,6 +11,7 @@
 `architecture.md` §5.2 가 정의한 **"번들 내 화합물 부족 시 `services/pubchem` 이 PubChem API 호출 → IndexedDB 캐시에 저장"** 경로를 상세 설계한다. Phase 04 가 빌드타임에 약 2500 종의 큐레이션 매니페스트를 구축했으므로, 본 Phase 의 책임은 **매니페스트 miss 가 발생한 사용자 쿼리(이름·CID·InChIKey) 의 런타임 폴백** 과 그 결과의 **세션 간 영속 캐시** 이다.
 
 이 Phase 가 끝나면:
+
 - 사용자가 매니페스트에 없는 화합물을 입력했을 때 PubChem PUG REST 가 호출되어 `Compound` 가 반환된다.
 - 반환된 `Compound` 는 IndexedDB 에 영속되어 차후 동일 CID 조회는 네트워크를 거치지 않는다.
 - **불변식**: 매니페스트에 있는 CID 는 런타임에서 PubChem 을 호출하지 않는다 (D10).
@@ -52,19 +53,19 @@
 
 ### 2.2 비포함 (다른 Phase / 비목표)
 
-| 항목 | 이관 대상 |
-|------|-----------|
-| 매니페스트 자체 (정적 데이터·청크 로더) | Phase 04 (`data/compounds/index.ts`) |
-| 화합물 검색 UI / 자동완성 | Phase 11 (CompoundBrowser 패널) |
-| moleculeStore 의 `loadCompound` 액션 | Phase 07 (Stores) |
-| UI 로딩 스피너 / 에러 toast 문구 | Phase 07 + Phase 11 |
-| 반응 규칙 런타임 로드 | Phase 06 (Reaction Engine) |
-| 사용자 편집 분자 / 세션 영속화 | Phase 07 / Phase 13 (Export) |
-| 풀 PWA / Service Worker 오프라인 모드 | 비목표 (캐시 읽기가 오프라인에서 동작하는 것만 보장) |
-| BroadcastChannel 기반 다탭 공유 rate limit | Phase 14 (계측 후 필요성 결정) |
-| 캐시 강제 새로고침 / 매니페스트 우회 API | 비목표 (D10 불변식 위반) |
+| 항목                                                    | 이관 대상                                              |
+| ------------------------------------------------------- | ------------------------------------------------------ |
+| 매니페스트 자체 (정적 데이터·청크 로더)                 | Phase 04 (`data/compounds/index.ts`)                   |
+| 화합물 검색 UI / 자동완성                               | Phase 11 (CompoundBrowser 패널)                        |
+| moleculeStore 의 `loadCompound` 액션                    | Phase 07 (Stores)                                      |
+| UI 로딩 스피너 / 에러 toast 문구                        | Phase 07 + Phase 11                                    |
+| 반응 규칙 런타임 로드                                   | Phase 06 (Reaction Engine)                             |
+| 사용자 편집 분자 / 세션 영속화                          | Phase 07 / Phase 13 (Export)                           |
+| 풀 PWA / Service Worker 오프라인 모드                   | 비목표 (캐시 읽기가 오프라인에서 동작하는 것만 보장)   |
+| BroadcastChannel 기반 다탭 공유 rate limit              | Phase 14 (계측 후 필요성 결정)                         |
+| 캐시 강제 새로고침 / 매니페스트 우회 API                | 비목표 (D10 불변식 위반)                               |
 | PubChem PUG View Section 파싱 (녹는점 등 물성 스크래핑) | 비목표 — Phase 04 와 동일하게 런타임에서는 물성 미수집 |
-| Service Worker 캐시 / HTTP 캐시 헤더 활용 | 비목표 — IndexedDB 가 단일 캐시 계층 |
+| Service Worker 캐시 / HTTP 캐시 헤더 활용               | 비목표 — IndexedDB 가 단일 캐시 계층                   |
 
 ---
 
@@ -73,35 +74,35 @@
 ### 3.1 선행 Phase
 
 - **Phase 01** — `Result<T, E>`, `ok` / `err` 헬퍼, `Compound` 기본 타입(Phase 04 가 확장), `Atom` / `Bond` / `Molecule`, `logger`
-- **Phase 03** — 브라우저 `getRdkit()` 및 `RdkitBackend` 인터페이스 (§6.8). 공개 함수: `parseSmiles`, `toCanonicalSmiles`, `smilesTo3DMolecule`, `toDomain`. 본 Phase 는 이들을 직접 호출하지 않고 **`RdkitBackend` 인터페이스를 통해서만** 호출한다 (D1 공용화 전제).
+- **Phase 03** — 브라우저 `getRdkit()` 및 `RdkitBackend` 인터페이스 (§6.8). 사용 메서드: `RdkitBackend.parseSmiles`, `RdkitBackend.toCanonical`, `RdkitBackend.embed`, `RdkitBackend.parseSdfBlock`. 본 Phase 는 개별 함수를 직접 호출하지 않고 **`RdkitBackend` 인터페이스를 통해서만** 호출한다 (D1 공용화 전제).
 - **Phase 04** — `Compound` 확장 필드 (`category`, `priority`, `properties`, `coordinateSource`, `synonyms`, `inchiKey`, `iupacName`), `CompoundCategory` 유니온, `CompoundProperties` 타입. 매니페스트 진입 함수 `findCompoundByCid`, `findCompoundByInchiKey`, `searchCompoundManifest`.
 
 ### 3.2 외부 라이브러리
 
-| 라이브러리 | 용도 | 라이선스 / 비고 |
-|-----------|------|----------------|
-| **`idb`** | IndexedDB 의 Promise/타입 친화 래퍼. architecture §2 가 권장. | ISC |
-| **`zod`** | PubChem 응답 스키마 검증. **Phase 04 §3.2 에서 "빌드타임 전용" 으로 도입된 것을 본 Phase 가 "런타임까지 확장"** 한다. 번들 영향 ~12 KB gzip (초기 번들 500 KB 예산의 2.4%). 수동 type guard 대비 단일 스키마 소스화 + 명확한 에러 issue 트리가 D6 의 `Schema` variant 와 직접 결합되는 이득이 더 크다. architecture §2 의 "스택 외 라이브러리는 각 Phase 상세 설계에서 근거와 함께 명시" 규칙에 따른 명시적 범위 확장. | MIT |
-| 브라우저 내장 `fetch` / `AbortController` / `AbortSignal.any` / `setTimeout` | HTTP 클라이언트 + 개별 요청 타임아웃 결합. 추가 의존성 없음. | — |
-| **테스트 한정** — `msw`, `fake-indexeddb` | 유닛 테스트 (mock PubChem, in-memory IDB) | MIT |
+| 라이브러리                                                                   | 용도                                                                                                                                                                                                                                                                                                                                                                                                                   | 라이선스 / 비고 |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| **`idb`**                                                                    | IndexedDB 의 Promise/타입 친화 래퍼. architecture §2 가 권장.                                                                                                                                                                                                                                                                                                                                                          | ISC             |
+| **`zod`**                                                                    | PubChem 응답 스키마 검증. **Phase 04 §3.2 에서 "빌드타임 전용" 으로 도입된 것을 본 Phase 가 "런타임까지 확장"** 한다. 번들 영향 ~12 KB gzip (초기 번들 500 KB 예산의 2.4%). 수동 type guard 대비 단일 스키마 소스화 + 명확한 에러 issue 트리가 D6 의 `Schema` variant 와 직접 결합되는 이득이 더 크다. architecture §2 의 "스택 외 라이브러리는 각 Phase 상세 설계에서 근거와 함께 명시" 규칙에 따른 명시적 범위 확장. | MIT             |
+| 브라우저 내장 `fetch` / `AbortController` / `AbortSignal.any` / `setTimeout` | HTTP 클라이언트 + 개별 요청 타임아웃 결합. 추가 의존성 없음.                                                                                                                                                                                                                                                                                                                                                           | —               |
+| **테스트 한정** — `msw`, `fake-indexeddb`                                    | 유닛 테스트 (mock PubChem, in-memory IDB)                                                                                                                                                                                                                                                                                                                                                                              | MIT             |
 
 > Phase 04 의 빌드타임 zod 사용과 **동일 버전을 고정**한다. 런타임 zod 가 빌드타임보다 새로운 버전을 사용하면 동일 스키마 코드가 환경별로 다른 동작을 보일 위험이 있다.
 
 ### 3.3 결정 필요 사항 (사용자 확인)
 
-| # | 결정 | 기본안 |
-|---|------|--------|
-| **D1** | **`normalize()` 소재** — PubChem 응답 → `Compound` 매핑 로직을 빌드타임(Phase 04) 과 런타임(Phase 05) 에서 어떻게 공유하는가 | **(A) 공용 추출**: `src/engine/pubchem/normalize.ts` 로 승격. Phase 04 스크립트와 Phase 05 서비스가 공동 import. 대안 (B) 중복 구현은 동일 CID 가 환경별로 다른 `Compound` 로 해석되는 드리프트 위험을 남기므로 비채택. Phase 04 의 `RdkitBackend` 패턴(§6.4/§6.8) 이 이미 "환경 추상화 + 공용 로직" 경로를 확립했음 |
-| **D2** | **캐시 저장 단위** — 정규화된 `Compound` vs 원시 PubChem JSON | **정규화된 `Compound` + `schemaVersion: number`**. 읽기 시 현재 버전과 불일치면 stale → 재호출. 빠른 읽기 + normalize 변경 시 선택적 무효화 가능 |
-| **D3** | **동시성 범위** — 탭별 토큰 버킷 vs BroadcastChannel 공유 | **탭별 per-tab 버킷**. 용량 5, 리필률 4 tokens/sec (Phase 04 D7 과 동일 안전여유). 다탭 충돌은 PubChem 측 429 재시도로 흡수. 공유 버킷은 Phase 14 로 이관 |
-| **D4** | **TTL / 캐시 용량** | **TTL 90일, 기본 상한 1000 엔트리**. 초과 시 LRU 로 가장 오래된 것부터 제거. PubChem 레코드는 거의 불변이므로 보수적 TTL. Phase 14 에서 계측 후 조정 |
-| **D5** | **캐시 키 스페이스** | `cid` 가 **primary key (keyPath: `value.cid`)**, `inchiKey` 가 **secondary index (`by-inchi-key`, unique)**, `lastAccessedAt` 가 **LRU 정렬 인덱스 (`by-last-accessed`)**. 이름 쿼리는 "name → cid 해소 → cid 조회" 의 2단계로 처리 |
-| **D6** | **에러 분류 (architecture §3.7 요구)** | 판별 유니온 `PubChemError = Network \| HttpStatus \| Schema \| Timeout \| RateLimited \| NotFound \| RdkitFailed \| Aborted`. `NotFound` 는 **HTTP 404** 와 **HTTP 200 + `{ Fault: { Code: "PUGREST.NotFound" } }`** 두 패턴을 단일 variant 로 정규화 |
-| **D7** | **재시도 정책 (architecture §3.7 Phase 05 지정)** | **지수 백오프**: 1 s → 2 s → 4 s (각 ±20% jitter), 최대 3회 재시도, 개별 요청 타임아웃 10 s. 재시도 대상: `Network`, `Timeout`, `RateLimited(429, Retry-After 존중)`, `HttpStatus` 의 **5xx 전체**(502/503/504). 즉시 실패: `NotFound`, `Schema`, 그 외 4xx, `Aborted`. 전체 최악 시나리오: `10 s × 3 + backoff 7 s ≈ 37 s` 상한 |
-| **D8** | **첫 요청에서 RDKit lazy init** | 서비스 공개 API 는 **RDKit init 대기를 포함한 단일 Promise** 로 노출. 서비스가 `readiness.rdkitLoading` 관찰용 훅을 제공하여 Phase 07 스토어 / Phase 11 UI 가 스피너 표시 가능 |
-| **D9** | **AbortSignal 지원** | **모든 서비스 공개 API 가 `opts: { signal?: AbortSignal }` 를 첫 도입부터 수용**. abort 시 in-flight fetch 취소 + 캐시 쓰기 스킵 (atomic — 일부 쓰기 금지). RDKit WASM 작업은 중간 취소 불가 — §6.4 의 제약사항으로 명시 |
-| **D10** | **`CID in manifest` 불변식** | **`getCompoundByCid(cid)` 와 `getCompoundByInchiKey(key)` 는 매니페스트 hit 시 PubChem 호출 금지**. **`resolveCompoundByName(name)` 은 매니페스트 `searchCompoundManifest` miss 시 PubChem `name→cid` 호출 — 본 불변식의 예외**. 매니페스트가 정답(authoritative) 인 이유는 Phase 04 가 큐레이팅한 우선순위·이름·청크 분배가 런타임 조회로 오버라이드되면 결정성 보장이 무너지기 때문 |
-| **D11** | **IndexedDB 스키마 버전 / 업그레이드 계약** | `DB_NAME: 'chemistry-app'`, **`DB_VERSION: 1`**. `idb.openDB` 의 `upgrade(db, oldVersion, newVersion, tx)` 콜백에서 `switch (oldVersion)` 로 v0→v1, v1→v2, ... 순차 마이그레이션. 본 Phase 는 v0→v1 경로(`compounds` store + 2개 인덱스 생성) 만 구현. 후속 Phase(반응 히스토리 등) 가 store 추가 시 v2, v3 으로 올린다 |
+| #       | 결정                                                                                                                         | 기본안                                                                                                                                                                                                                                                                                                                                                                                |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1**  | **`normalize()` 소재** — PubChem 응답 → `Compound` 매핑 로직을 빌드타임(Phase 04) 과 런타임(Phase 05) 에서 어떻게 공유하는가 | **(A) 공용 추출**: `src/engine/pubchem/normalize.ts` 로 승격. Phase 04 스크립트와 Phase 05 서비스가 공동 import. 대안 (B) 중복 구현은 동일 CID 가 환경별로 다른 `Compound` 로 해석되는 드리프트 위험을 남기므로 비채택. Phase 04 의 `RdkitBackend` 패턴(§6.4/§6.8) 이 이미 "환경 추상화 + 공용 로직" 경로를 확립했음                                                                  |
+| **D2**  | **캐시 저장 단위** — 정규화된 `Compound` vs 원시 PubChem JSON                                                                | **정규화된 `Compound` + `schemaVersion: number`**. 읽기 시 현재 버전과 불일치면 stale → 재호출. 빠른 읽기 + normalize 변경 시 선택적 무효화 가능                                                                                                                                                                                                                                      |
+| **D3**  | **동시성 범위** — 탭별 토큰 버킷 vs BroadcastChannel 공유                                                                    | **탭별 per-tab 버킷**. 용량 5, 리필률 4 tokens/sec (Phase 04 D7 과 동일 안전여유). 다탭 충돌은 PubChem 측 429 재시도로 흡수. 공유 버킷은 Phase 14 로 이관                                                                                                                                                                                                                             |
+| **D4**  | **TTL / 캐시 용량**                                                                                                          | **TTL 90일, 기본 상한 1000 엔트리**. 초과 시 LRU 로 가장 오래된 것부터 제거. PubChem 레코드는 거의 불변이므로 보수적 TTL. Phase 14 에서 계측 후 조정                                                                                                                                                                                                                                  |
+| **D5**  | **캐시 키 스페이스**                                                                                                         | `cid` 가 **primary key (keyPath: `value.cid`)**, `inchiKey` 가 **secondary index (`by-inchi-key`, unique)**, `lastAccessedAt` 가 **LRU 정렬 인덱스 (`by-last-accessed`)**. 이름 쿼리는 "name → cid 해소 → cid 조회" 의 2단계로 처리                                                                                                                                                   |
+| **D6**  | **에러 분류 (architecture §3.7 요구)**                                                                                       | 판별 유니온 `PubChemError = Network \| HttpStatus \| Schema \| Timeout \| RateLimited \| NotFound \| RdkitFailed \| Aborted`. `NotFound` 는 **HTTP 404** 와 **HTTP 200 + `{ Fault: { Code: "PUGREST.NotFound" } }`** 두 패턴을 단일 variant 로 정규화                                                                                                                                 |
+| **D7**  | **재시도 정책 (architecture §3.7 Phase 05 지정)**                                                                            | **지수 백오프**: 1 s → 2 s → 4 s (각 ±20% jitter), 최대 3회 재시도, 개별 요청 타임아웃 10 s. 재시도 대상: `Network`, `Timeout`, `RateLimited(429, Retry-After 존중)`, `HttpStatus` 의 **5xx 전체**(502/503/504). 즉시 실패: `NotFound`, `Schema`, 그 외 4xx, `Aborted`. 전체 최악 시나리오: 초기 1회 + 재시도 3회 = `10 s × 4 + backoff (1+2+4) = 47 s` 상한 (§6.3 와 일치)           |
+| **D8**  | **첫 요청에서 RDKit lazy init**                                                                                              | 서비스 공개 API 는 **RDKit init 대기를 포함한 단일 Promise** 로 노출. 서비스가 `readiness.rdkitLoading` 관찰용 훅을 제공하여 Phase 07 스토어 / Phase 11 UI 가 스피너 표시 가능                                                                                                                                                                                                        |
+| **D9**  | **AbortSignal 지원**                                                                                                         | **모든 서비스 공개 API 가 `opts: { signal?: AbortSignal }` 를 첫 도입부터 수용**. abort 시 in-flight fetch 취소 + 캐시 쓰기 스킵 (atomic — 일부 쓰기 금지). RDKit WASM 작업은 중간 취소 불가 — §6.4 의 제약사항으로 명시                                                                                                                                                              |
+| **D10** | **`CID in manifest` 불변식**                                                                                                 | **`getCompoundByCid(cid)` 와 `getCompoundByInchiKey(key)` 는 매니페스트 hit 시 PubChem 호출 금지**. **`resolveCompoundByName(name)` 은 매니페스트 `searchCompoundManifest` miss 시 PubChem `name→cid` 호출 — 본 불변식의 예외**. 매니페스트가 정답(authoritative) 인 이유는 Phase 04 가 큐레이팅한 우선순위·이름·청크 분배가 런타임 조회로 오버라이드되면 결정성 보장이 무너지기 때문 |
+| **D11** | **IndexedDB 스키마 버전 / 업그레이드 계약**                                                                                  | `DB_NAME: 'chemistry-app'`, **`DB_VERSION: 1`**. `idb.openDB` 의 `upgrade(db, oldVersion, newVersion, tx)` 콜백에서 `switch (oldVersion)` 로 v0→v1, v1→v2, ... 순차 마이그레이션. 본 Phase 는 v0→v1 경로(`compounds` store + 2개 인덱스 생성) 만 구현. 후속 Phase(반응 히스토리 등) 가 store 추가 시 v2, v3 으로 올린다                                                               |
 
 본 문서 승인 시 기본안 채택. 수정·반대 의견은 §11 열린 질문에서 제기.
 
@@ -168,19 +169,31 @@ export const DB_VERSION = 1;
 import type { ZodIssue } from 'zod';
 
 export type PubChemError =
-  | { readonly kind: 'Network'; readonly cause: string;          readonly retryable: true }
-  | { readonly kind: 'Timeout'; readonly elapsedMs: number;      readonly retryable: true }
+  | { readonly kind: 'Network'; readonly cause: string; readonly retryable: true }
+  | { readonly kind: 'Timeout'; readonly elapsedMs: number; readonly retryable: true }
   | { readonly kind: 'RateLimited'; readonly retryAfterMs: number | null; readonly retryable: true }
-  | { readonly kind: 'HttpStatus'; readonly status: number; readonly bodyExcerpt: string | null; readonly retryable: boolean }
-  | { readonly kind: 'Schema';     readonly issues: ReadonlyArray<ZodIssue>; readonly retryable: false }
-  | { readonly kind: 'NotFound';   readonly query: { readonly type: 'cid' | 'name' | 'inchiKey'; readonly value: string | number }; readonly retryable: false }
-  | { readonly kind: 'RdkitFailed'; readonly reason: string;      readonly retryable: false }
-  | { readonly kind: 'Aborted';    readonly retryable: false };
+  | {
+      readonly kind: 'HttpStatus';
+      readonly status: number;
+      readonly bodyExcerpt: string | null;
+      readonly retryable: boolean;
+    }
+  | { readonly kind: 'Schema'; readonly issues: ReadonlyArray<ZodIssue>; readonly retryable: false }
+  | {
+      readonly kind: 'NotFound';
+      readonly query: {
+        readonly type: 'cid' | 'name' | 'inchiKey';
+        readonly value: string | number;
+      };
+      readonly retryable: false;
+    }
+  | { readonly kind: 'RdkitFailed'; readonly reason: string; readonly retryable: false }
+  | { readonly kind: 'Aborted'; readonly retryable: false };
 ```
 
 - `retryable` 은 **상위 레이어가 에러를 받은 시점에 재시도 버튼을 노출할지의 힌트**. 서비스 내부의 자동 재시도(§6.3) 는 이 필드와 독립적으로 D7 의 정책 표를 따른다.
 - `HttpStatus.retryable` 은 `status >= 500 || status === 429` 인 경우 `true`. 4xx 일반은 `false`.
-- `RateLimited.retryAfterMs` 는 `Retry-After` 헤더(초 단위) 를 ms 로 변환 후 60 s 로 클램프한 값. 헤더 부재 시 `null` — 이때 백오프 곡선 그대로 사용. 헤더 존재 시 §6.3 의 우선순위 정책에 따라 *첫 재시도* delay 가 이 값과 정확히 같음.
+- `RateLimited.retryAfterMs` 는 `Retry-After` 헤더(초 단위) 를 ms 로 변환 후 60 s 로 클램프한 값. 헤더 부재 시 `null` — 이때 백오프 곡선 그대로 사용. 헤더 존재 시 §6.3 의 우선순위 정책에 따라 _첫 재시도_ delay 가 이 값과 정확히 같음.
 
 ### 4.4 서비스 입출력 타입
 
@@ -237,10 +250,7 @@ export { subscribeReadiness, getReadinessSnapshot } from './readiness';
  * CID 로 화합물 조회. 매니페스트 → 캐시 → 네트워크 순.
  * 매니페스트에 있으면 PubChem 호출 절대 없음 (D10).
  */
-export function getCompoundByCid(
-  cid: number,
-  opts?: LookupOptions,
-): Promise<LookupResult>;
+export function getCompoundByCid(cid: number, opts?: LookupOptions): Promise<LookupResult>;
 
 /**
  * InChIKey 로 화합물 조회. 매니페스트 by-inchi-key 인덱스 → 캐시 → 네트워크.
@@ -254,10 +264,7 @@ export function getCompoundByInchiKey(
  * 이름으로 화합물 조회. 매니페스트 검색 토큰 → (miss 시) PubChem name→cid →
  * getCompoundByCid 위임. 다중 CID 반환 시 첫 번째 채택 + warning 로그 (R8).
  */
-export function resolveCompoundByName(
-  name: string,
-  opts?: LookupOptions,
-): Promise<LookupResult>;
+export function resolveCompoundByName(name: string, opts?: LookupOptions): Promise<LookupResult>;
 ```
 
 > 세 함수 모두 **항상 `Promise<LookupResult>`** 를 반환한다. throw 는 프로그래밍 오류(불변식 위반: 예 — 음수 CID 입력) 한정이며, 외부 실패는 모두 `Result.err` 로 표현된다 (architecture §3.7).
@@ -344,8 +351,8 @@ export interface PubChemPropertyRow {
 
 export type NormalizeError =
   | { readonly kind: 'SmilesParseFailed'; readonly cid: number; readonly detail: string }
-  | { readonly kind: 'EmbedFailed';       readonly cid: number; readonly detail: string }
-  | { readonly kind: 'SdfParseFailed';    readonly cid: number; readonly detail: string }
+  | { readonly kind: 'EmbedFailed'; readonly cid: number; readonly detail: string }
+  | { readonly kind: 'SdfParseFailed'; readonly cid: number; readonly detail: string }
   | { readonly kind: 'MissingRequiredField'; readonly cid: number; readonly field: string };
 
 export interface NormalizeOptions {
@@ -367,12 +374,14 @@ export function normalizePubChemResponse(
 ```
 
 - `fillRuntimeDefaults: true` 일 때:
-  - `category: 'inorganic-common'` (기본값) — 런타임 fetch 결과는 카테고리 미분류이므로 `Compound.category` 에 placeholder 채움. UI(Phase 11) 가 "런타임 조회된 분자" 라벨로 표시.
+  - **`provenance: 'runtime-fetch'`** — 런타임 PubChem fetch 결과임을 나타내는 **명시적 판별 필드** (Phase 01 `CompoundProvenance`). UI(Phase 11) 는 이 필드로 "런타임 조회된 분자" 를 식별한다 (category/priority placeholder 패턴 추론 금지).
+  - `category: 'inorganic-common'` (표시용 기본값일 뿐 판별 용도 아님 — 실제 무기물과 구분은 `provenance` 로)
   - `priority: 9999` (낮은 우선순위 — 검색 시 매니페스트 엔트리보다 뒤로)
   - `properties.{meltingPointK, boilingPointK, densityGPerCm3, logP}: null`
   - `properties.standardState: 'unknown'`, `properties.waterSolubility: 'unknown'`
   - `synonyms: []` (런타임에서는 별도 fetch 비용 회피, 필요 시 §11 Q4 결정에 따라 확장)
-  - `defaultMolecule.id: "cid:{CID}"` — Phase 04 §4.4 와 동일 규약
+  - `defaultMolecule`: 직렬화 인덱스 형태를 Phase 01 `indexToId` 로 복원, `Molecule.id` 는 `moleculeIdForCid(cid)` (Phase 04 §4.4 와 동일 규약)
+- `fillRuntimeDefaults: false` (Phase 04 빌드타임) 일 때는 `provenance: 'manifest'`.
 - `fillRuntimeDefaults: false` 일 때 (Phase 04 빌드타임):
   - 위 필드들은 `null` / undefined 로 두어, 후처리 단계 (`assignPriorityAndCategory`, `applyKoreanNames`, `physical/curated.tsv` 머지) 에서 채움.
 
@@ -473,7 +482,7 @@ delay (jitter): 0    ±20% ±20% ±20%
 ```
 
 - **`Retry-After` 헤더 우선순위**: `RateLimited (429)` 응답에 `Retry-After` 헤더가 있으면:
-  - **첫 재시도**: `delay = headerValueMs` (지수 백오프 base 무시, 헤더 값 그대로 사용. 서버가 명시적으로 요청한 대기 시간을 *그대로 존중*).
+  - **첫 재시도**: `delay = headerValueMs` (지수 백오프 base 무시, 헤더 값 그대로 사용. 서버가 명시적으로 요청한 대기 시간을 _그대로 존중_).
   - **이후 재시도**: 헤더 값이 한 번 적용된 뒤에는 다시 받지 않는 한 표준 지수 백오프 곡선 (1s → 2s → 4s) 으로 진입. 만약 후속 응답에 또 다른 `Retry-After` 가 오면 그 시점부터 다시 헤더 값 적용.
   - 헤더 부재 시: 처음부터 표준 백오프 (1s/2s/4s).
   - 안전 가드: `headerValueMs > 60_000` 이면 `60_000` 으로 클램프 (악의적/오작동 서버로부터 보호). `RateLimited.retryAfterMs` 필드에 클램프 후 값 기록.
@@ -497,7 +506,7 @@ delay (jitter): 0    ±20% ±20% ±20%
   fetch(url, { signal: combined });
   ```
   (런타임이 `AbortSignal.any` 를 미지원하면 polyfill 또는 수동 결합 헬퍼 사용 — 구현 단계에서 브라우저 호환성 매트릭스 확인.)
-- **RDKit WASM 호출 제약**: `parseSmiles` / `embed3D` / `toCanonicalSmiles` / SDF 파서는 WASM 경계를 넘어선 동기 작업이며, **JS 표준은 WASM 함수 중간 취소를 지원하지 않는다**. 따라서:
+- **RDKit WASM 호출 제약**: `RdkitBackend.parseSmiles` / `RdkitBackend.embed` / `RdkitBackend.toCanonical` / SDF 파서는 WASM 경계를 넘어선 동기 작업이며, **JS 표준은 WASM 함수 중간 취소를 지원하지 않는다**. 따라서:
   - 본 Phase 는 RDKit 작업을 **시작하기 전** 에 `signal.aborted` 를 확인하여 시작 자체를 스킵.
   - 이미 시작된 RDKit 작업은 **완료까지 대기**.
   - 작업 완료 후 **`cache.put` 직전** 에 다시 `signal.aborted` 확인하여 캐시 쓰기 스킵 + `Aborted` 반환.
@@ -563,18 +572,18 @@ delay (jitter): 0    ±20% ±20% ±20%
 
 ### 6.8.1 PubChem 엔드포인트 계약 (런타임 축약본, Phase 04 §6.3 과 정합)
 
-| 용도 | 엔드포인트 | 응답 형식 | 재시도 / 특이 처리 |
-|------|-----------|----------|---------------------|
-| 속성 배치 | `GET /compound/cid/{cid}/property/MolecularFormula,MolecularWeight,CanonicalSMILES,IsomericSMILES,InChI,InChIKey,IUPACName,XLogP,Complexity/JSON` | `{ PropertyTable: { Properties: [PubChemPropertyRow] } }` | 5xx / 429 재시도. 200 + `Fault.Code === 'PUGREST.NotFound'` 는 `NotFound` |
-| 이름 → CID | `GET /compound/name/{encodedName}/cids/JSON` | `{ IdentifierList: { CID: [number, ...] } }` 또는 `{ Fault: { Code, Message } }` | 5xx / 429 재시도. 다중 CID 첫 번째 채택 + warn |
-| InChIKey → CID | `GET /compound/inchikey/{key}/cids/JSON` | 동상 | 5xx / 429 재시도 |
-| 3D SDF | `GET /compound/cid/{cid}/SDF?record_type=3d` | `text/plain` SDF blob 또는 HTTP 404 | 5xx / 429 재시도. 404 는 **재시도 없이** `coordinateSource: 'rdkit-etkdg'` 폴백 트리거 (RDKit `embed3D` 로 좌표 생성) |
+| 용도           | 엔드포인트                                                                                                                                        | 응답 형식                                                                        | 재시도 / 특이 처리                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 속성 배치      | `GET /compound/cid/{cid}/property/MolecularFormula,MolecularWeight,CanonicalSMILES,IsomericSMILES,InChI,InChIKey,IUPACName,XLogP,Complexity/JSON` | `{ PropertyTable: { Properties: [PubChemPropertyRow] } }`                        | 5xx / 429 재시도. 200 + `Fault.Code === 'PUGREST.NotFound'` 는 `NotFound`                                                  |
+| 이름 → CID     | `GET /compound/name/{encodedName}/cids/JSON`                                                                                                      | `{ IdentifierList: { CID: [number, ...] } }` 또는 `{ Fault: { Code, Message } }` | 5xx / 429 재시도. 다중 CID 첫 번째 채택 + warn                                                                             |
+| InChIKey → CID | `GET /compound/inchikey/{key}/cids/JSON`                                                                                                          | 동상                                                                             | 5xx / 429 재시도                                                                                                           |
+| 3D SDF         | `GET /compound/cid/{cid}/SDF?record_type=3d`                                                                                                      | `text/plain` SDF blob 또는 HTTP 404                                              | 5xx / 429 재시도. 404 는 **재시도 없이** `coordinateSource: 'rdkit-etkdg'` 폴백 트리거 (`RdkitBackend.embed` 로 좌표 생성) |
 
 > **물성 미수집**: Phase 04 §6.3 과 동일하게 **녹는점/끓는점/밀도/상태/용해도** 는 PubChem REST 의 단일 속성으로 제공되지 않으며, 본 Phase 도 PUG View Section 파싱을 비목표로 둔다. 런타임 fetch 로 만든 `Compound.properties` 의 해당 필드는 모두 `null`/`'unknown'`. 사용자가 매니페스트 외 화합물의 정확한 물성을 원하면 Phase 04 시드에 추가 후 재실행이 정규 경로 — UI(Phase 11) 가 이를 안내.
 
 ### 6.9 매니페스트 / 캐시 / 네트워크 의존 방향
 
-- `services/pubchem` → `data/compounds` (Phase 04 의 `findCompoundByCid` 등) 호출. architecture §4.1 의 레이어 다이어그램에서 `services` 는 `data` 의 상위가 아니지만, Phase 04 §5 의 "data/compounds/index.ts 의 공개 API 를 호출할 수 있는 레이어는 services/*, stores/*, panels/*, ..." 명시에 따라 정상.
+- `services/pubchem` → `data/compounds` (Phase 04 의 `findCompoundByCid` 등) 호출. architecture §4.1 의 레이어 다이어그램에서 `services` 는 `data` 의 상위가 아니지만, Phase 04 §5 의 "data/compounds/index.ts 의 공개 API 를 호출할 수 있는 레이어는 services/_, stores/_, panels/\*, ..." 명시에 따라 정상.
 - `services/pubchem` → `engine/pubchem` (정규화) → `chemistry/compounds` (타입). 모두 하위 방향이므로 다이어그램 정합.
 - `services/pubchem` → `services/cache` 는 동일 레이어 내 모듈 참조 (architecture §4.1 "동일 레이어 내 모듈 간 참조 허용, 순환 의존 금지"). `services/cache` 는 `services/pubchem` 을 import 하지 않는다 — 단방향.
 - `services/cache` → `idb` 외부 라이브러리. `idb` 직접 import 는 **`services/cache/` 외부에서 금지** (ESLint `no-restricted-imports`).
@@ -648,7 +657,7 @@ src/
 `tests/unit/engine/pubchem/normalize.test.ts`:
 
 1. **Phase 04 케이스 회귀**: 물(CID 962), 벤젠(CID 241), NaCl(CID 5234) 의 PubChem 응답 픽스처 → 기존 빌드타임 결과(Phase 04 의 normalize 테스트 fixture) 와 byte-identical (단 `priority`/`category`/`name.ko` 등 후처리 필드는 미체크).
-2. **`fillRuntimeDefaults: true`**: 동일 입력으로 호출 시 `category === 'inorganic-common'`, `priority === 9999`, `properties.standardState === 'unknown'`.
+2. **`fillRuntimeDefaults: true`**: 동일 입력으로 호출 시 `provenance === 'runtime-fetch'`, `priority === 9999`, `properties.standardState === 'unknown'`. (`fillRuntimeDefaults: false` → `provenance === 'manifest'`.)
 3. **SmilesParseFailed**: 의도적으로 망가진 SMILES → `Result.err('SmilesParseFailed')`.
 4. **EmbedFailed**: SDF 없이 RDKit embed mock 이 reject 하는 케이스 → `EmbedFailed`.
 5. **SDF 파싱**: 정상 SDF 블록 → `coordinateSource: 'pubchem-3d'`, 좌표가 SDF 와 일치 (RMSD < 1e-6).
@@ -686,7 +695,7 @@ MSW 로 PubChem 엔드포인트 mock. fake timers 로 백오프 / rate limit 시
 9. **Name → 다중 CID**: handler 가 `[1, 2, 3]` 반환 → 첫 번째 채택 + `logger.warn` 발생.
 10. **NotFound 정규화**: HTTP 404 와 200+`Fault.Code: PUGREST.NotFound` 두 케이스 모두 `kind: 'NotFound'`.
 11. **Schema 실패**: handler 가 형식 망가진 JSON 반환 → `kind: 'Schema'`, `issues` 배열 비어있지 않음.
-12. **3D SDF 404 폴백**: SDF 엔드포인트만 404 → RDKit `embed3D` 경로로 진입, 결과 `coordinateSource: 'rdkit-etkdg'`.
+12. **3D SDF 404 폴백**: SDF 엔드포인트만 404 → `RdkitBackend.embed` 경로로 진입, 결과 `coordinateSource: 'rdkit-etkdg'`.
 
 ### 8.4 통합 — 전체 플로우 (Vitest + jsdom + fake-indexeddb + MSW)
 
@@ -724,21 +733,21 @@ MSW 로 PubChem 엔드포인트 mock. fake timers 로 백오프 / rate limit 시
 
 ## 9. 리스크 및 대안
 
-| # | 리스크 | 영향 | 완화 |
-|---|--------|------|------|
-| R1 | PubChem CORS 정책 변경 (현재는 허용) | 중 | 공식 문서 기준. 변경 감지 시 Phase 14 에서 사용자 측 프록시 또는 백엔드 도입 검토 — 본 Phase 는 직접 호출 가정 |
-| R2 | IndexedDB 할당량 초과 (사파리 1 GB / 임시 모드 더 적음) | 중 | D4 의 1000 엔트리 상한 + LRU. `QuotaExceededError` 포착 시 `evictLru(maxEntries / 2)` 강제 후 재시도. 그래도 실패면 `CacheError('QuotaExceeded')` 반환 |
-| R3 | 사용자 시스템 시계 변경 → TTL 신뢰성 손실 | 하 | `cachedAt` TTL 은 2차 방어. 1차는 `schemaVersion` 불일치. 또한 미래 시각으로 설정된 레코드는 `cachedAt > Date.now()` 검증으로 stale 처리 |
-| R4 | RDKit 런타임 lazy init 첫 조회 지연 (수백 ms~1 s) | 중 | D8: 서비스가 `readiness.rdkitLoading` 노출. Phase 07/11 가 스피너 표시. 거대 분자 처리 시 Phase 14 Web Worker 분리 (architecture §12 Q4) |
-| R5 | Phase 04 retrofit (D1) 이 빌드타임 테스트를 깨트림 | 중 | DoD #7 — Phase 04 normalize 테스트가 새 import 경로에서 그린 유지. 의미 변경 없는 위치/주입 형태 변경만 |
-| R6 | 동일 CID 동시 중복 요청 (예: 사용자가 빠르게 같은 화합물을 두 번 클릭) | 하 | §6.4 in-flight dedup — Map<cid, Promise> |
-| R7 | 네트워크 불안정 환경에서 재시도 3회 후에도 실패 | 중 | 최종 `PubChemError` 반환 → Phase 07 스토어가 에러 상태 노출 → Phase 11 UI 가 "재시도" 버튼 표시 |
-| R8 | 동일 이름의 다중 CID 응답 (PubChem 이 배열 반환) | 중 | `resolveCompoundByName` 은 첫 번째 CID 채택 + warn. 사용자가 다른 동의어를 원하면 Phase 11 가 "여러 결과" 표시 (Q4 결정 필요) |
-| R9 | IndexedDB 버전 충돌 (다른 탭이 이전 버전 점유) | 하 | `onBlocking` 콜백 → Phase 11 가 "다른 탭을 닫아주세요" toast. 자동 해결 불가능한 경우 사용자 안내가 한계 |
-| R10 | RDKit canonical SMILES 가 PubChem `IsomericSMILES` 과 토큰 순서 차이 | 하 | Phase 04 §6.5 와 동일 — 저장 SMILES 는 RDKit canonical 로 통일, PubChem 원문은 캐시 미보관 |
-| R11 | PubChem `Fault` 응답 외에 다른 에러 객체 형식 (드물게 발생) | 하 | zod 스키마가 미식별 응답을 `Schema` 에러로 분류. 새 케이스 발견 시 fixture 추가 + 스키마 보강 |
-| R12 | 동시에 여러 CID 를 fetch 할 때 토큰 버킷이 직렬화시켜 체감 지연 | 하 | 4 req/s 평균 + 5 버스트. 현실적 사용량(사용자가 한 번에 수십 개 조회) 에 충분. 대량 사용은 비목표 (UI 가 페이징) |
-| R13 | `AbortSignal.any` 가 구형 브라우저 미지원 | 하 | architecture §3.3 의 "최신 Chromium/FF/Safari 최근 2개 버전" 범위에서는 지원. 미지원 시 polyfill 또는 수동 합성 헬퍼 추가 |
+| #   | 리스크                                                                 | 영향 | 완화                                                                                                                                                   |
+| --- | ---------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| R1  | PubChem CORS 정책 변경 (현재는 허용)                                   | 중   | 공식 문서 기준. 변경 감지 시 Phase 14 에서 사용자 측 프록시 또는 백엔드 도입 검토 — 본 Phase 는 직접 호출 가정                                         |
+| R2  | IndexedDB 할당량 초과 (사파리 1 GB / 임시 모드 더 적음)                | 중   | D4 의 1000 엔트리 상한 + LRU. `QuotaExceededError` 포착 시 `evictLru(maxEntries / 2)` 강제 후 재시도. 그래도 실패면 `CacheError('QuotaExceeded')` 반환 |
+| R3  | 사용자 시스템 시계 변경 → TTL 신뢰성 손실                              | 하   | `cachedAt` TTL 은 2차 방어. 1차는 `schemaVersion` 불일치. 또한 미래 시각으로 설정된 레코드는 `cachedAt > Date.now()` 검증으로 stale 처리               |
+| R4  | RDKit 런타임 lazy init 첫 조회 지연 (수백 ms~1 s)                      | 중   | D8: 서비스가 `readiness.rdkitLoading` 노출. Phase 07/11 가 스피너 표시. 거대 분자 처리 시 Phase 14 Web Worker 분리 (architecture §12 Q4)               |
+| R5  | Phase 04 retrofit (D1) 이 빌드타임 테스트를 깨트림                     | 중   | DoD #7 — Phase 04 normalize 테스트가 새 import 경로에서 그린 유지. 의미 변경 없는 위치/주입 형태 변경만                                                |
+| R6  | 동일 CID 동시 중복 요청 (예: 사용자가 빠르게 같은 화합물을 두 번 클릭) | 하   | §6.4 in-flight dedup — Map<cid, Promise>                                                                                                               |
+| R7  | 네트워크 불안정 환경에서 재시도 3회 후에도 실패                        | 중   | 최종 `PubChemError` 반환 → Phase 07 스토어가 에러 상태 노출 → Phase 11 UI 가 "재시도" 버튼 표시                                                        |
+| R8  | 동일 이름의 다중 CID 응답 (PubChem 이 배열 반환)                       | 중   | `resolveCompoundByName` 은 첫 번째 CID 채택 + warn. 사용자가 다른 동의어를 원하면 Phase 11 가 "여러 결과" 표시 (Q4 결정 필요)                          |
+| R9  | IndexedDB 버전 충돌 (다른 탭이 이전 버전 점유)                         | 하   | `onBlocking` 콜백 → Phase 11 가 "다른 탭을 닫아주세요" toast. 자동 해결 불가능한 경우 사용자 안내가 한계                                               |
+| R10 | RDKit canonical SMILES 가 PubChem `IsomericSMILES` 과 토큰 순서 차이   | 하   | Phase 04 §6.5 와 동일 — 저장 SMILES 는 RDKit canonical 로 통일, PubChem 원문은 캐시 미보관                                                             |
+| R11 | PubChem `Fault` 응답 외에 다른 에러 객체 형식 (드물게 발생)            | 하   | zod 스키마가 미식별 응답을 `Schema` 에러로 분류. 새 케이스 발견 시 fixture 추가 + 스키마 보강                                                          |
+| R12 | 동시에 여러 CID 를 fetch 할 때 토큰 버킷이 직렬화시켜 체감 지연        | 하   | 4 req/s 평균 + 5 버스트. 현실적 사용량(사용자가 한 번에 수십 개 조회) 에 충분. 대량 사용은 비목표 (UI 가 페이징)                                       |
+| R13 | `AbortSignal.any` 가 구형 브라우저 미지원                              | 하   | architecture §3.3 의 "최신 Chromium/FF/Safari 최근 2개 버전" 범위에서는 지원. 미지원 시 polyfill 또는 수동 합성 헬퍼 추가                              |
 
 ---
 
@@ -789,7 +798,7 @@ MSW 로 PubChem 엔드포인트 mock. fake timers 로 백오프 / rate limit 시
   - `coordinateSource` 가 `'rdkit-etkdg'` 인 경우 (3D SDF 404 폴백) 도 동일하게 처리 — 표시/디버그 분기 불요.
 - **Phase 11 (Panels — CompoundBrowser / MoleculeInfo)**:
   - 검색창: 1차 `searchCompoundManifest` (Phase 04, 동기), 2차 `resolveCompoundByName` (본 Phase, 비동기). UI 가 두 단계의 상태(즉시 결과 vs 로딩) 를 분리 표시.
-  - "런타임 조회된 분자" 라벨: `Compound.priority === 9999 && Compound.category === 'inorganic-common'` 등의 placeholder 패턴으로 식별 또는 별도 메타 필드 추가 검토 (Phase 11 결정).
+  - "런타임 조회된 분자" 라벨: `Compound.provenance === 'runtime-fetch'` 로 식별 (Phase 01 판별 필드 — placeholder 패턴 추론 불필요, Phase 11 추가 결정 없음).
   - IDB blocking 안내 toast: `openAppDb({ onBlocking: () => toast.warn('다른 탭을 닫아주세요') })` 등록.
 - **Phase 13 (Export / Import)**:
   - 캐시된 `Compound` 를 그대로 `toSdfBlock` (Phase 03) 으로 SDF export 가능.
@@ -808,5 +817,5 @@ MSW 로 PubChem 엔드포인트 mock. fake timers 로 백오프 / rate limit 시
 
 ---
 
-*문서 버전: 0.1 (초안)*
-*작성일: 2026-04-25*
+_문서 버전: 0.1 (초안)_
+_작성일: 2026-04-25_
