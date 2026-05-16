@@ -13,7 +13,7 @@
 1. **4 스토어 책임 분리** — `moleculeStore` / `reactionStore` / `uiStore` / `settingsStore` 각각의 상태·액션·selector 면을 동결한다 (architecture §8.1).
 2. **단일 부수효과 지점** — Phase 03 의 `smilesTo3DMolecule`, Phase 05 의 `getCompoundByCid`, Phase 06 의 `predict` 등 비동기 진입점은 **스토어 액션 안에서만** 호출된다. 패널/뷰포트는 selector 와 액션만 본다.
 3. **AsyncState 표면화** — 모든 비동기 진입점은 `idle | loading | success | error` 의 4-상태 유니온으로 노출된다. UI 가 로딩/에러를 조건부 렌더로 처리할 수 있는 단일 모양.
-4. **Phase 09 와의 인터페이스 동결** — Undo/Redo 의 *어떤 액션이 undoable 인지* 와 *액션 메타 형태* 만 본 Phase 가 동결한다. 스택 자료구조·스냅샷 전략·메모리 한도는 Phase 09 가 인수 (architecture §3.8 마지막 줄). **Phase 09 §4.3 + §6.1 + D1/D2/D3 에서 다음과 같이 확정됨**: (a) **full `Molecule` snapshot per undoable action** — diff 아님, immer 구조적 공유로 변경 안 된 가지는 메모리 공유. (b) **FIFO 용량 N=50**, 초과 시 oldest drop. (c) **200 ms group merge window** — 동일 `UndoableMeta.group` 키의 연속 액션은 첫 액션의 prev 와 마지막 액션의 next 만 보관해 단일 entry 로 합쳐짐 (드래그 stream 압축에 핵심). flush 트리거 = (i) 200 ms 침묵 후 다른 액션, (ii) 다른 group 액션, (iii) undo/redo 호출. 본 Phase 의 `dispatchUndoable(meta, mutator)` 인터페이스는 무변경이며, Phase 09 가 dispatcher 만 본 구현으로 교체.
+4. **Phase 09 와의 인터페이스 동결** — Undo/Redo 의 _어떤 액션이 undoable 인지_ 와 _액션 메타 형태_ 만 본 Phase 가 동결한다. 스택 자료구조·스냅샷 전략·메모리 한도는 Phase 09 가 인수 (architecture §3.8 마지막 줄). **Phase 09 §4.3 + §6.1 + D1/D2/D3 에서 다음과 같이 확정됨**: (a) **full `Molecule` snapshot per undoable action** — diff 아님, immer 구조적 공유로 변경 안 된 가지는 메모리 공유. (b) **FIFO 용량 N=50**, 초과 시 oldest drop. (c) **200 ms group merge window** — 동일 `UndoableMeta.group` 키의 연속 액션은 첫 액션의 prev 와 마지막 액션의 next 만 보관해 단일 entry 로 합쳐짐 (드래그 stream 압축에 핵심). flush 트리거 = (i) 200 ms 침묵 후 다른 액션, (ii) 다른 group 액션, (iii) undo/redo 호출. 본 Phase 의 `dispatchUndoable(meta, mutator)` 인터페이스는 무변경이며, Phase 09 가 dispatcher 만 본 구현으로 교체.
 
 본 Phase 는 architecture §12 의 열린 질문 중 **(없음)** 을 닫지 않는다. 스토어 자체는 신규 화학 도메인 결정을 도입하지 않으며, Phase 01·03·06 이 이미 동결한 타입을 조립하는 계층이다.
 
@@ -36,7 +36,7 @@
 - **Undo/Redo 의 스택 자료구조 / 스냅샷 전략 / 메모리 한도** → Phase 09. 본 Phase 는 `dispatchUndoable(meta, prev, next)` 인터페이스만 동결, 실 스택은 `Phase09UndoStack` 자리표시 모듈로 비워둔다 (호출 시 logger.debug + no-op).
 - **3D 뷰포트 실 렌더 / 드래그 핸들** → Phase 08, 09. 본 Phase 는 selector 만 제공.
 - **패널 UI 컴포넌트 / Toolbar / 토스트 컴포넌트** → Phase 10, 11. 본 Phase 의 `notifications` 큐는 자료구조와 push/dismiss 액션까지만.
-- **PNG / SDF export 직렬화** → Phase 13. 단, JSON snapshot selector (`selectMoleculeSnapshot(id)`) 의 *형태* 는 본 Phase 에서 합의 (Phase 13 가 그대로 수용 가능한 직렬화 가능 dump).
+- **PNG / SDF export 직렬화** → Phase 13. 단, JSON snapshot selector (`selectMoleculeSnapshot(id)`) 의 _형태_ 는 본 Phase 에서 합의 (Phase 13 가 그대로 수용 가능한 직렬화 가능 dump).
 - **PubChem 검색 결과 영속 캐시** → Phase 05 의 `services/cache` 가 책임. 본 Phase 의 `compoundSearch` slice 는 휘발성 (페이지 떠나면 사라짐).
 - **i18n 실제 문구** — 본 Phase 는 키만 `common.json#stores.*` 네임스페이스로 정의 (예: `stores.error.smilesParse`). 실제 한·영 문구는 Phase 01 의 i18n 리소스 + Phase 11 의 패널 통합 시 채움.
 - **단위계 변환 함수의 본 구현** — `K ↔ °C`, `atm ↔ Pa` 변환은 `src/utils/units.ts` 의 순수 함수로 별도 (`utils` 계층), 본 Phase 는 호출자.
@@ -54,49 +54,49 @@
 
 ### 3.1 선행 Phase
 
-| Phase | 본 Phase 가 사용하는 자산 |
-|-------|--------------------------|
-| 01 (Foundation) | `Result<T, E>`, `Logger` (`src/utils/logger.ts`), `Brand<T, K>`, `Condition`, `Molecule` / `Atom` / `Bond` (Phase 01 placeholder + Phase 03 확정본), `ReactionResult` / `ReactionPredictionKind` / `ThermoFlag`, i18n 네임스페이스(`common`, `chemistry`), 임시 저장 키 `chem.theme` / `chem.locale` (§2.4) |
-| 02 (Element Data) | `getElement(n)` / `elementSymbolOf` — uiStore 의 alphabet 키 입력 보조 (라벨 토글 디버깅용으로만 간접 의존, 직접 import 는 selector 에서 발생) |
-| 03 (Chemistry Engine) | `getRdkit()` / `RdkitStatus`, `parseSmiles`, `parseInchi`, `smilesTo3DMolecule`, `validateMolecule`, `Molecule` 확정본 / `Atom` / `Bond` / `BondOrder`, `ParseError` / `EmbedError`, `RdkitInitError` |
-| 04 (Compound Pipeline) | `loadCompoundChunkByCid(cid)` / `searchCompoundManifest(query)` (phase-04 §5 의 동적 import + 매니페스트 검색 API) |
-| 05 (Runtime Data) | `getCompoundByCid(cid, opts?)` / `resolveCompoundByName(name, opts?)` / `LookupResult` / `PubChemError` / `LookupOptions` |
-| 06 (Reaction Engine) | `predict(input, opts?)` / `PredictInput` / `PredictOptions` / `PredictOutput`, `ReactionEngineError`, `ReactionResult`, `Condition` (재노출), `ReactionPredictionKind`, i18n 키 `reaction.*` |
+| Phase                  | 본 Phase 가 사용하는 자산                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01 (Foundation)        | `Result<T, E>`, `Logger` (`src/utils/logger.ts`), `Brand<T, K>`, `Condition`, `Molecule` / `Atom` / `Bond` (Phase 01 placeholder + Phase 03 확정본), `ReactionResult` / `ReactionPredictionKind` / `ThermoFlag`, i18n 네임스페이스(`common`, `chemistry`), 임시 저장 키 `chem.theme` / `chem.locale` (§2.4) |
+| 02 (Element Data)      | `getElement(n)` / `elementSymbolOf` — uiStore 의 alphabet 키 입력 보조 (라벨 토글 디버깅용으로만 간접 의존, 직접 import 는 selector 에서 발생)                                                                                                                                                              |
+| 03 (Chemistry Engine)  | `getRdkit()` / `RdkitStatus`, `parseSmiles`, `parseInchi`, `smilesTo3DMolecule`, `validateMolecule`, `Molecule` 확정본 / `Atom` / `Bond` / `BondOrder`, `ParseError` / `EmbedError`, `RdkitInitError`                                                                                                       |
+| 04 (Compound Pipeline) | `loadCompoundChunkByCid(cid)` / `searchCompoundManifest(query)` (phase-04 §5 의 동적 import + 매니페스트 검색 API)                                                                                                                                                                                          |
+| 05 (Runtime Data)      | `getCompoundByCid(cid, opts?)` / `resolveCompoundByName(name, opts?)` / `LookupResult` / `PubChemError` / `LookupOptions`                                                                                                                                                                                   |
+| 06 (Reaction Engine)   | `predict(input, opts?)` / `PredictInput` / `PredictOptions` / `PredictOutput`, `ReactionEngineError`, `ReactionResult`, `Condition` (재노출), `ReactionPredictionKind`, i18n 키 `reaction.*`                                                                                                                |
 
 본 Phase 는 **`src/chemistry`** / **`src/engine`** / **`src/services`** / **`src/data`** 만 import 한다. `viewport`/`panels`/`components` 는 본 Phase 가 import 하지 않는다 (의존 방향: `architecture.md` §4.1 다이어그램 — UI 가 stores 를 보지, stores 가 UI 를 보지 않음).
 
 ### 3.2 외부 라이브러리
 
-| 라이브러리 | 용도 | 비고 |
-|-----------|------|------|
-| `zustand` (Phase 01 도입) | 스토어 본체 | `create<T>()(...)` curry 형식 사용 |
-| `zustand/middleware` | `persist`, `subscribeWithSelector`, `devtools` | 별도 패키지 아님. 추가 의존성 없음 |
-| `zustand/middleware/immer` | draft 패턴 갱신 (P2 확정) | `immer` peerDep 으로 동반 도입 |
-| `immer` | `zustand/middleware/immer` 의 peerDep | ~5 KB (gzip), architecture §9.1 의 500 KB 예산 내 |
-| `zustand/shallow` | `useShallow` selector 안정성 | zustand 4.4+ 내장 |
+| 라이브러리                 | 용도                                           | 비고                                              |
+| -------------------------- | ---------------------------------------------- | ------------------------------------------------- |
+| `zustand` (Phase 01 도입)  | 스토어 본체                                    | `create<T>()(...)` curry 형식 사용                |
+| `zustand/middleware`       | `persist`, `subscribeWithSelector`, `devtools` | 별도 패키지 아님. 추가 의존성 없음                |
+| `zustand/middleware/immer` | draft 패턴 갱신 (P2 확정)                      | `immer` peerDep 으로 동반 도입                    |
+| `immer`                    | `zustand/middleware/immer` 의 peerDep          | ~5 KB (gzip), architecture §9.1 의 500 KB 예산 내 |
+| `zustand/shallow`          | `useShallow` selector 안정성                   | zustand 4.4+ 내장                                 |
 
 **신규 라이브러리는 `immer` 한 개.** architecture §2 의 "스택 외 추가는 근거와 함께 명시" 조항에 따른 명시적 추가다. 근거: 분자/원자/결합 트리의 깊은 갱신 (특히 좌표 이동, 결합 차수 변경) 을 spread 체인으로 표현하면 액션 코드가 길어지고 readonly 추론이 무너지기 쉽다. immer 는 draft 안에서 mutation-처럼 작성해도 결과는 동결된 새 객체가 된다 (architecture §3.4 ⑥ "불변 데이터" 와 호환).
 
 ### 3.3 결정 필요 사항 (Plan 단계에서 모두 확정)
 
-| ID | 질문 | 확정 답 | 본문 영향 |
-|----|------|---------|-----------|
-| D1 | `MoleculeId` 생성기 | **`crypto.randomUUID()`** (브라우저 표준, 추가 의존성 없음). 외부 PubChem 화합물은 `cid:{CID}` 접두 식별자 병기 | §4.1 `MoleculeId` 정의, §6.2 의 ID 충돌 방지 |
-| D2 | `immer` 도입 | **도입** (`zustand/middleware/immer` 사용) | §3.2 라이브러리, §6.1 미들웨어 합성, §5.1 액션 시그니처가 draft 패턴 |
-| D3 | 화합물 검색 슬라이스 위치 | **`uiStore` 내 sub-slice** (`compoundSearch`) | §4.4 uiStore, §5.3 `compoundSearch.*` 액션 |
-| D4 | 알림 토스트 큐 본 Phase 포함 | **포함** (자료구조 + push/dismiss 액션). 컴포넌트는 Phase 11 | §4.4 `notifications`, §5.3 `notify*` 액션 |
-| D5 | `settingsStore` persist 마이그레이션 | **신규 키 `chem.settings` + 1회 이관** (구 키 유지로 롤백 안전) | §4.5 persist 키, §6.3 마이그레이션 로직 |
+| ID  | 질문                                 | 확정 답                                                                                                                                                                           | 본문 영향                                                            |
+| --- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| D1  | `MoleculeId` 생성기                  | **Phase 01 `createMoleculeId()`** (`@/chemistry/compounds/ids`, crypto.randomUUID 기반, CD1 — 본 store 재정의 안 함). 외부 PubChem 화합물은 `moleculeIdForCid(cid)` = `cid:{CID}` | §4.1 재수출, §6.2 의 ID 충돌 방지                                    |
+| D2  | `immer` 도입                         | **도입** (`zustand/middleware/immer` 사용)                                                                                                                                        | §3.2 라이브러리, §6.1 미들웨어 합성, §5.1 액션 시그니처가 draft 패턴 |
+| D3  | 화합물 검색 슬라이스 위치            | **`uiStore` 내 sub-slice** (`compoundSearch`)                                                                                                                                     | §4.4 uiStore, §5.3 `compoundSearch.*` 액션                           |
+| D4  | 알림 토스트 큐 본 Phase 포함         | **포함** (자료구조 + push/dismiss 액션). 컴포넌트는 Phase 11                                                                                                                      | §4.4 `notifications`, §5.3 `notify*` 액션                            |
+| D5  | `settingsStore` persist 마이그레이션 | **신규 키 `chem.settings` + 1회 이관** (구 키 유지로 롤백 안전)                                                                                                                   | §4.5 persist 키, §6.3 마이그레이션 로직                              |
 
 추가로, Plan 검토 단계에서 아키텍처/관례에 의해 자유도 없는 사항으로 판정된 **선결정 사항(P1–P6)** 은 다음과 같다.
 
-| ID | 결정 | 근거 |
-|----|------|------|
-| P1 | 스토어 간 직접 `getState()` 크로스 호출 금지. 컴포넌트 레벨에서 selector 결합 또는 액션 인자 전달 | architecture §8.2 "스토어 간 직접 참조 금지" |
-| P2 | 비동기 액션은 호출 직후 `kind: 'loading'` 으로 set, 진입점 `await` 후 success/error 분기 | phase-05 §6.2 `LookupResult` 패턴 정합 |
-| P3 | `moleculeStore` 의 분자 컨테이너는 `Map<MoleculeId, Molecule>` 가 아니라 **`Record<string, Molecule>` + `ids: ReadonlyArray<MoleculeId>`** (immer + persist 직렬화 친화) | immer 의 Map proxy 는 `Object.freeze`/구조적 공유에 비효율적. 일반 객체 + ids 배열 패턴이 zustand 권장 |
-| P4 | Undoable 액션은 항상 `dispatchUndoable(meta, () => mutator)` 래퍼를 거친다. 일반 액션은 직접 set | Phase 09 가 인수할 인터페이스 동결. 본 Phase 의 placeholder 는 mutator 만 실행 |
-| P5 | `reactionStore.run()` 은 직전 호출이 진행 중이면 새 `AbortController` 만들기 전에 이전 controller `abort()` | phase-06 §4.7 의 `'Aborted'` kind 가 자연스럽게 발화됨 |
-| P6 | persist 미들웨어 `version: 1` 시작. `migrate(persistedState, version)` 함수가 v0 → v1 처리 | Phase 13 의 export/import 가 v2 도입 시 안전 |
+| ID  | 결정                                                                                                                                                                     | 근거                                                                                                   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| P1  | 스토어 간 직접 `getState()` 크로스 호출 금지. 컴포넌트 레벨에서 selector 결합 또는 액션 인자 전달                                                                        | architecture §8.2 "스토어 간 직접 참조 금지"                                                           |
+| P2  | 비동기 액션은 호출 직후 `kind: 'loading'` 으로 set, 진입점 `await` 후 success/error 분기                                                                                 | phase-05 §6.2 `LookupResult` 패턴 정합                                                                 |
+| P3  | `moleculeStore` 의 분자 컨테이너는 `Map<MoleculeId, Molecule>` 가 아니라 **`Record<string, Molecule>` + `ids: ReadonlyArray<MoleculeId>`** (immer + persist 직렬화 친화) | immer 의 Map proxy 는 `Object.freeze`/구조적 공유에 비효율적. 일반 객체 + ids 배열 패턴이 zustand 권장 |
+| P4  | Undoable 액션은 항상 `dispatchUndoable(meta, () => mutator)` 래퍼를 거친다. 일반 액션은 직접 set                                                                         | Phase 09 가 인수할 인터페이스 동결. 본 Phase 의 placeholder 는 mutator 만 실행                         |
+| P5  | `reactionStore.run()` 은 직전 호출이 진행 중이면 새 `AbortController` 만들기 전에 이전 controller `abort()`                                                              | phase-06 §4.7 의 `'Aborted'` kind 가 자연스럽게 발화됨                                                 |
+| P6  | persist 미들웨어 `version: 1` 시작. `migrate(persistedState, version)` 함수가 v0 → v1 처리                                                                               | Phase 13 의 export/import 가 v2 도입 시 안전                                                           |
 
 ---
 
@@ -106,7 +106,8 @@
 
 ```ts
 // src/stores/_shared/types.ts
-import type { Brand } from '@/types/brand';
+import type { MoleculeId } from '@/chemistry/compounds/ids';
+import { createMoleculeId } from '@/chemistry/compounds/ids';
 import type { ParseError } from '@/engine/parser';
 import type { EmbedError } from '@/engine/geometry';
 import type { PubChemError } from '@/services/pubchem';
@@ -125,14 +126,13 @@ export type AsyncState<T, E> =
 export const ASYNC_IDLE: AsyncState<never, never> = { kind: 'idle' };
 
 /**
- * MoleculeId — D1 확정: crypto.randomUUID() 결과 또는 `cid:${CID}` 형식.
+ * MoleculeId 는 **Phase 01 `@/chemistry/compounds/ids` 단일 정의** (CD1) 를 재수출만 한다
+ * (본 store 가 재정의하지 않음). 생성은 Phase 01 `createMoleculeId()` (crypto.randomUUID 기반).
  */
-export type MoleculeId = Brand<string, 'MoleculeId'>;
+export type { MoleculeId };
+export const newMoleculeId = createMoleculeId;
 
-export function newMoleculeId(): MoleculeId {
-  return crypto.randomUUID() as MoleculeId;
-}
-
+/** CID → 결정적 MoleculeId (`cid:{CID}` 형식). 동일 CID 재로드 시 동일 id (중복 식별). */
 export function moleculeIdForCid(cid: number): MoleculeId {
   return `cid:${cid}` as MoleculeId;
 }
@@ -143,8 +143,8 @@ export function moleculeIdForCid(cid: number): MoleculeId {
  */
 export interface UndoableMeta {
   readonly undoable: true;
-  readonly labelKey: string;       // i18n 키 — 실제 문구는 Phase 11 가 번역
-  readonly group?: string;         // 같은 group 의 연속 액션은 Phase 09 가 합칠 수 있음
+  readonly labelKey: string; // i18n 키 — 실제 문구는 Phase 11 가 번역
+  readonly group?: string; // 같은 group 의 연속 액션은 Phase 09 가 합칠 수 있음
 }
 
 /**
@@ -174,7 +174,7 @@ export interface MoleculeStoreState {
    * MoleculeId → Molecule. immer + persist 호환을 위해 Map 이 아닌 plain object (P3).
    */
   readonly molecules: Readonly<Record<MoleculeId, Molecule>>;
-  readonly ids: ReadonlyArray<MoleculeId>;       // 안정적 정렬 보장
+  readonly ids: ReadonlyArray<MoleculeId>; // 안정적 정렬 보장
   readonly activeId: MoleculeId | null;
 
   /**
@@ -256,7 +256,7 @@ export interface ReactionStoreState {
 let inflightReactionController: AbortController | null = null;
 
 export const DEFAULT_CONDITION: Condition = {
-  temperatureK: 298.15,    // 25 °C
+  temperatureK: 298.15, // 25 °C
   pressureAtm: 1.0,
   pH: 7.0,
 };
@@ -304,7 +304,7 @@ export interface UiStoreState {
 
   /** 뷰포트 표시 옵션 (architecture §3.10). */
   readonly viewport: {
-    readonly showAtomLabels: boolean;       // 기본 false
+    readonly showAtomLabels: boolean; // 기본 false
     readonly backgroundOverride: 'theme' | 'light' | 'dark';
   };
 
@@ -327,19 +327,19 @@ export type PanelKey =
   | 'toolbar';
 
 export interface Notification {
-  readonly id: string;                              // crypto.randomUUID()
+  readonly id: string; // crypto.randomUUID()
   readonly level: 'info' | 'success' | 'warn' | 'error';
-  readonly messageKey: string;                      // i18n 키 (common.json)
+  readonly messageKey: string; // i18n 키 (common.json)
   readonly messageParams?: Readonly<Record<string, string | number>>;
   readonly createdAt: number;
-  readonly dismissAfterMs: number | null;           // null = 사용자 dismiss 까지 유지
+  readonly dismissAfterMs: number | null; // null = 사용자 dismiss 까지 유지
 }
 
 export interface CompoundSearchSlice {
   readonly query: string;
   readonly mode: 'name' | 'cid' | 'formula';
   readonly results: AsyncState<ReadonlyArray<Compound>, import('@/services/pubchem').PubChemError>;
-  readonly selectedCid: number | null;              // 미리보기 강조
+  readonly selectedCid: number | null; // 미리보기 강조
 }
 ```
 
@@ -367,12 +367,12 @@ export interface SettingsStoreState {
   readonly locale: Locale;
   readonly renderMode: RenderMode;
   readonly units: UnitSystem;
-  readonly cvdMode: boolean;                        // 색약 모드 (architecture §3.5)
+  readonly cvdMode: boolean; // 색약 모드 (architecture §3.5)
 }
 
 export const DEFAULT_SETTINGS: SettingsStoreState = {
   theme: 'system',
-  locale: 'en',                                     // Phase 01 §2.4 와 동일 fallback 순서
+  locale: 'en', // Phase 01 §2.4 와 동일 fallback 순서
   renderMode: 'ball-and-stick',
   units: { temperature: 'K', pressure: 'atm' },
   cvdMode: false,
@@ -402,9 +402,18 @@ export const LEGACY_LOCALE_KEY = 'chem.locale';
 // src/stores/moleculeStore.ts (액션 계약)
 export interface MoleculeStoreActions {
   // ── 비동기 진입점 ──
-  addFromSmiles(input: string, opts?: { signal?: AbortSignal }): Promise<Result<MoleculeId, IngestError>>;
-  addFromInchi(input: string, opts?: { signal?: AbortSignal }): Promise<Result<MoleculeId, IngestError>>;
-  addFromCompound(cid: number, opts?: { signal?: AbortSignal }): Promise<Result<MoleculeId, IngestError>>;
+  addFromSmiles(
+    input: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<Result<MoleculeId, IngestError>>;
+  addFromInchi(
+    input: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<Result<MoleculeId, IngestError>>;
+  addFromCompound(
+    cid: number,
+    opts?: { signal?: AbortSignal },
+  ): Promise<Result<MoleculeId, IngestError>>;
 
   // ── 동기 편집 (모두 undoable) ──
   setActive(id: MoleculeId | null): void;
@@ -412,8 +421,9 @@ export interface MoleculeStoreActions {
   /**
    * 기존 분자 slot 의 내용을 새 Molecule 으로 *전체* 교체. `id` 는 보존.
    * **사용 사례**: Phase 12 의 SMILES/InChI 텍스트 입력으로 같은 slot 을 새 3D 구조로 갱신.
-   * **호출자 책임**: `next.atoms[*].id`, `next.bonds[*].id` 는 새로 생성된 안정 ID 여야 한다 (phase-08 D1
-   * 의 `crypto.randomUUID()`). 호출 전 selection 정리는 phase-08 의 useSelectionStaleGuard 가 자동 처리.
+   * **호출자 책임**: `next.atoms[*].id`, `next.bonds[*].id` 는 새로 생성된 안정 ID 여야 한다
+   * (Phase 01 `@/chemistry/compounds/ids` 의 `createAtomId()` / `createBondId()`, CD1). 호출 전
+   * selection 정리는 phase-08 의 useSelectionStaleGuard 가 자동 처리.
    */
   replace(id: MoleculeId, next: Molecule): void;
   moveAtom(id: MoleculeId, atomIndex: number, position: readonly [number, number, number]): void;
@@ -422,8 +432,8 @@ export interface MoleculeStoreActions {
   removeBond(id: MoleculeId, bondIndex: number): void;
   /**
    * 분자에 새 원자를 추가. `atom` 객체는 **호출자가 완전히 구성** (id, element, position, formalCharge,
-   * implicitHCount 모두 포함). `atom.id` 는 phase-08 의 `createAtomId(): AtomId`
-   * (`crypto.randomUUID()` wrapper) 로 생성하여 주입. 본 store 는 받은 atom 을 그대로 분자의
+   * implicitHCount 모두 포함). `atom.id` 는 Phase 01 `@/chemistry/compounds/ids` 의
+   * `createAtomId(): AtomId` (crypto.randomUUID 기반, CD1) 로 생성하여 주입. 본 store 는 받은 atom 을 그대로 분자의
    * `atoms[]` 끝에 push (atomIndex 는 자동 = 기존 길이). 본 호출은 단일 entry undoable.
    */
   addAtom(id: MoleculeId, atom: Molecule['atoms'][number]): void;
@@ -444,21 +454,26 @@ export interface MoleculeStoreActions {
 export const selectActiveMolecule = (s: MoleculeStoreState): Molecule | null =>
   s.activeId ? (s.molecules[s.activeId] ?? null) : null;
 
-export const selectMoleculeById = (id: MoleculeId) => (s: MoleculeStoreState): Molecule | null =>
-  s.molecules[id] ?? null;
+export const selectMoleculeById =
+  (id: MoleculeId) =>
+  (s: MoleculeStoreState): Molecule | null =>
+    s.molecules[id] ?? null;
 
 export const selectMoleculeIds = (s: MoleculeStoreState): ReadonlyArray<MoleculeId> => s.ids;
 
-export const selectIngestState = (s: MoleculeStoreState): AsyncState<MoleculeId, IngestError> => s.ingest;
+export const selectIngestState = (s: MoleculeStoreState): AsyncState<MoleculeId, IngestError> =>
+  s.ingest;
 
 /** Phase 13 export 용 — 직렬화 가능한 dump. */
-export const selectMoleculeSnapshot = (id: MoleculeId) => (s: MoleculeStoreState): MoleculeSnapshot | null => {
-  const m = s.molecules[id];
-  return m ? toSnapshot(m) : null;
-};
+export const selectMoleculeSnapshot =
+  (id: MoleculeId) =>
+  (s: MoleculeStoreState): MoleculeSnapshot | null => {
+    const m = s.molecules[id];
+    return m ? toSnapshot(m) : null;
+  };
 ```
 
-`MoleculeSnapshot` 타입의 정확한 필드는 Phase 13 가 export 포맷 결정 시 동결한다. 본 Phase 는 *형태가 직렬화 가능* (Date / Map / Set / 함수 미포함) 한 dump 라는 보장만 한다.
+`MoleculeSnapshot` 타입의 정확한 필드는 Phase 13 가 export 포맷 결정 시 동결한다. 본 Phase 는 _형태가 직렬화 가능_ (Date / Map / Set / 함수 미포함) 한 dump 라는 보장만 한다.
 
 ### 5.2 `reactionStore`
 
@@ -484,27 +499,30 @@ export interface ReactionStoreActions {
 
 **ReactionEngineError → i18n 키 매핑 표** (selector `selectErrorI18nKey` 의 본문):
 
-| `kind` | i18n 키 (`common.json`) | UI 처리 권장 (Phase 11) |
-|--------|------------------------|------------------------|
-| `RdkitNotReady` | `reaction.error.rdkitNotReady` | 재시도 버튼 + 진행 중 스피너 |
-| `RdkitInitFailed` | `reaction.error.rdkitInitFailed` | 페이지 새로고침 안내 |
-| `NoMatchingRule` | `reaction.error.noMatchingRule` | "예측 불가" 안내 + 입력 검토 가이드 |
-| `HeuristicAbstained` | `reaction.error.heuristicAbstained` | 동상 |
-| `ConditionOutOfRange` | `reaction.error.conditionOutOfRange` | 권장 조건 범위 표시 |
-| `InvalidReactant` | `reaction.error.invalidReactant` | 분자 정보 패널 표시 |
-| `RunReactantsFailed` | `reaction.error.runReactantsFailed` | 일반 실패 토스트 + "다시 시도" |
-| `EmbedFailed` | `reaction.error.embedFailed` | 동상 (생성물 좌표 실패) |
-| `Aborted` | `reaction.error.aborted` | 토스트 표시 안 함 (사용자 의도) |
-| `Internal` | `reaction.error.internal` | 일반 실패 토스트 |
+| `kind`                | i18n 키 (`common.json`)              | UI 처리 권장 (Phase 11)             |
+| --------------------- | ------------------------------------ | ----------------------------------- |
+| `RdkitNotReady`       | `reaction.error.rdkitNotReady`       | 재시도 버튼 + 진행 중 스피너        |
+| `RdkitInitFailed`     | `reaction.error.rdkitInitFailed`     | 페이지 새로고침 안내                |
+| `NoMatchingRule`      | `reaction.error.noMatchingRule`      | "예측 불가" 안내 + 입력 검토 가이드 |
+| `HeuristicAbstained`  | `reaction.error.heuristicAbstained`  | 동상                                |
+| `ConditionOutOfRange` | `reaction.error.conditionOutOfRange` | 권장 조건 범위 표시                 |
+| `InvalidReactant`     | `reaction.error.invalidReactant`     | 분자 정보 패널 표시                 |
+| `RunReactantsFailed`  | `reaction.error.runReactantsFailed`  | 일반 실패 토스트 + "다시 시도"      |
+| `EmbedFailed`         | `reaction.error.embedFailed`         | 동상 (생성물 좌표 실패)             |
+| `Aborted`             | `reaction.error.aborted`             | 토스트 표시 안 함 (사용자 의도)     |
+| `Internal`            | `reaction.error.internal`            | 일반 실패 토스트                    |
 
 매핑 함수는 `src/stores/reactionStore.selectors.ts` 에 `mapReactionErrorToKey(e: ReactionEngineError): string` 으로 위치.
 
 **selector helpers**:
 
 ```ts
-export const selectReactantIds = (s: ReactionStoreState): ReadonlyArray<MoleculeId> => s.reactantIds;
+export const selectReactantIds = (s: ReactionStoreState): ReadonlyArray<MoleculeId> =>
+  s.reactantIds;
 export const selectCondition = (s: ReactionStoreState): Condition => s.condition;
-export const selectRunState = (s: ReactionStoreState): AsyncState<ReactionResult, ReactionEngineError> => s.run;
+export const selectRunState = (
+  s: ReactionStoreState,
+): AsyncState<ReactionResult, ReactionEngineError> => s.run;
 export const selectIsRunning = (s: ReactionStoreState): boolean => s.run.kind === 'loading';
 export const selectIsExperimental = (s: ReactionStoreState): boolean =>
   s.run.kind === 'success' && s.run.value.kind === 'heuristic-experimental';
@@ -532,8 +550,8 @@ export interface UiStoreActions {
   setBackgroundOverride(mode: 'theme' | 'light' | 'dark'): void;
 
   // ── 전역 로딩 ──
-  beginLoading(): void;       // count++
-  endLoading(): void;         // count--, 0 미만 방지
+  beginLoading(): void; // count++
+  endLoading(): void; // count--, 0 미만 방지
 
   // ── 알림 ──
   notify(n: Omit<Notification, 'id' | 'createdAt'> & { dismissAfterMs?: number | null }): string; // id 반환
@@ -607,9 +625,16 @@ import { immer } from 'zustand/middleware/immer';
  */
 export function createAppStore<T>(
   name: string,
-  creator: StateCreator<T, [['zustand/immer', never], ['zustand/subscribeWithSelector', never]], [], T>,
+  creator: StateCreator<
+    T,
+    [['zustand/immer', never], ['zustand/subscribeWithSelector', never]],
+    [],
+    T
+  >,
   persistOptions?: PersistOptions<T>,
-) { /* … */ }
+) {
+  /* … */
+}
 ```
 
 각 스토어는 `createAppStore('moleculeStore', creator)` 형태로 생성한다.
@@ -624,18 +649,23 @@ export function createAppStore<T>(
 // 훅 (zustand store 인스턴스)
 export { useMoleculeStore } from './moleculeStore';
 export { useReactionStore } from './reactionStore';
-export { useUiStore }       from './uiStore';
+export { useUiStore } from './uiStore';
 export { useSettingsStore } from './settingsStore';
 
 // State / Action 인터페이스 타입 (selector 작성 / 테스트 mock 용)
 export type { MoleculeStoreState } from './moleculeStore';
 export type { ReactionStoreState } from './reactionStore';
-export type { UiStoreState }       from './uiStore';
+export type { UiStoreState } from './uiStore';
 export type { SettingsStoreState } from './settingsStore';
 
 // AsyncState 등 공용 타입
-export type { AsyncState, AsyncStateLoading, AsyncStateError, IngestError, SerializedError }
-  from './_shared/types';
+export type {
+  AsyncState,
+  AsyncStateLoading,
+  AsyncStateError,
+  IngestError,
+  SerializedError,
+} from './_shared/types';
 
 // 안정 selector — 공식 Phase 11 / Phase 08 인계 표면 (§12 hand-off 표 참고)
 export {
@@ -661,7 +691,7 @@ export type { UndoableActionKind, UndoableMeta, UndoableDispatcher } from './_sh
 export { phase07PlaceholderDispatcher } from './_shared/undoable';
 ```
 
-> **internal 모듈** (`_shared/_crossStore.ts`, `_shared/createStore.ts`, `*.persist.ts` 등) 은 barrel 미노출 — 본 Phase 내부에서만 사용. Phase 09 가 dispatcher 교체 시에는 `_shared/undoable.ts` 의 *export 시점에* 본 구현으로 swap (호출자 코드 변경 0).
+> **internal 모듈** (`_shared/_crossStore.ts`, `_shared/createStore.ts`, `*.persist.ts` 등) 은 barrel 미노출 — 본 Phase 내부에서만 사용. Phase 09 가 dispatcher 교체 시에는 `_shared/undoable.ts` 의 _export 시점에_ 본 구현으로 swap (호출자 코드 변경 0).
 
 ---
 
@@ -672,6 +702,7 @@ export { phase07PlaceholderDispatcher } from './_shared/undoable';
 순서: `devtools` (가장 바깥) → `persist` (선택) → `subscribeWithSelector` → `immer` (가장 안쪽).
 
 이유:
+
 - **devtools 는 모든 setState 를 가로채야** Redux DevTools 에 액션 이름이 표시되므로 가장 바깥.
 - **persist 는 도메인 데이터의 직렬화 형태** 를 결정하므로 immer/subscribeWithSelector 보다 바깥.
 - **subscribeWithSelector** 는 스토어 외부에서 selector 단위 구독을 가능하게 한다 (Phase 08 의 `useFrame` 안 직접 구독, Phase 13 export 시 unsub 등).
@@ -751,7 +782,7 @@ async function run(): Promise<PredictOutput> {
 
 ### 6.3 persist 마이그레이션 (settingsStore)
 
-**핵심 함정**: Zustand `persist` 의 `migrate(persisted, version)` 콜백은 storage 에 값이 *있을 때만* 호출된다. v0 사용자는 `chem.settings` 키가 부재하므로 — `getItem('chem.settings')` 이 `null` 반환 → persist 가 곧장 `DEFAULT_SETTINGS` 로 초기화 → migrate 가 발화하지 않아 사용자 설정 손실. (advisor 검토 §6.3 반영.)
+**핵심 함정**: Zustand `persist` 의 `migrate(persisted, version)` 콜백은 storage 에 값이 _있을 때만_ 호출된다. v0 사용자는 `chem.settings` 키가 부재하므로 — `getItem('chem.settings')` 이 `null` 반환 → persist 가 곧장 `DEFAULT_SETTINGS` 로 초기화 → migrate 가 발화하지 않아 사용자 설정 손실. (advisor 검토 §6.3 반영.)
 
 따라서 v0 → v1 마이그레이션은 **custom storage adapter** 로 구현한다. adapter 의 `getItem` 이 `chem.settings` 부재 시 legacy 키를 합성해 v0-shaped JSON 을 반환하고, 이후 persist 표준 경로 (migrate → rehydrate) 가 자연스럽게 발화하도록 한다.
 
@@ -770,8 +801,7 @@ import {
   type Theme,
 } from './settingsStore.types';
 
-const isTheme = (v: unknown): v is Theme =>
-  v === 'light' || v === 'dark' || v === 'system';
+const isTheme = (v: unknown): v is Theme => v === 'light' || v === 'dark' || v === 'system';
 const isLocale = (v: unknown): v is Locale => v === 'ko' || v === 'en';
 
 function tryParseJson<T>(raw: string | null, guard: (v: unknown) => v is T): T | null {
@@ -882,10 +912,7 @@ export const settingsPersistOptions = {
 ```ts
 // src/stores/_shared/undoable.ts
 export interface UndoableDispatcher {
-  dispatchUndoable<T>(
-    meta: UndoableMeta & { kind: UndoableActionKind },
-    mutator: () => T,
-  ): T;
+  dispatchUndoable<T>(meta: UndoableMeta & { kind: UndoableActionKind }, mutator: () => T): T;
   undo(): void;
   redo(): void;
   readonly canUndo: () => boolean;
@@ -898,7 +925,10 @@ export interface UndoableDispatcher {
  */
 export const phase07PlaceholderDispatcher: UndoableDispatcher = {
   dispatchUndoable: (meta, mutator) => {
-    logger.debug('undoable action dispatched (Phase 07 placeholder)', { kind: meta.kind, label: meta.labelKey });
+    logger.debug('undoable action dispatched (Phase 07 placeholder)', {
+      kind: meta.kind,
+      label: meta.labelKey,
+    });
     return mutator();
   },
   undo: () => logger.debug('undo() called — Phase 09 가 인수'),
@@ -955,7 +985,7 @@ const { atoms, bonds } = useMoleculeStore(
 
 ### 6.6 스토어 간 통신 금지 운영 (P1)
 
-원칙: 다른 스토어를 *읽지/쓰지* 않는다. 그러나 실무상 두 가지 cross-store 영향이 불가피하다 — (a) 비동기 액션의 전역 로딩 카운터 inc/dec, (b) 도메인 액션의 후속 효과 (예: molecule 삭제 시 reaction 의 stale id 정리, 비동기 실패 시 toast 발화). 이를 다음 세 패턴으로 격리한다.
+원칙: 다른 스토어를 _읽지/쓰지_ 않는다. 그러나 실무상 두 가지 cross-store 영향이 불가피하다 — (a) 비동기 액션의 전역 로딩 카운터 inc/dec, (b) 도메인 액션의 후속 효과 (예: molecule 삭제 시 reaction 의 stale id 정리, 비동기 실패 시 toast 발화). 이를 다음 세 패턴으로 격리한다.
 
 1. **컴포넌트 레벨 결합** (가장 권장) — `useMoleculeStore(...)` 와 `useReactionStore(...)` 를 한 컴포넌트에서 호출 후 props 로 전달.
 2. **`_shared/_crossStore.ts` 의 명시적 헬퍼** — `withGlobalLoading(fn)`, `notifyError(error)`, `cascadeRemoveMolecule(id)` 등. 액션 본문은 이 헬퍼만 알면 되고, cross-store 의 실제 호출은 헬퍼 내부에 격리. (advisor 검토 §6.2 반영 — 이 통로 외에서 `useUiStore.getState()` 호출 금지.)
@@ -965,11 +995,11 @@ const { atoms, bonds } = useMoleculeStore(
 
 `_crossStore.ts` 가 노출하는 정식 통로 (Phase 07 v1):
 
-| 헬퍼 | 호출자 | 효과 |
-|------|--------|------|
-| `withGlobalLoading(fn)` | 모든 비동기 액션 (moleculeStore/reactionStore/uiStore) | uiStore.beginLoading → fn → finally endLoading |
-| `notifyError(source, error)` | 비동기 실패 분기 | uiStore.notify({ level: 'error', messageKey: mapXxxErrorToKey(error) }) |
-| `cascadeRemoveMolecule(id)` | moleculeStore.removeMolecule 내부 | reactionStore 의 reactant 집합과 selection 정리 |
+| 헬퍼                         | 호출자                                                 | 효과                                                                    |
+| ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `withGlobalLoading(fn)`      | 모든 비동기 액션 (moleculeStore/reactionStore/uiStore) | uiStore.beginLoading → fn → finally endLoading                          |
+| `notifyError(source, error)` | 비동기 실패 분기                                       | uiStore.notify({ level: 'error', messageKey: mapXxxErrorToKey(error) }) |
+| `cascadeRemoveMolecule(id)`  | moleculeStore.removeMolecule 내부                      | reactionStore 의 reactant 집합과 selection 정리                         |
 
 ### 6.7 React 외부 호출 / 테스트 용이성
 
@@ -988,6 +1018,7 @@ src/stores/
 │   ├── undoable.ts                    # UndoableActionKind, UndoableDispatcher, phase07Placeholder
 │   ├── createStore.ts                 # 미들웨어 합성 헬퍼
 │   ├── selectors.ts                   # 공용 selector 유틸 (EMPTY_ATOMS 등)
+│   ├── notifications.ts               # NOTIFICATION_QUEUE_MAX=50, drop-oldest 헬퍼 (R7)
 │   └── _crossStore.ts                 # 스토어 간 cross-action 격리 (P1 예외 지점)
 ├── moleculeStore.ts                   # state + create() 진입점
 ├── moleculeStore.actions.ts           # 액션 본문 (immer draft)
@@ -1026,13 +1057,19 @@ tests/unit/stores/
 // .eslintrc 의 가드 추가분
 {
   "rules": {
-    "no-restricted-imports": ["error", {
-      "patterns": [
-        { "group": ["@/stores/*"], "message": "스토어는 @/stores 배럴에서만 import 하세요." },
-        { "group": ["@/stores/_shared/_crossStore"], "message": "_crossStore 는 stores 내부 전용입니다." }
-      ]
-    }]
-  }
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          { "group": ["@/stores/*"], "message": "스토어는 @/stores 배럴에서만 import 하세요." },
+          {
+            "group": ["@/stores/_shared/_crossStore"],
+            "message": "_crossStore 는 stores 내부 전용입니다.",
+          },
+        ],
+      },
+    ],
+  },
 }
 ```
 
@@ -1067,6 +1104,7 @@ tests/unit/stores/
 
 - `beginLoading()` / `endLoading()` 의 균형 — `endLoading` 만 5번 호출 시 count 0 미만 방지.
 - `notify({ ... })` 가 id 반환, `dismissNotification(id)` 가 정확히 해당 id 만 제거.
+- **큐 상한 (R7)**: `notify` 를 `NOTIFICATION_QUEUE_MAX + 10` 회 호출 → `notifications.length === NOTIFICATION_QUEUE_MAX (50)`, 보존된 항목은 **가장 최근 50개** (가장 오래된 10개가 drop-oldest 로 축출, 잔존 첫 항목 id === 11번째로 push 한 id).
 - `runCompoundSearch()` 가 phase-05 의 `resolveCompoundByName` mock 호출 → AsyncState 전이.
 - `setCompoundSearchQuery` 갱신 시 results 가 idle 로 초기화 안 함 (사용자가 입력하는 동안 결과 유지).
 - `selectCompoundSearchResult(cid)` 가 selectedCid 만 갱신, results 보존.
@@ -1091,23 +1129,23 @@ tests/unit/stores/
 
 - "분자 추가 → 반응물 등록 → predict 실행 → 분자 삭제" 시퀀스에서 cross-store 일관성:
   - `removeMolecule(id)` 가 reactionStore.reactantIds 에서도 제거되는지.
-  - 진행 중 `predict` 가 있을 때 `removeMolecule` 이 reactionStore.cancel() 을 트리거 (P1 예외 지점) — *또는* run 결과의 stale id 처리. 본 Phase 는 후자 (제거 후 결과는 표시하되 stale 표시) 채택, integration test 가 이를 강제.
+  - 진행 중 `predict` 가 있을 때 `removeMolecule` 이 reactionStore.cancel() 을 트리거 (P1 예외 지점) — _또는_ run 결과의 stale id 처리. 본 Phase 는 후자 (제거 후 결과는 표시하되 stale 표시) 채택, integration test 가 이를 강제.
 
 ---
 
 ## 9. 리스크 및 대안
 
-| ID | 리스크 | 대응 |
-|----|--------|------|
-| R1 | persist 마이그레이션 실패 (저장된 값이 새 스키마와 불일치, 또는 사용자가 수동 편집한 localStorage) | `onRehydrateStorage` 검증 실패 시 `DEFAULT_SETTINGS` 복귀 + `logger.warn`. 사용자에게는 다음 액션 시 토스트로 알림 (Phase 11) |
-| R2 | AbortController 누수 — 컴포넌트 언마운트 후 액션이 commit | 스토어가 controller 보관 + 다음 호출 시 cancel. 사용자도 `cancel()` 명시 호출 가능 |
-| R3 | 스토어 간 cross-getState 남용 — ESLint 로 완전 차단 어려움 | `_crossStore.ts` 모듈에만 격리 + 코드 리뷰 가이드. PR 템플릿에 "stores 간 직접 참조 여부" 체크박스 추가 (Phase 15) |
-| R4 | Phase 09 의 undo 본 구현이 본 Phase placeholder 와 호환 깨짐 | §6.4 의 `UndoableDispatcher` 인터페이스를 본 Phase 에서 동결. 변경은 Phase 09 본 구현 단계에서 본 문서 갱신 필요 |
-| R5 | immer draft 안에서 `Map` / `Set` 사용 시 enableMapSet 필요 — 잊으면 런타임 오류 | P3 에 따라 `Record<...>` + `ids` 배열 패턴만 사용 (Map/Set 미사용). enableMapSet 호출 안 함 |
-| R6 | persist 직렬화에 RDKit `Mol` 객체 등 비-직렬화 가능 값 포함 → JSON.stringify 폭발 | `settingsStore` 외 어떤 스토어도 persist 적용 안 함. `Molecule` 은 plain object 만 담는다는 phase-03 §4.5 보장 |
-| R7 | `notifications` 큐 무한 증가 (사용자가 dismiss 안 함) | 큐 길이 상한 (예: 50) — 초과 시 가장 오래된 자동 dismiss. 본 Phase 의 `_shared/notifications.ts` 에 상수 |
-| R8 | DevTools 미들웨어가 production 번들에 포함되면 번들 부풀음 | `import.meta.env.DEV` 게이트 + Vite tree-shake 보장. 번들 분석은 Phase 14 |
-| R9 | persist 의 `version` 충돌 — 향후 export/import (Phase 13) 가 다른 version 체계 도입 | 본 Phase 는 `version: 1` 고정. Phase 13 의 export 포맷은 별도 schemaVersion (phase-05 의 패턴) 가짐 |
+| ID  | 리스크                                                                                             | 대응                                                                                                                                                                                                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | persist 마이그레이션 실패 (저장된 값이 새 스키마와 불일치, 또는 사용자가 수동 편집한 localStorage) | `onRehydrateStorage` 검증 실패 시 `DEFAULT_SETTINGS` 복귀 + `logger.warn`. 사용자에게는 다음 액션 시 토스트로 알림 (Phase 11)                                                                                                                                                         |
+| R2  | AbortController 누수 — 컴포넌트 언마운트 후 액션이 commit                                          | 스토어가 controller 보관 + 다음 호출 시 cancel. 사용자도 `cancel()` 명시 호출 가능                                                                                                                                                                                                    |
+| R3  | 스토어 간 cross-getState 남용 — ESLint 로 완전 차단 어려움                                         | `_crossStore.ts` 모듈에만 격리 + 코드 리뷰 가이드. PR 템플릿에 "stores 간 직접 참조 여부" 체크박스 추가 (Phase 15)                                                                                                                                                                    |
+| R4  | Phase 09 의 undo 본 구현이 본 Phase placeholder 와 호환 깨짐                                       | §6.4 의 `UndoableDispatcher` 인터페이스를 본 Phase 에서 동결. 변경은 Phase 09 본 구현 단계에서 본 문서 갱신 필요                                                                                                                                                                      |
+| R5  | immer draft 안에서 `Map` / `Set` 사용 시 enableMapSet 필요 — 잊으면 런타임 오류                    | P3 에 따라 `Record<...>` + `ids` 배열 패턴만 사용 (Map/Set 미사용). enableMapSet 호출 안 함                                                                                                                                                                                           |
+| R6  | persist 직렬화에 RDKit `Mol` 객체 등 비-직렬화 가능 값 포함 → JSON.stringify 폭발                  | `settingsStore` 외 어떤 스토어도 persist 적용 안 함. `Molecule` 은 plain object 만 담는다는 phase-03 §4.5 보장                                                                                                                                                                        |
+| R7  | `notifications` 큐 무한 증가 (사용자가 dismiss 안 함)                                              | `src/stores/_shared/notifications.ts` 에 `export const NOTIFICATION_QUEUE_MAX = 50;` 정의. `notify(n)` 는 push 후 길이가 `NOTIFICATION_QUEUE_MAX` 를 초과하면 **가장 오래된 항목부터 drop-oldest** 로 잘라 정확히 `NOTIFICATION_QUEUE_MAX` 개 유지 (FIFO 축출). §8.3 #N 테스트로 검증 |
+| R8  | DevTools 미들웨어가 production 번들에 포함되면 번들 부풀음                                         | `import.meta.env.DEV` 게이트 + Vite tree-shake 보장. 번들 분석은 Phase 14                                                                                                                                                                                                             |
+| R9  | persist 의 `version` 충돌 — 향후 export/import (Phase 13) 가 다른 version 체계 도입                | 본 Phase 는 `version: 1` 고정. Phase 13 의 export 포맷은 별도 schemaVersion (phase-05 의 패턴) 가짐                                                                                                                                                                                   |
 
 ---
 
@@ -1141,18 +1179,18 @@ Plan 단계에서 D1–D5 + P1–P6 가 모두 확정되어 본 §11 은 **Phase
 
 ## 12. 다음 Phase 로의 인계 (Hand-off)
 
-| Phase | 본 Phase 가 인계하는 것 |
-|-------|--------------------------|
-| **08 (Rendering)** | `selectActiveMolecule` / `selectMoleculeById` 안정 selector, `selectAtomLabelsOn` / `selectBackgroundOverride` 뷰포트 옵션, `useMoleculeStore.subscribe(selector, listener)` 외부 구독 패턴 (`useFrame` 안 직접 사용 가능) |
-| **09 (Interactions)** | `UndoableDispatcher` 인터페이스 + `UndoableActionKind` 9개 enum, `moveAtom` / `setBondOrder` / `addBond` 등 동기 편집 액션 시그니처. Phase 09 는 `phase07PlaceholderDispatcher` 를 본 구현으로 교체 |
-| **10 (UI Framework)** | `selectActivePanel` / 패널 토글 액션, `selectIsGloballyLoading` 전역 스피너 |
-| **11 (UI Panels)** | `notifications` 큐 + `notify` / `dismissNotification` (토스트 컴포넌트 책임), `compoundSearch` slice + `runCompoundSearch` (검색 패널), `mapReactionErrorToKey` 매핑 (반응 결과 패널), 단위계 표시 selector (`selectUnits`) |
-| **12 (Text Input)** | `addFromSmiles` / `addFromInchi` 진입점, `IngestError` 분기 표 |
-| **13 (Export/Import)** | `selectMoleculeSnapshot(id)` (직렬화 가능 dump), persist 마이그레이션 패턴 (v1 → v2 재사용) |
-| **14 (Performance)** | DevTools 미들웨어 게이트, selector 분포 측정 자리, `subscribeWithSelector` 기반 React-외 구독 (메인 스레드 부하 감소) |
-| **15 (Testing & Polish)** | persist 마이그레이션 회귀 테스트, 스토어 간 cross-action 일관성 시나리오 |
+| Phase                     | 본 Phase 가 인계하는 것                                                                                                                                                                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **08 (Rendering)**        | `selectActiveMolecule` / `selectMoleculeById` 안정 selector, `selectAtomLabelsOn` / `selectBackgroundOverride` 뷰포트 옵션, `useMoleculeStore.subscribe(selector, listener)` 외부 구독 패턴 (`useFrame` 안 직접 사용 가능)  |
+| **09 (Interactions)**     | `UndoableDispatcher` 인터페이스 + `UndoableActionKind` 9개 enum, `moveAtom` / `setBondOrder` / `addBond` 등 동기 편집 액션 시그니처. Phase 09 는 `phase07PlaceholderDispatcher` 를 본 구현으로 교체                         |
+| **10 (UI Framework)**     | `selectActivePanel` / 패널 토글 액션, `selectIsGloballyLoading` 전역 스피너                                                                                                                                                 |
+| **11 (UI Panels)**        | `notifications` 큐 + `notify` / `dismissNotification` (토스트 컴포넌트 책임), `compoundSearch` slice + `runCompoundSearch` (검색 패널), `mapReactionErrorToKey` 매핑 (반응 결과 패널), 단위계 표시 selector (`selectUnits`) |
+| **12 (Text Input)**       | `addFromSmiles` / `addFromInchi` 진입점, `IngestError` 분기 표                                                                                                                                                              |
+| **13 (Export/Import)**    | `selectMoleculeSnapshot(id)` (직렬화 가능 dump), persist 마이그레이션 패턴 (v1 → v2 재사용)                                                                                                                                 |
+| **14 (Performance)**      | DevTools 미들웨어 게이트, selector 분포 측정 자리, `subscribeWithSelector` 기반 React-외 구독 (메인 스레드 부하 감소)                                                                                                       |
+| **15 (Testing & Polish)** | persist 마이그레이션 회귀 테스트, 스토어 간 cross-action 일관성 시나리오                                                                                                                                                    |
 
 ---
 
-*문서 버전: 0.1 (초안)*
-*작성일: 2026-04-25*
+_문서 버전: 0.1 (초안)_
+_작성일: 2026-04-25_
