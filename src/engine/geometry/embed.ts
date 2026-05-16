@@ -5,7 +5,7 @@ import type { Molecule } from '@/chemistry/compounds/types';
 import type { Result } from '@/types/result';
 import { err } from '@/types/result';
 
-export async function embed3D(
+export async function embedMolecule(
   parsed: ParsedMol,
   backend: { embed(p: ParsedMol, opts: EmbedOptions): Promise<Result<Molecule, EmbedError>> },
   opts: Partial<EmbedOptions> = {},

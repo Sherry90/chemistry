@@ -11,7 +11,7 @@ import type { FormulaComposition } from './formula';
 import { FORMULA_TO_SMILES } from './formula-map';
 import { FORMULA_MAP_GENERATED } from './formula-map.generated';
 import { getParsedMol, setParsedMol } from '@/engine/rdkit/cache';
-import { embed3D } from '@/engine/geometry/embed';
+import { embedMolecule } from '@/engine/geometry/embed';
 
 export type { ParseError } from './errors';
 export type { FormulaComposition, FormulaEntry } from './formula';
@@ -74,7 +74,7 @@ export async function toMoleculeWith3D(
   parsed: ParsedMol,
   opts: Partial<EmbedOptions> = {},
 ): Promise<Result<Molecule, EmbedError>> {
-  return embed3D(parsed, getBackend(), opts);
+  return embedMolecule(parsed, getBackend(), opts);
 }
 
 export async function smilesTo3DMolecule(

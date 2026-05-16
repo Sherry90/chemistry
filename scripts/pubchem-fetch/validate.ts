@@ -3,7 +3,7 @@ import type { Result } from '../../src/types/result.js';
 import type { Molecule } from '../../src/chemistry/compounds/types.js';
 import type { EmbedError } from '../../src/engine/geometry/types.js';
 import { EMBED_SEED_PRIMARY } from '../../src/engine/geometry/types.js';
-import { embed3D } from '../../src/engine/geometry/embed.js';
+import { embedMolecule } from '../../src/engine/geometry/embed.js';
 
 export interface ValidateAndEmbedOptions {
   readonly backend: RdkitBackend;
@@ -48,7 +48,7 @@ export async function validateAndEmbed(
 
   for (const seedHint of seeds) {
     const seed = seedHint === -1 ? (Math.random() * 0xffffffff) >>> 0 : seedHint;
-    const result = await embed3D(parsed.value, backend, {
+    const result = await embedMolecule(parsed.value, backend, {
       seed,
       maxIters: 2000,
       useRandomCoords: seedHint === -1,

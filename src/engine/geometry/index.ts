@@ -1,4 +1,4 @@
-export { embed3D } from './embed';
+export { embedMolecule } from './embed';
 export { bondLength, bondAngle, dihedral } from './metrics';
 export type { EmbedOptions, EmbedError, EmbedErrorCode } from './types';
 export {
