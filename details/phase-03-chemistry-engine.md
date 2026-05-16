@@ -11,6 +11,7 @@
 화학 엔진의 심장을 만든다. RDKit.js (WebAssembly) 를 **lazy-init 래퍼 서비스**로 감싸고, 그 위에 **SMILES / InChI / 분자식(formula) 입력 → `Molecule` 도메인 객체 + 3D 좌표 산출** 파이프라인을 구축한다.
 
 이 Phase 가 끝나면:
+
 - 앱 어디에서든 `await ensureRdkit()` 한 번으로 RDKit 인스턴스를 얻을 수 있다 (최초 호출에만 WASM 다운로드·초기화; 이후 재사용).
 - SMILES / InChI / 분자식 입력이 `Result<Molecule, ParseError>` 로 좁혀진 유니온으로 반환된다 (예외 throw 금지).
 - 생성된 `Molecule` 은 `architecture.md` §3.4 의 **불변·프레임워크 독립** 원칙을 준수한다.
@@ -24,6 +25,7 @@
 ## 2. 범위 (Scope)
 
 ### 2.1 포함
+
 - **RDKit.js lazy 로더** (`engine/rdkit/service.ts`): WASM 자산 경로, 초기화 상태 관리, 진행/에러 이벤트
 - **입력 파서** (`engine/parser/`):
   - `parseSmiles(input: string): Result<ParsedMol, ParseError>`
@@ -32,16 +34,16 @@
   - 입력 전처리(trim, 공백 제거, 길이 제한, 문자셋 검증)
 - **도메인 매퍼** (`engine/parser/toDomain.ts`): RDKit 내부 객체 → `Molecule` / `Atom` / `Bond` (Phase 01 타입) 변환
 - **3D 임베드** (`engine/geometry/embed.ts`):
-  - `embed3D(mol: ParsedMol, options?: EmbedOptions): Result<Molecule, EmbedError>` — ETKDG v3 + UFF/MMFF 간이 최적화(옵션)
+  - `embedMolecule(mol: ParsedMol, options: EmbedOptions): Result<Molecule, EmbedError>` — ETKDG v3 + UFF/MMFF 간이 최적화(옵션). **내부 기하 프리미티브** — 외부 소비 표면이 아니다. 공개 3D 좌표 진입점은 `RdkitBackend.embed` (§6.8, async) 와 `toMoleculeWith3D` / `smilesTo3DMolecule` (§5.2) 이며 `RdkitBackend` 가 이 프리미티브를 감싼다 (단일 임베드 명칭으로 통일).
   - 실패 시 (치환기 충돌, 비정상 결합 등) 원인 분류
 - **보조 기하 계산** (`engine/geometry/metrics.ts`):
   - `bondLength(a, b)`, `bondAngle(a, b, c)`, `dihedral(a, b, c, d)` — 순수 수학, RDKit 불요
 - **입체화학 추출** (`engine/parser/stereo.ts`):
   - `extractStereo(mol): StereoAnnotations` — 원자 중심 R/S, 이중결합 E/Z
-- **정규화 / 출력** (`engine/rdkit/canonical.ts`):
-  - `toCanonicalSmiles(mol): string`
-  - `toInchi(mol): { inchi: string; inchiKey: string }`
-  - `toSdfBlock(mol): string` — Phase 13 Export 에서 재사용
+- **정규화 / 출력** (`engine/rdkit/canonical.ts`, `RdkitBackend` 주입형):
+  - `toCanonicalSmiles(backend, parsed): Promise<Result<string, ParseError>>` — 공개 표면은 `RdkitBackend.toCanonical` (§6.8); 본 함수는 그 구현 헬퍼
+  - `toInchi(backend, parsed): Promise<Result<{ inchi: string; inchiKey: string }, ParseError>>`
+  - `toSdfBlock(backend, mol): Result<string, RdkitNotReady>` — Phase 13 Export 에서 재사용 (RDKit 초기화 필요; 미초기화 시 `RdkitNotReady` 반환, throw 아님)
 - **이온·하전 분자 검증** (`engine/parser/validate.ts`):
   - 사용자 formula/SMILES 의 포말 전하 합계, 홀전자 수 검증
   - `validateMolecule(mol): Result<Molecule, ValidationIssue[]>`
@@ -51,7 +53,7 @@
 - **Web Worker 준비 훅** (`engine/rdkit/backend.ts`):
   - §6.8 의 `RdkitBackend` 인터페이스 정의 + 메인 스레드 구현. Worker 구현은 Phase 14.
 - **이온/하전 분자 ETKDG 안정성 사전 검증** (구현 착수 전 선결 작업):
-  - architecture.md §12-6 리스크의 구체적 검증 단계. 본 Phase 의 RDKit.js 버전이 다음 대표 케이스에 대해 ETKDG v3 임베드를 안정적으로 수행하는지 *코드 작성 전* 손으로 확인 (REPL / RDKit.js playground):
+  - architecture.md §12-6 리스크의 구체적 검증 단계. 본 Phase 의 RDKit.js 버전이 다음 대표 케이스에 대해 ETKDG v3 임베드를 안정적으로 수행하는지 _코드 작성 전_ 손으로 확인 (REPL / RDKit.js playground):
     - `[NH4+]` (4 N-H 결합, 사면체 대칭)
     - `[OH-]` (단일 fragment 음이온)
     - `[H3O+]` (양이온 + 비대칭 H 분포)
@@ -64,27 +66,30 @@
   - 검증 결과는 §11 열린 질문 / §9 리스크에 기록. 본 Phase 테스트 §8.2 의 이온 케이스(`[NH4+]` 등) 는 본 사전 검증의 후속 보강.
 
 ### 2.2 비포함 (후속 Phase 로 이관)
-| 항목 | 이관 대상 |
-|------|-----------|
-| 반응 규칙 매칭 / RunReactants 활용 | Phase 06 |
-| PubChem 에서 받은 SDF 파싱 통합 | Phase 05 (서비스 경계), 본 Phase 의 SDF 리더는 문자열 블록 수준까지만 |
-| 3D 렌더(구/실린더 인스턴싱) | Phase 08 |
-| 원자 드래그 시 재임베드 / 부분 좌표 갱신 | Phase 09 |
-| 입체화학 UI 표시 | Phase 11 |
-| 대용량 분자의 Web Worker 실제 이동 | Phase 14 |
-| 에너지/힘장(MM) 계산 | **비목표** (architecture §1.4) |
+
+| 항목                                     | 이관 대상                                                             |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| 반응 규칙 매칭 / RunReactants 활용       | Phase 06                                                              |
+| PubChem 에서 받은 SDF 파싱 통합          | Phase 05 (서비스 경계), 본 Phase 의 SDF 리더는 문자열 블록 수준까지만 |
+| 3D 렌더(구/실린더 인스턴싱)              | Phase 08                                                              |
+| 원자 드래그 시 재임베드 / 부분 좌표 갱신 | Phase 09                                                              |
+| 입체화학 UI 표시                         | Phase 11                                                              |
+| 대용량 분자의 Web Worker 실제 이동       | Phase 14                                                              |
+| 에너지/힘장(MM) 계산                     | **비목표** (architecture §1.4)                                        |
 
 ---
 
 ## 3. 의존성 (Dependencies)
 
 ### 3.1 선행 Phase
+
 - **Phase 01** — `Result`, `Brand`, `Atom`, `Bond`, `Molecule`, `Vec3`, logger, i18n
 - **Phase 02** — `getElement(n)`, `isValidElementNumber`, `getElementBySymbol`, CPK 색/반지름 메타
 
 ### 3.2 외부 라이브러리
-| 패키지 | 버전 계열 | 용도 | 라이선스 |
-|--------|-----------|------|---------|
+
+| 패키지         | 버전 계열                | 용도                 | 라이선스     |
+| -------------- | ------------------------ | -------------------- | ------------ |
 | `@rdkit/rdkit` | 최신 안정 (2024Q3+ 계열) | WASM 빌드, JS 바인딩 | BSD-3-Clause |
 
 - 배포 자산: `RDKit_minimal.js` + `RDKit_minimal.wasm` — Vite `publicDir` 혹은 `assets` 로 복사한다(§6.2).
@@ -93,15 +98,15 @@
 
 ### 3.3 결정 필요 사항 (사용자 확인)
 
-| # | 질문 | 기본안 |
-|---|------|--------|
-| D1 | WASM 자산 배포 방식 | `public/rdkit/` 에 `RDKit_minimal.{js,wasm}` 를 복사하고, `ensureRdkit` 가 `import.meta.env.BASE_URL` 기반 경로(서브패스 배포 대응) 로 fetch |
-| D2 | 3D 임베드 기본 옵션 | ETKDG v3 + `useRandomCoords: true`, 시드 고정(재현성), `numThreads: 0` (WASM 싱글), `maxIters: 200`. MM 최적화는 기본 off (옵션으로 제공) |
-| D3 | 입력 길이 제한 | SMILES 2000 자, InChI 4000 자, formula 200 자 초과 시 즉시 `InputTooLong` 오류 |
-| D4 | Formula → 3D 경로 | 조성 맵 → 대표 SMILES 테이블 매핑(예: `H2O`→`O`, `CO2`→`O=C=O`) + 단순 분자만 허용. 알려지지 않은 조합은 `FormulaUnsupported` 반환 |
-| D5 | 캐시 용량 | LRU 200 엔트리 기본. 메모리 상한 예상 < 10 MB |
-| D6 | Web Worker 도입 시점 | Phase 03 에서는 **경계만** 준비, 실제 Worker 파일 도입은 Phase 14 의 성능 측정 결과에 따라 결정 |
-| D7 | InChI 정규화 | 입력 InChI 를 RDKit 로 분자 재구성 → canonical SMILES 역산. 원본 InChI 도 보존 |
+| #   | 질문                 | 기본안                                                                                                                                       |
+| --- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | WASM 자산 배포 방식  | `public/rdkit/` 에 `RDKit_minimal.{js,wasm}` 를 복사하고, `ensureRdkit` 가 `import.meta.env.BASE_URL` 기반 경로(서브패스 배포 대응) 로 fetch |
+| D2  | 3D 임베드 기본 옵션  | ETKDG v3 + `useRandomCoords: true`, 시드 고정(재현성), `numThreads: 0` (WASM 싱글), `maxIters: 200`. MM 최적화는 기본 off (옵션으로 제공)    |
+| D3  | 입력 길이 제한       | SMILES 2000 자, InChI 4000 자, formula 200 자 초과 시 즉시 `InputTooLong` 오류                                                               |
+| D4  | Formula → 3D 경로    | 조성 맵 → 대표 SMILES 테이블 매핑(예: `H2O`→`O`, `CO2`→`O=C=O`) + 단순 분자만 허용. 알려지지 않은 조합은 `FormulaUnsupported` 반환           |
+| D5  | 캐시 용량            | LRU 200 엔트리 기본. 메모리 상한 예상 < 10 MB                                                                                                |
+| D6  | Web Worker 도입 시점 | Phase 03 에서는 **경계만** 준비, 실제 Worker 파일 도입은 Phase 14 의 성능 측정 결과에 따라 결정                                              |
+| D7  | InChI 정규화         | 입력 InChI 를 RDKit 로 분자 재구성 → canonical SMILES 역산. 원본 InChI 도 보존                                                               |
 
 본 문서 승인 시 위 기본안 채택.
 
@@ -119,12 +124,12 @@ import type { Molecule } from '@/chemistry/compounds/types';
 
 /** 파싱 결과. 3D 좌표는 아직 미생성. */
 export interface ParsedMol {
-  readonly source: InputSource;         // 원본 입력 종류/문자열
-  readonly canonicalSmiles: string;     // RDKit canonical
-  readonly formula: string;             // 분자식 (Hill 표기)
-  readonly molecularWeight: number;     // g/mol
+  readonly source: InputSource; // 원본 입력 종류/문자열
+  readonly canonicalSmiles: string; // RDKit canonical
+  readonly formula: string; // 분자식 (Hill 표기)
+  readonly molecularWeight: number; // g/mol
   readonly totalCharge: number;
-  readonly radicalElectrons: number;    // 홀전자 수
+  readonly radicalElectrons: number; // 홀전자 수
   readonly atoms: ReadonlyArray<ParsedAtom>;
   readonly bonds: ReadonlyArray<ParsedBond>;
   readonly stereo: StereoAnnotations;
@@ -133,11 +138,11 @@ export interface ParsedMol {
 }
 
 export interface ParsedAtom {
-  readonly index: number;               // RDKit atom index
-  readonly elementNumber: number;       // ElementNumber 로 좁히기 전 raw
+  readonly index: number; // RDKit atom index
+  readonly elementNumber: number; // ElementNumber 로 좁히기 전 raw
   readonly formalCharge: number;
-  readonly isotope: number | null;      // 지정된 경우만
-  readonly implicitHCount: number;      // RDKit 이 계산
+  readonly isotope: number | null; // 지정된 경우만
+  readonly implicitHCount: number; // RDKit 이 계산
   readonly aromaticFlag: boolean;
 }
 
@@ -171,8 +176,8 @@ export type InputKind = 'smiles' | 'inchi' | 'formula';
 
 export interface InputSource {
   readonly kind: InputKind;
-  readonly raw: string;                 // 사용자 원본
-  readonly normalized: string;          // trim / 공백 제거 / 대소문자 정규화
+  readonly raw: string; // 사용자 원본
+  readonly normalized: string; // trim / 공백 제거 / 대소문자 정규화
 }
 ```
 
@@ -180,24 +185,25 @@ export interface InputSource {
 
 ```ts
 export interface EmbedOptions {
-  readonly seed: number;                // 재현성 (기본 EMBED_SEED_PRIMARY = 0xC0FFEE; §6.5 상수)
-  readonly maxIters: number;            // 기본 200
-  readonly useRandomCoords: boolean;    // 기본 true
-  readonly optimize: 'none' | 'uff' | 'mmff94';  // 기본 'none'
-  readonly timeoutMs: number;           // 기본 EMBED_DEFAULT_TIMEOUT_MS = 4000; §6.5 상수
+  readonly seed: number; // 재현성 기준 — 정본 기본값은 §6.5 DEFAULT_EMBED_OPTIONS
+  readonly maxIters: number;
+  readonly useRandomCoords: boolean; // 결정성 위해 기본 false (§6.5)
+  readonly optimize: 'none' | 'uff' | 'mmff94';
+  readonly timeoutMs: number;
 }
+// 모든 키의 정본 기본값은 §6.5 `DEFAULT_EMBED_OPTIONS` 단일 정의. 호출측은 `resolveEmbedOptions(opts?)` 로 병합.
 
 export type EmbedErrorCode =
   | 'RdkitNotReady'
   | 'EmbedTimeout'
-  | 'EmbedFailed'           // ETKDG 가 좌표를 만들지 못함
-  | 'InvalidMolecule'       // 결합 수 불일치 등
-  | 'IonHandlingFailed'     // 이온/라디칼 처리 실패
+  | 'EmbedFailed' // ETKDG 가 좌표를 만들지 못함
+  | 'InvalidMolecule' // 결합 수 불일치 등
+  | 'IonHandlingFailed' // 이온/라디칼 처리 실패
   | 'InternalError';
 
 export interface EmbedError {
   readonly code: EmbedErrorCode;
-  readonly message: string;             // i18n 키와 별도의 기술 메시지
+  readonly message: string; // i18n 키와 별도의 기술 메시지
   readonly details?: Record<string, unknown>;
 }
 ```
@@ -211,9 +217,9 @@ export type ParseErrorCode =
   | 'SmilesSyntax'
   | 'InchiSyntax'
   | 'FormulaSyntax'
-  | 'FormulaUnsupported'    // 알려진 SMILES 매핑 없음 (D4)
+  | 'FormulaUnsupported' // 알려진 SMILES 매핑 없음 (D4)
   | 'UnknownElement'
-  | 'SanitizationFailed'    // RDKit sanitize 실패
+  | 'SanitizationFailed' // RDKit sanitize 실패
   | 'RdkitNotReady'
   | 'InternalError';
 
@@ -231,8 +237,8 @@ export interface ParseError {
 
 ```ts
 export type ValidationIssueKind =
-  | 'ChargeMismatch'        // totalCharge ≠ Σ formalCharge
-  | 'ValenceExceeded'       // 원소별 상한 초과 (경고)
+  | 'ChargeMismatch' // totalCharge ≠ Σ formalCharge
+  | 'ValenceExceeded' // 원소별 상한 초과 (경고)
   | 'DisconnectedFragments' // 다중 분자 단편 감지 (허용하되 notifying)
   | 'RadicalPresent';
 
@@ -246,7 +252,7 @@ export interface ValidationIssue {
 
 ### 4.5 `Molecule` 매핑 (Phase 01 타입 재확인)
 
-`engine/parser/toDomain.ts` 는 `ParsedMol` + `embed3D` 결과를 Phase 01 의 `Molecule` 형태로 변환한다. 본 Phase 에서 다음 필드가 확정된다:
+`engine/parser/toDomain.ts` 는 `ParsedMol` + `embedMolecule` (= `RdkitBackend.embed`) 결과를 Phase 01 의 `Molecule` 형태로 변환한다. 원자/결합 ID 는 Phase 01 `createAtomId()` / `createBondId()` (`@/chemistry/compounds/ids`) 로 부여하고, `Molecule.id` 는 `createMoleculeId()` 로 생성한다 (CD1 하이브리드 식별 모델). 본 Phase 에서 다음 필드가 확정된다:
 
 - `Atom.position`: Å 단위, RDKit 좌표를 그대로 사용 (좌표계: 오른손)
 - `Atom.implicitHCount`: RDKit 의 `GetTotalNumHs(true)` 결과
@@ -257,17 +263,17 @@ export interface ValidationIssue {
 - Phase 01 `// TODO: Phase 03` 로 남겨두었던 `canonicalSmiles`, `inchi`, `inchiKey`, `stereo`, `spinMultiplicity` 필드를 채움:
 
 ```ts
-// src/chemistry/compounds/types.ts — Phase 03 확장 적용
+// src/chemistry/compounds/types.ts — Phase 03 확장 적용 (id 는 Phase 01 brand)
 export interface Molecule {
-  readonly id: string;
+  readonly id: MoleculeId; // Phase 01 @/chemistry/compounds/ids
   readonly atoms: ReadonlyArray<Atom>;
   readonly bonds: ReadonlyArray<Bond>;
   readonly totalCharge: number;
   readonly canonicalSmiles: string;
   readonly inchi: string | null;
   readonly inchiKey: string | null;
-  readonly stereo: StereoAnnotations;   // 표시 전용
-  readonly spinMultiplicity: number;    // 2S+1 (S = radicalElectrons/2). 라디칼이 없으면 1. 표시 전용
+  readonly stereo: StereoAnnotations; // 표시 전용
+  readonly spinMultiplicity: number; // 2S+1 (S = radicalElectrons/2). 라디칼이 없으면 1. 표시 전용
 }
 ```
 
@@ -282,13 +288,13 @@ export interface Molecule {
 - **표시/내보내기 요구 발생 시** (예: MoleculeInfo 패널이 동위원소 라벨 배지를 그리려 할 때): Phase 01 `Atom` 에 `isotope?: number | null` 필드를 추가하고 `toDomain` 이 전달하도록 확장한다. 본 Phase 에서는 그 확장 훅을 Phase 01 타입 파일의 TODO 주석으로 남긴다.
 - **반응 엔진** (Phase 06) 은 동위원소를 구분하지 않는다 (비목표).
 
-> **확장 안전성 명시**: `Atom.isotope?: number | null` 추가는 *순수 additive* 변경이다 — 기존 `Molecule` 객체와 직렬화된 JSON (Phase 13 export 포맷, Phase 07 persist 데이터) 모두 새 필드 없이 유효 (optional 이므로 누락 시 `undefined` 로 해석). Phase 11 가 라벨 표시를 요청하면 다음 순서로 적용:
+> **확장 안전성 명시**: `Atom.isotope?: number | null` 추가는 _순수 additive_ 변경이다 — 기존 `Molecule` 객체와 직렬화된 JSON (Phase 13 export 포맷, Phase 07 persist 데이터) 모두 새 필드 없이 유효 (optional 이므로 누락 시 `undefined` 로 해석). Phase 11 가 라벨 표시를 요청하면 다음 순서로 적용:
 >
-> 1. Phase 01 `src/types/index.ts` 의 `Atom` 인터페이스에 `readonly isotope?: number | null;` 추가 (현재 TODO 주석 → 실제 필드).
+> 1. Phase 01 `src/chemistry/compounds/types.ts` 의 `Atom` 인터페이스에 `readonly isotope?: number | null;` 추가 (현재 TODO 주석 → 실제 필드).
 > 2. 본 Phase 의 `toDomain.ts` 에서 `parsed.atoms[i].isotope ?? null` 을 `Atom.isotope` 로 전달.
 > 3. 후속 phase (Phase 11 `MoleculeInfo`, Phase 13 export) 가 필드를 읽어 표시/직렬화.
 >
-> Phase 04 의 청크 데이터·Phase 07 의 store snapshot 은 *재빌드/재로드 없이* 신/구 포맷 호환 (`isotope === undefined` 는 "기본 동위원소" 의미). Phase 09 의 Undo full-snapshot 메모리 영향도 무시 가능 (선택적 정수 1개 / atom).
+> Phase 04 의 청크 데이터·Phase 07 의 store snapshot 은 _재빌드/재로드 없이_ 신/구 포맷 호환 (`isotope === undefined` 는 "기본 동위원소" 의미). Phase 09 의 Undo full-snapshot 메모리 영향도 무시 가능 (선택적 정수 1개 / atom).
 >
 > **현 Phase 작업**: Phase 01 `Atom` 인터페이스 정의 위에 다음 TODO 코멘트를 단다 — `// TODO: Phase 11 - 동위원소 라벨 표시 요구 시 'readonly isotope?: number | null;' 추가 (phase-03 §4.5 동위원소 정책)`. 이로써 후속 phase 가 변경 경로를 즉시 발견.
 
@@ -312,15 +318,13 @@ export interface RdkitService {
 export function getRdkit(): RdkitService;
 
 /** 초기화 진행 상태 구독 (UI 스피너 연결 용) */
-export function onRdkitStatusChange(
-  listener: (status: RdkitStatus) => void,
-): () => void;
+export function onRdkitStatusChange(listener: (status: RdkitStatus) => void): () => void;
 
 export type RdkitInitErrorCode =
-  | 'ScriptLoadFailed'      // RDKit_minimal.js fetch 실패 (네트워크 / CSP / 404)
+  | 'ScriptLoadFailed' // RDKit_minimal.js fetch 실패 (네트워크 / CSP / 404)
   | 'WasmInstantiateFailed' // WebAssembly.instantiate 실패
-  | 'InitTimeout'           // 초기화 타임아웃
-  | 'UnsupportedEnvironment'// WebAssembly 또는 WebGL2 미지원
+  | 'InitTimeout' // 초기화 타임아웃
+  | 'UnsupportedEnvironment' // WebAssembly 또는 WebGL2 미지원
   | 'InternalError';
 
 export interface RdkitInitError {
@@ -349,7 +353,7 @@ export function parseInchi(input: string): Promise<Result<ParsedMol, ParseError>
 
 export interface FormulaComposition {
   readonly entries: ReadonlyArray<{ readonly symbol: string; readonly count: number }>;
-  readonly totalCharge: number;   // "NH4+" 같은 표기 허용
+  readonly totalCharge: number; // "NH4+" 같은 표기 허용
 }
 export function parseFormula(input: string): Result<FormulaComposition, ParseError>;
 
@@ -371,21 +375,37 @@ export function smilesTo3DMolecule(
 ): Promise<Result<Molecule, ParseError | EmbedError>>;
 ```
 
-### 5.3 `src/engine/rdkit/canonical.ts`
+> **옵션 병합 규약** (`exactOptionalPropertyTypes: true` 대응): 호출측은 `opts` 를 생략하거나 _설정할 키만_ 담은 부분 객체를 넘긴다 (`opts.someKey = undefined` 명시 금지). 내부에서 `resolveEmbedOptions(opts?)` 가 `DEFAULT_EMBED_OPTIONS` 와 키 단위 병합하여 완전한 `EmbedOptions` 를 만든 뒤 `RdkitBackend.embed(parsed, resolved)` 로 전달한다. `DEFAULT_EMBED_OPTIONS` / `resolveEmbedOptions` 정의는 §6.5.
+
+### 5.3 `src/engine/rdkit/canonical.ts` (`RdkitBackend` 주입형)
 
 ```ts
-export function toCanonicalSmiles(parsed: ParsedMol): string;
-export function toInchi(parsed: ParsedMol): { inchi: string; inchiKey: string };
-export function toSdfBlock(mol: Molecule): string;
+import type { RdkitBackend } from '@/engine/rdkit/backend';
+
+// async — RDKit 호출. 공개 표면은 RdkitBackend.toCanonical (§6.8); 아래는 구현 헬퍼.
+export function toCanonicalSmiles(
+  backend: RdkitBackend,
+  parsed: ParsedMol,
+): Promise<Result<string, ParseError>>;
+export function toInchi(
+  backend: RdkitBackend,
+  parsed: ParsedMol,
+): Promise<Result<{ inchi: string; inchiKey: string }, ParseError>>;
+
+// sync — 이미 구축된 도메인 Molecule 을 SDF 블록으로. RDKit 초기화 필요;
+// 미초기화 시 RdkitNotReady 반환(throw 아님). Phase 13 Export 가 소비.
+export function toSdfBlock(backend: RdkitBackend, mol: Molecule): Result<string, RdkitNotReady>;
 ```
+
+> **sync/async 규약**: §5.2 `parseSmiles`/`parseInchi`/`formulaToParsedMol`/`toMoleculeWith3D`/`smilesTo3DMolecule` 는 모두 **async** (RDKit WASM 호출, Worker 이동 대비 §6.8). `parseFormula` 는 **sync** (순수 조성 파싱, RDKit 불요). §5.3 `toCanonicalSmiles`/`toInchi` 는 **async**, `toSdfBlock` 는 **sync**. §5.4 metrics 는 **sync** (순수 수학). §5.5 `validateMolecule` 는 **sync**.
 
 ### 5.4 `src/engine/geometry/metrics.ts`
 
 ```ts
 import type { Atom } from '@/chemistry/compounds/types';
 
-export function bondLength(a: Atom, b: Atom): number;              // Å
-export function bondAngle(a: Atom, b: Atom, c: Atom): number;      // radians
+export function bondLength(a: Atom, b: Atom): number; // Å
+export function bondAngle(a: Atom, b: Atom, c: Atom): number; // radians
 export function dihedral(a: Atom, b: Atom, c: Atom, d: Atom): number; // radians
 ```
 
@@ -466,57 +486,57 @@ raw input
 - `formulaToParsedMol` 은 아래 단계로 동작:
   1. 조성 맵이 내장 매핑 테이블(`src/engine/parser/formula-map.ts`)에 존재? → 대응 SMILES 로 `parseSmiles` 재호출
   2. 미존재 → `FormulaUnsupported`. 사용자에게 "분자식으로는 구조를 결정할 수 없습니다. SMILES 를 입력하거나 PubChem 검색을 사용하세요" 메시지(i18n)
-**초기 매핑 테이블 (`formula-map.ts` 에 고정 수록, Phase 03 완료 시점의 최소 보장 세트)**
+     **초기 매핑 테이블 (`formula-map.ts` 에 고정 수록, Phase 03 완료 시점의 최소 보장 세트)**
 
 > 표의 **Key (Hill)** 열이 실제 테이블 키이며, 입력은 아래 정규화 규칙에 의해 이 키로 환산된 뒤 조회된다. **통상 표기** 열은 가독성 보조(테이블 주석)이며 코드 키로 사용하지 않는다.
 
-| Key (Hill) | 통상 표기 | SMILES | 비고 |
-|------------|----------|--------|------|
-| `H2` | `H2` | `[H][H]` | 수소 분자 |
-| `O2` | `O2` | `O=O` | 산소 분자 |
-| `N2` | `N2` | `N#N` | 질소 분자 |
-| `F2` | `F2` | `FF` |  |
-| `Cl2` | `Cl2` | `ClCl` |  |
-| `Br2` | `Br2` | `BrBr` |  |
-| `I2` | `I2` | `II` |  |
-| `H2O` | `H2O` | `O` | 물 |
-| `H2O2` | `H2O2` | `OO` | 과산화수소 |
-| `FH` | `HF` | `F` | 플루오르화 수소 |
-| `ClH` | `HCl` | `Cl` | 염화 수소 |
-| `BrH` | `HBr` | `Br` | 브롬화 수소 |
-| `HI` | `HI` | `I` |  |
-| `H3N` | `NH3` | `N` | 암모니아 |
-| `H4N+` | `NH4+` | `[NH4+]` | 암모늄 이온 (전하 +1) |
-| `CH4` | `CH4` | `C` | 메탄 |
-| `CO` | `CO` | `[C-]#[O+]` | 일산화탄소 (공식 전하 표기) |
-| `CO2` | `CO2` | `O=C=O` | 이산화탄소 |
-| `O2S` | `SO2` | `O=S=O` | 이산화 황 |
-| `O3S` | `SO3` | `O=S(=O)=O` | 삼산화 황 |
-| `NO` | `NO` | `[N]=O` | 일산화 질소 (라디칼) |
-| `NO2` | `NO2` | `[N+](=O)[O-]` | 이산화 질소 (중성, 라디칼) |
-| `N2O` | `N2O` | `N#[N+][O-]` | 아산화 질소 |
-| `H2S` | `H2S` | `S` | 황화 수소 |
-| `H2O4S` | `H2SO4` | `OS(=O)(=O)O` | 황산 |
-| `HNO3` | `HNO3` | `O[N+](=O)[O-]` | 질산 |
-| `H3O4P` | `H3PO4` | `OP(=O)(O)O` | 인산 |
-| `ClHO4` | `HClO4` | `OCl(=O)(=O)=O` | 과염소산 |
-| `CH2O3` | `H2CO3` | `OC(=O)O` | 탄산 |
-| `HNaO` | `NaOH` | `[Na+].[OH-]` | 수산화 소듐 |
-| `HKO` | `KOH` | `[K+].[OH-]` | 수산화 칼륨 |
-| `CaH2O2` | `Ca(OH)2` | `[Ca+2].[OH-].[OH-]` | 수산화 칼슘 |
-| `ClNa` | `NaCl` | `[Na+].[Cl-]` | 염화 소듐 |
-| `ClK` | `KCl` | `[K+].[Cl-]` | 염화 칼륨 |
-| `CHNaO3` | `NaHCO3` | `[Na+].OC(=O)[O-]` | 탄산수소소듐 (베이킹소다) |
-| `CNa2O3` | `Na2CO3` | `[Na+].[Na+].[O-]C(=O)[O-]` | 탄산 소듐 |
-| `CH4O` | `CH3OH` | `CO` | 메탄올 (기본 이성질체) |
-| `C2H6O` | `C2H5OH` | `CCO` | 에탄올 (기본 이성질체; 다이메틸에테르 `COC` 아님) |
-| `C2H6` | `C2H6` | `CC` | 에탄 |
-| `C2H4` | `C2H4` | `C=C` | 에틸렌 |
-| `C2H2` | `C2H2` | `C#C` | 아세틸렌 |
-| `C3H8` | `C3H8` | `CCC` | 프로판 |
-| `C6H6` | `C6H6` | `c1ccccc1` | 벤젠 |
-| `C2H4O2` | `CH3COOH` | `CC(=O)O` | 아세트산 (기본 이성질체; 포름산메틸 아님) |
-| `C2H4O` | `CH3CHO` | `CC=O` | 아세트알데하이드 (기본 이성질체; 에틸렌옥사이드 `C1CO1` 아님) |
+| Key (Hill) | 통상 표기 | SMILES                      | 비고                                                          |
+| ---------- | --------- | --------------------------- | ------------------------------------------------------------- |
+| `H2`       | `H2`      | `[H][H]`                    | 수소 분자                                                     |
+| `O2`       | `O2`      | `O=O`                       | 산소 분자                                                     |
+| `N2`       | `N2`      | `N#N`                       | 질소 분자                                                     |
+| `F2`       | `F2`      | `FF`                        |                                                               |
+| `Cl2`      | `Cl2`     | `ClCl`                      |                                                               |
+| `Br2`      | `Br2`     | `BrBr`                      |                                                               |
+| `I2`       | `I2`      | `II`                        |                                                               |
+| `H2O`      | `H2O`     | `O`                         | 물                                                            |
+| `H2O2`     | `H2O2`    | `OO`                        | 과산화수소                                                    |
+| `FH`       | `HF`      | `F`                         | 플루오르화 수소                                               |
+| `ClH`      | `HCl`     | `Cl`                        | 염화 수소                                                     |
+| `BrH`      | `HBr`     | `Br`                        | 브롬화 수소                                                   |
+| `HI`       | `HI`      | `I`                         |                                                               |
+| `H3N`      | `NH3`     | `N`                         | 암모니아                                                      |
+| `H4N+`     | `NH4+`    | `[NH4+]`                    | 암모늄 이온 (전하 +1)                                         |
+| `CH4`      | `CH4`     | `C`                         | 메탄                                                          |
+| `CO`       | `CO`      | `[C-]#[O+]`                 | 일산화탄소 (공식 전하 표기)                                   |
+| `CO2`      | `CO2`     | `O=C=O`                     | 이산화탄소                                                    |
+| `O2S`      | `SO2`     | `O=S=O`                     | 이산화 황                                                     |
+| `O3S`      | `SO3`     | `O=S(=O)=O`                 | 삼산화 황                                                     |
+| `NO`       | `NO`      | `[N]=O`                     | 일산화 질소 (라디칼)                                          |
+| `NO2`      | `NO2`     | `[N+](=O)[O-]`              | 이산화 질소 (중성, 라디칼)                                    |
+| `N2O`      | `N2O`     | `N#[N+][O-]`                | 아산화 질소                                                   |
+| `H2S`      | `H2S`     | `S`                         | 황화 수소                                                     |
+| `H2O4S`    | `H2SO4`   | `OS(=O)(=O)O`               | 황산                                                          |
+| `HNO3`     | `HNO3`    | `O[N+](=O)[O-]`             | 질산                                                          |
+| `H3O4P`    | `H3PO4`   | `OP(=O)(O)O`                | 인산                                                          |
+| `ClHO4`    | `HClO4`   | `OCl(=O)(=O)=O`             | 과염소산                                                      |
+| `CH2O3`    | `H2CO3`   | `OC(=O)O`                   | 탄산                                                          |
+| `HNaO`     | `NaOH`    | `[Na+].[OH-]`               | 수산화 소듐                                                   |
+| `HKO`      | `KOH`     | `[K+].[OH-]`                | 수산화 칼륨                                                   |
+| `CaH2O2`   | `Ca(OH)2` | `[Ca+2].[OH-].[OH-]`        | 수산화 칼슘                                                   |
+| `ClNa`     | `NaCl`    | `[Na+].[Cl-]`               | 염화 소듐                                                     |
+| `ClK`      | `KCl`     | `[K+].[Cl-]`                | 염화 칼륨                                                     |
+| `CHNaO3`   | `NaHCO3`  | `[Na+].OC(=O)[O-]`          | 탄산수소소듐 (베이킹소다)                                     |
+| `CNa2O3`   | `Na2CO3`  | `[Na+].[Na+].[O-]C(=O)[O-]` | 탄산 소듐                                                     |
+| `CH4O`     | `CH3OH`   | `CO`                        | 메탄올 (기본 이성질체)                                        |
+| `C2H6O`    | `C2H5OH`  | `CCO`                       | 에탄올 (기본 이성질체; 다이메틸에테르 `COC` 아님)             |
+| `C2H6`     | `C2H6`    | `CC`                        | 에탄                                                          |
+| `C2H4`     | `C2H4`    | `C=C`                       | 에틸렌                                                        |
+| `C2H2`     | `C2H2`    | `C#C`                       | 아세틸렌                                                      |
+| `C3H8`     | `C3H8`    | `CCC`                       | 프로판                                                        |
+| `C6H6`     | `C6H6`    | `c1ccccc1`                  | 벤젠                                                          |
+| `C2H4O2`   | `CH3COOH` | `CC(=O)O`                   | 아세트산 (기본 이성질체; 포름산메틸 아님)                     |
+| `C2H4O`    | `CH3CHO`  | `CC=O`                      | 아세트알데하이드 (기본 이성질체; 에틸렌옥사이드 `C1CO1` 아님) |
 
 - **조회 키 정규화 (Hill)**: `FormulaComposition.entries` 배열을 다음 규칙으로 직렬화한다.
   1. **탄소(C)** 가 포함되면: `C` 먼저, `H` 가 있으면 바로 다음, 그 외 원소는 **기호의 알파벳 순** (기호 단위로 문자열 비교; `Ca`, `Cl` 는 `C` 로 시작하지만 `C` 자체가 선행되므로 그 뒤에 배치). 예: `CHNaO3`.
@@ -530,26 +550,41 @@ raw input
 
 ### 6.5 3D 임베드 (ETKDG)
 
-**상수 정의** (`src/engine/geometry/types.ts` 또는 `src/engine/geometry/constants.ts`):
-```ts
-/** 1차 시드 — 결정성 기준값. Phase 04 빌드 스크립트가 동일 값을 import 하여 데이터 재현성 확보. */
-export const EMBED_SEED_PRIMARY = 0xC0FFEE; // = 12648430
+**상수 정의** (`src/engine/geometry/constants.ts`):
 
-/** 1차 실패 후 추가 시도 횟수 (랜덤 시드). */
-export const EMBED_MAX_RETRIES = 2;
+```ts
+import type { EmbedOptions } from '@/engine/geometry/types';
+
+/** 1차 시드 — 결정성 기준값. Phase 04 빌드 스크립트가 동일 값을 import 하여 데이터 재현성 확보. */
+export const EMBED_SEED_PRIMARY = 0xc0ffee; // = 12648430
+
+/** 재시도 시드 시퀀스 — **결정적** (랜덤 아님). 순서대로 시도. */
+export const EMBED_RETRY_SEEDS = [EMBED_SEED_PRIMARY + 1, EMBED_SEED_PRIMARY + 2] as const;
+export const EMBED_MAX_RETRIES = EMBED_RETRY_SEEDS.length; // = 2
 
 /** 단일 임베드 호출 타임아웃. RDKit 동기 호출이라 실제 중단은 다음 tick 에서. */
 export const EMBED_DEFAULT_TIMEOUT_MS = 4000;
+
+export const DEFAULT_EMBED_OPTIONS: EmbedOptions = {
+  seed: EMBED_SEED_PRIMARY,
+  maxIters: 200,
+  useRandomCoords: false, // 결정적 임베드
+  optimize: 'mmff94',
+  timeoutMs: EMBED_DEFAULT_TIMEOUT_MS,
+};
+
+/** opts 부분 객체를 DEFAULT_EMBED_OPTIONS 와 키 단위 병합 (undefined 키 무시). */
+export function resolveEmbedOptions(opts?: Partial<EmbedOptions>): EmbedOptions;
 ```
 
-> **결정성 보장**: `EMBED_SEED_PRIMARY` 는 Phase 04 의 빌드 스크립트(`scripts/pubchem-fetch/normalize.ts` → `embed3D({ seed: EMBED_SEED_PRIMARY })`) 가 동일 모듈에서 import 한다. 두 곳이 동일 상수를 참조하므로, 같은 SMILES + 같은 RDKit 버전 → 항상 동일 좌표.
+> **결정성 보장**: `EMBED_SEED_PRIMARY` 와 `EMBED_RETRY_SEEDS` 는 Phase 04 의 빌드 스크립트(phase-05 §6.8 가 단일 권위로 두는 `src/engine/pubchem/normalize.ts` → `RdkitBackend.embed`)가 동일 모듈에서 import 한다. **모든 시도(1차 + 재시도)가 고정 시드 시퀀스**이므로, 같은 SMILES + 같은 RDKit 버전 → 항상 byte-identical 좌표 (재시도로 성공한 경우 포함). `crypto` 랜덤 시드는 사용하지 않는다.
 
 - 호출: `rdkit.get_mol(smiles)` → `mol.addHs()` → `EmbedMolecule(params)` → (옵션) `UFFOptimizeMolecule` / `MMFFOptimizeMolecule`
 - 좌표 정렬: 분자 **기하 중심(centroid, 모든 원자 위치의 단순 평균)** 을 원점으로 이동. 중원소 편향을 피하고 시각 중심을 렌더 원점에 맞춰 뷰포트 카메라 기본값(architecture §3.10)과 정합. 질량 중심은 MoleculeInfo 패널 표시용 보조 계산으로 별도 제공(Phase 11).
 - 타임아웃: `timeoutMs` 내 미완료 시 강제 중단 (Promise race). RDKit 은 동기 호출이므로 실제로는 **다음 tick 에 체크**하는 한계 존재 → Web Worker 경계 마련 (§6.8)
-- 실패 재시도:
-  - 1차 시드로 실패 → 2차 `useRandomCoords: true` 랜덤 시드로 재시도
-  - 2차도 실패 → `EmbedFailed` 반환
+- 실패 재시도 (**결정적**):
+  - 1차 `EMBED_SEED_PRIMARY` 실패 → `EMBED_RETRY_SEEDS` 를 순서대로 시도 (`useRandomCoords: false` 유지, 시드만 교체)
+  - 모든 시드 소진 후에도 실패 → `EmbedFailed` 반환 (좌표 비결정성 없음 — 성공 시 항상 동일 좌표)
 - 이온 처리:
   - `addHs` 전 `formalCharge` 보존 확인
   - `Chem.Cleanup()` 경로가 없으면 직접 `SanitizeMol` 옵션 조정
@@ -565,9 +600,9 @@ export const EMBED_DEFAULT_TIMEOUT_MS = 4000;
 ```ts
 // src/engine/rdkit/cache.ts
 interface CacheEntry {
-  readonly key: string;        // `${kind}:${normalized}`
-  readonly value: ParsedMol;   // 또는 Molecule (3D 포함은 별도 키스페이스)
-  readonly bytes: number;      // 대략치(디버그)
+  readonly key: string; // `${kind}:${normalized}`
+  readonly value: ParsedMol; // 또는 Molecule (3D 포함은 별도 키스페이스)
+  readonly bytes: number; // 대략치(디버그)
   readonly lastHitAt: number;
 }
 
@@ -584,7 +619,7 @@ const MAX_ENTRIES = 200;
 
 ### 6.8 RdkitBackend 인터페이스 (환경 추상화 + Web Worker 경계 준비)
 
-**목적**: RDKit 호출의 *환경 추상화 계층*. 단일 인터페이스로 (a) 브라우저 메인 스레드, (b) Node 빌드타임 스크립트, (c) (Phase 14) Web Worker 세 환경을 동일 시그니처로 호출 가능하게 한다. **Phase 04** (빌드타임 PubChem 수집/검증), **Phase 05** (런타임 PubChem 응답 정규화), **Phase 14** (Worker 분리) 가 모두 이 인터페이스에 의존한다.
+**목적**: RDKit 호출의 _환경 추상화 계층_. 단일 인터페이스로 (a) 브라우저 메인 스레드, (b) Node 빌드타임 스크립트, (c) (Phase 14) Web Worker 세 환경을 동일 시그니처로 호출 가능하게 한다. **Phase 04** (빌드타임 PubChem 수집/검증), **Phase 05** (런타임 PubChem 응답 정규화), **Phase 14** (Worker 분리) 가 모두 이 인터페이스에 의존한다.
 
 **위치**: `src/engine/rdkit/backend.ts` (인터페이스), `src/engine/rdkit/main-thread-backend.ts` (브라우저 구현). `src/engine/rdkit/index.ts` 에서 `RdkitBackend` 타입과 `createMainThreadRdkitBackend()` 팩토리를 re-export.
 
@@ -613,17 +648,18 @@ export interface RdkitBackend {
 
 **구현 매핑**:
 
-| 환경 | 구현 | 위치 | 추가 시점 |
-|------|------|------|----------|
-| 브라우저 메인 스레드 | `createMainThreadRdkitBackend(getRdkit)` | `src/engine/rdkit/main-thread-backend.ts` | **본 Phase 03** |
-| Node 빌드타임 | `createNodeRdkitBackend()` | `scripts/pubchem-fetch/pubchem/rdkit-node.ts` | Phase 04 |
-| Web Worker | `createWorkerRdkitBackend()` | `src/engine/rdkit/worker-backend.ts` | Phase 14 |
+| 환경                 | 구현                                     | 위치                                          | 추가 시점       |
+| -------------------- | ---------------------------------------- | --------------------------------------------- | --------------- |
+| 브라우저 메인 스레드 | `createMainThreadRdkitBackend(getRdkit)` | `src/engine/rdkit/main-thread-backend.ts`     | **본 Phase 03** |
+| Node 빌드타임        | `createNodeRdkitBackend()`               | `scripts/pubchem-fetch/pubchem/rdkit-node.ts` | Phase 04        |
+| Web Worker           | `createWorkerRdkitBackend()`             | `src/engine/rdkit/worker-backend.ts`          | Phase 14        |
 
 **규칙**:
+
 - 본 인터페이스의 모든 메서드는 `Promise` 반환 (Worker 구현이 자연스러우려면 비동기 통일이 필요).
 - 메인 스레드 구현은 내부에서 RDKit 동기 호출을 감싸므로 동기 작업이지만, 시그니처는 비동기로 통일.
 - 상위 레이어 (스토어 / phase-04 빌드 스크립트 / phase-05 normalize) 는 **인터페이스만** 호출 → Worker 도입 시 호출부 수정 0.
-- `runReactants` (반응 SMARTS 매칭) 는 본 인터페이스에 **포함하지 않는다** — Phase 06 가 별도 모듈 (`src/engine/rdkit/reactions.ts`) 로 추가하며, `RdkitBackend` 와는 *병렬 boundary* (phase-06 §5.7).
+- `runReactants` (반응 SMARTS 매칭) 는 본 인터페이스에 **포함하지 않는다** — Phase 06 가 별도 모듈 (`src/engine/rdkit/reactions.ts`) 로 추가하며, `RdkitBackend` 와는 _병렬 boundary_ (phase-06 §5.7).
 - 본 Phase 의 순수 변환 모듈 (`engine/parser/toDomain`, `engine/parser/stereo`, `engine/parser/normalize`, `engine/parser/formula`, `engine/rdkit/canonical`) 는 RDKit 인스턴스에 직접 결합하지 않고, `RdkitBackend` 를 인자로 받아 동작 가능한 형태로 구현한다 (Phase 04 의 Node 구현이 동일 변환 로직을 재사용할 수 있도록).
 
 **테스트 mock**: `tests/unit/engine/rdkit/mock-backend.ts` 에 `createMockRdkitBackend(stubs)` 헬퍼 제공. Phase 04/05 의 normalize 단독 테스트가 RDKit WASM 의존 없이 실행 가능 (phase-05 §8 테스트 계획 참고).
@@ -669,15 +705,18 @@ src/engine/
 └── geometry/
     ├── index.ts
     ├── types.ts               # EmbedOptions, EmbedError
-    ├── embed.ts               # embed3D
+    ├── constants.ts           # EMBED_SEED_PRIMARY/RETRY_SEEDS, DEFAULT_EMBED_OPTIONS, resolveEmbedOptions
+    ├── embed.ts               # embedMolecule (내부 기하 프리미티브)
     └── metrics.ts             # bondLength/Angle/dihedral
 ```
 
 ### 7.1 레이어 가드
+
 - `engine/` 는 `chemistry/`, `data/`, `types/`, `utils/` 만 import 허용 (Phase 01 ESLint 규칙과 일치)
 - `@rdkit/rdkit` import 는 **오직 `src/engine/rdkit/` 내부에서만** 허용 → 다른 레이어가 RDKit 을 직접 호출하는 것 방지. ESLint `no-restricted-imports` 패턴으로 강제.
 
 ### 7.2 공개 경계
+
 - 외부(상위) 레이어가 접촉하는 심볼은 §7 의 공개 모듈 경로(`@/engine/rdkit`, `@/engine/parser`, `@/engine/geometry`) 만이며, 각 서브디렉터리의 `index.ts` 에서 재export 된 심볼로 제한한다.
 - 위 3개 경로의 **형제 파일**(`service.ts`, `cache.ts`, `smiles.ts` 등) 을 외부 레이어가 직접 import 하는 것을 ESLint `no-restricted-imports` 패턴으로 차단한다 (패턴: `@/engine/rdkit/*`, `@/engine/parser/*`, `@/engine/geometry/*` 중 `index` 가 아닌 경로 참조 금지). `internal/` 서브폴더 관례는 도입하지 않는다 — 공개/비공개 구분은 "index.ts 재export 여부" 로 일원화한다.
 
@@ -688,6 +727,7 @@ src/engine/
 ### 8.1 유닛 — 파서 (Vitest)
 
 `tests/unit/engine/parser/`:
+
 1. `parseSmiles('CCO')` → 에탄올: 원자 3, C-C 결합, C-O 결합, H 수 자동 채움
 2. `parseSmiles('c1ccccc1')` → 벤젠: aromatic 결합 6
 3. `parseSmiles('[Na+].[Cl-]')` → 이온쌍: totalCharge 0, 두 fragment, `DisconnectedFragments` warning
@@ -704,6 +744,7 @@ src/engine/
 ### 8.2 유닛 — 3D 임베드
 
 `tests/unit/engine/geometry/`:
+
 1. 물(H2O): embed 후 `bondAngle(H-O-H)` 가 100°–110° 범위
 2. 메탄(CH4): 4개 C-H 결합 각도 사중점 근사 (σ < 5°)
 3. 벤젠: 평면성 검증 (모든 원자의 z 좌표 분산 < 0.1 Å)
@@ -715,6 +756,7 @@ src/engine/
 ### 8.3 유닛 — 메트릭스
 
 `tests/unit/engine/metrics.test.ts`:
+
 - 고정 좌표 기반으로 `bondLength`, `bondAngle`, `dihedral` 값 수학적 검증
 
 ### 8.4 유닛 — Canonical / SDF
@@ -748,16 +790,16 @@ src/engine/
 
 ## 9. 리스크 및 대안
 
-| # | 리스크 | 영향 | 완화 |
-|---|--------|------|------|
-| R1 | RDKit WASM 로드 실패 (네트워크, CSP) | 중 | `RdkitStatus.error` 로 노출 + 재시도 버튼. CSP 가이드 README 에 명시 |
-| R2 | ETKDG 가 특정 분자에서 수렴 실패 | 중 | 2차 랜덤 시드 재시도, 그래도 실패면 `EmbedFailed` 반환 (숨기지 않음) |
-| R3 | 이온/라디칼의 addHs 가 예기치 않게 전하 변경 | 중 | 임베드 전후 `totalCharge` 불변 assertion, 어긋나면 `IonHandlingFailed` |
-| R4 | 메인 스레드 차단 체감 지연 | 중 | §6.8 의 `RdkitBackend` 인터페이스로 Worker 이동 경로 확보 |
-| R5 | Formula → SMILES 매핑의 커버리지 한계 | 중 | D4 기본안대로 **지원되지 않음** 을 명시. Phase 04 와 협업하여 빈출 매핑 확장 |
-| R6 | RDKit 버전업에 따른 API 변경 | 하 | `engine/rdkit/` 내부에 버전 고정 및 얇은 래퍼 경계. 외부 레이어에는 변경이 전파되지 않음 |
-| R7 | `ParsedMol` 과 `Molecule` 의 중복 정보로 인한 동기화 오류 | 하 | `toDomain.ts` 가 단일 변환 지점. 직접 생성 금지 ESLint 규칙 검토 |
-| R8 | 테스트에서 WASM 로드 시간으로 Vitest 타임아웃 | 하 | 테스트 환경 `timeout` 상향, `ensureRdkit` 를 setup-file 에서 선로드 |
+| #   | 리스크                                                    | 영향 | 완화                                                                                     |
+| --- | --------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------- |
+| R1  | RDKit WASM 로드 실패 (네트워크, CSP)                      | 중   | `RdkitStatus.error` 로 노출 + 재시도 버튼. CSP 가이드 README 에 명시                     |
+| R2  | ETKDG 가 특정 분자에서 수렴 실패                          | 중   | 2차 랜덤 시드 재시도, 그래도 실패면 `EmbedFailed` 반환 (숨기지 않음)                     |
+| R3  | 이온/라디칼의 addHs 가 예기치 않게 전하 변경              | 중   | 임베드 전후 `totalCharge` 불변 assertion, 어긋나면 `IonHandlingFailed`                   |
+| R4  | 메인 스레드 차단 체감 지연                                | 중   | §6.8 의 `RdkitBackend` 인터페이스로 Worker 이동 경로 확보                                |
+| R5  | Formula → SMILES 매핑의 커버리지 한계                     | 중   | D4 기본안대로 **지원되지 않음** 을 명시. Phase 04 와 협업하여 빈출 매핑 확장             |
+| R6  | RDKit 버전업에 따른 API 변경                              | 하   | `engine/rdkit/` 내부에 버전 고정 및 얇은 래퍼 경계. 외부 레이어에는 변경이 전파되지 않음 |
+| R7  | `ParsedMol` 과 `Molecule` 의 중복 정보로 인한 동기화 오류 | 하   | `toDomain.ts` 가 단일 변환 지점. 직접 생성 금지 ESLint 규칙 검토                         |
+| R8  | 테스트에서 WASM 로드 시간으로 Vitest 타임아웃             | 하   | 테스트 환경 `timeout` 상향, `ensureRdkit` 를 setup-file 에서 선로드                      |
 
 ---
 
@@ -799,5 +841,5 @@ src/engine/
 
 ---
 
-*문서 버전: 0.1 (초안)*
-*작성일: 2026-04-19*
+_문서 버전: 0.1 (초안)_
+_작성일: 2026-04-19_
