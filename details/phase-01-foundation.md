@@ -18,6 +18,7 @@
 6. **라이선스·기여 규범 결정**: `LICENSE`, `README.md`(최소), (선택) `CONTRIBUTING.md` 를 확정한다.
 
 이 Phase 가 끝나면 다음이 성립한다:
+
 - `pnpm install && pnpm dev` 로 빈 React 앱이 뜬다.
 - `pnpm typecheck && pnpm lint && pnpm test` 가 모두 성공한다 (테스트는 연기 가능한 smoke 1건만).
 - PR 을 열면 CI 가 위 3개 검사를 수행한다.
@@ -28,11 +29,12 @@
 ## 2. 범위 (Scope)
 
 ### 2.1 포함
+
 - 프로젝트 스캐폴딩 (Vite, React 18+, TS strict, Tailwind, pnpm workspace 설정은 **하지 않음** — 단일 패키지)
 - `tsconfig.json` 및 경로 alias (예: `@/chemistry/*`, `@/engine/*`)
 - ESLint, Prettier, `eslint-plugin-import`, `import/no-cycle`, `import/no-restricted-paths` 기반 **레이어 가드** (+ `no-restricted-imports` 규칙을 **빈 패턴 슬롯으로 선언**해 두어 후속 Phase 가 규칙 병합 없이 패턴만 추가할 수 있게 한다 — §6.2)
 - Git hooks: `pre-commit` (lint + format), `pre-push` (typecheck + test) — `simple-git-hooks`
-- **공용 타입** 선언: `Result<T, E>`, `Brand<T, K>`, `ElementNumber`, `Theme`, `Locale`, `RenderMode`, `Condition`, `ThermoFlag`, `Atom`, `Bond`, `Molecule`, `Compound` (placeholder 필드), `ReactionRule`, `ReactionResult` (일부 필드는 `// TODO: Phase XX` 주석과 함께 연기)
+- **공용 타입** 선언: `Result<T, E>`, `Brand<T, K>`, `ElementNumber`, `AtomId`/`BondId`/`MoleculeId`/`CompoundId` (+ 팩토리·코덱), `Theme`, `Locale`, `RenderMode`, `Condition`, `ThermoFlag`, `Atom`, `Bond`, `Molecule`, `Compound` (placeholder 필드), `ReactionRule`, `ReactionResult` (일부 필드는 `// TODO: Phase XX` 주석과 함께 연기)
 - i18n 초기화 (`src/i18n/index.ts`), 리소스 파일 골격 (`ko.json`, `en.json`, `chemistry.ko.json`, `chemistry.en.json` — 키 몇 개만)
 - `logger` 추상화 인터페이스 (§3.7 반영, 실 구현은 최소)
 - 앱 셸 (`src/app/App.tsx`): "Chemistry Platform" 제목과 언어/테마 토글만. 3D / 패널은 placeholder
@@ -42,20 +44,22 @@
 - `LICENSE`, `README.md` (최소: 프로젝트 소개, 개발 방법 한 단락)
 
 ### 2.2 비포함 (후속 Phase 로 이관)
-| 항목 | 이관 대상 |
-|------|-----------|
-| 118 원소 실데이터 | Phase 02 |
-| RDKit.js 통합 · SMILES 파싱 | Phase 03 |
-| PubChem 수집 스크립트 | Phase 04 |
-| PubChem 런타임 API · IndexedDB | Phase 05 |
-| 반응 엔진 | Phase 06 |
-| Zustand 스토어 **구현** | Phase 07 (본 Phase 는 **타입 인터페이스만**) |
-| 3D 뷰포트 실제 Scene | Phase 08 |
-| 드래그/선택/애니메이션 | Phase 09 |
-| 패널 레이아웃/컴포넌트 실제 구현 | Phase 10, 11 |
-| Playwright E2E 시나리오 | Phase 15 |
+
+| 항목                             | 이관 대상                                    |
+| -------------------------------- | -------------------------------------------- |
+| 118 원소 실데이터                | Phase 02                                     |
+| RDKit.js 통합 · SMILES 파싱      | Phase 03                                     |
+| PubChem 수집 스크립트            | Phase 04                                     |
+| PubChem 런타임 API · IndexedDB   | Phase 05                                     |
+| 반응 엔진                        | Phase 06                                     |
+| Zustand 스토어 **구현**          | Phase 07 (본 Phase 는 **타입 인터페이스만**) |
+| 3D 뷰포트 실제 Scene             | Phase 08                                     |
+| 드래그/선택/애니메이션           | Phase 09                                     |
+| 패널 레이아웃/컴포넌트 실제 구현 | Phase 10, 11                                 |
+| Playwright E2E 시나리오          | Phase 15                                     |
 
 ### 2.3 명시적 비결정 (후속 결정)
+
 - 번역 리소스의 실제 문구는 이 Phase 에서 채우지 않는다 (스켈레톤만).
 - 테마(light/dark/system)의 구체적 팔레트는 Phase 10 에서 확정 (본 Phase 는 "토글이 작동"까지만).
 
@@ -77,6 +81,7 @@
 ## 3. 의존성 (Dependencies)
 
 ### 3.1 선행 Phase
+
 없음 (이 Phase 가 루트).
 
 ### 3.2 외부 도구 및 라이브러리
@@ -111,14 +116,14 @@
 
 다음 사항은 이 Phase 구현 착수 전에 확정되어야 한다:
 
-| # | 질문 | 기본안(없으면 채택) |
-|---|------|---------------------|
-| D1 | **라이선스** | MIT (기여/배포 자유도 최대) |
-| D2 | **Node 버전** | 20 LTS (`.nvmrc` 에 고정) |
-| D3 | **Git 훅 매니저** | `simple-git-hooks` (가벼움) |
-| D4 | **Vitest 환경** | `jsdom` (React 컴포넌트 smoke 가능) |
-| D5 | **CI 매트릭스** | Node 20 단일 (OS: `ubuntu-latest`) |
-| D6 | **Path alias 접두사** | `@/...` (예: `@/chemistry/...`) |
+| #   | 질문                  | 기본안(없으면 채택)                 |
+| --- | --------------------- | ----------------------------------- |
+| D1  | **라이선스**          | MIT (기여/배포 자유도 최대)         |
+| D2  | **Node 버전**         | 20 LTS (`.nvmrc` 에 고정)           |
+| D3  | **Git 훅 매니저**     | `simple-git-hooks` (가벼움)         |
+| D4  | **Vitest 환경**       | `jsdom` (React 컴포넌트 smoke 가능) |
+| D5  | **CI 매트릭스**       | Node 20 단일 (OS: `ubuntu-latest`)  |
+| D6  | **Path alias 접두사** | `@/...` (예: `@/chemistry/...`)     |
 
 본 문서 승인 시 위 기본안을 채택한 것으로 간주하며, 변경을 원하시면 검토 피드백에서 지정해 주십시오.
 
@@ -130,6 +135,8 @@
 
 ### 4.1 유틸리티 타입 (`src/types/result.ts`, `src/types/brand.ts`)
 
+**정본 위치는 `@/types/result` 단일 모듈** (`src/types/result.ts`). 다른 경로(`@/utils/result` 등)는 사용하지 않는다 — §5.4 barrel 표도 이 경로로 통일. 정본 형태는 `{ ok: true; value: T } | { ok: false; error: E }` 이며 실패 필드명은 **`error`** (architecture.md §3.7 정합).
+
 ```ts
 // src/types/result.ts
 export type Result<T, E = string> =
@@ -138,6 +145,21 @@ export type Result<T, E = string> =
 
 export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
 export const err = <E>(error: E): Result<never, E> => ({ ok: false, error });
+
+/** 좁히기 가드 — true 분기에서 `r.value`, false 분기에서 `r.error` 가 열린다. */
+export const isOk = <T, E>(r: Result<T, E>): r is { readonly ok: true; readonly value: T } => r.ok;
+export const isErr = <T, E>(r: Result<T, E>): r is { readonly ok: false; readonly error: E } =>
+  !r.ok;
+
+/** ok 값만 변환 (err 는 그대로 전파). */
+export const mapResult = <T, U, E>(r: Result<T, E>, fn: (value: T) => U): Result<U, E> =>
+  r.ok ? ok(fn(r.value)) : r;
+
+/** ok 값을 다시 Result 로 반환하는 합성 (err 단락). */
+export const flatMapResult = <T, U, E>(
+  r: Result<T, E>,
+  fn: (value: T) => Result<U, E>,
+): Result<U, E> => (r.ok ? fn(r.value) : r);
 ```
 
 ```ts
@@ -160,13 +182,13 @@ export type ElementNumber = Brand<number, 'ElementNumber'>;
 
 export interface Element {
   readonly number: ElementNumber;
-  readonly symbol: string;             // e.g., "H", "He"
-  readonly nameKo: string;             // e.g., "수소"
-  readonly nameEn: string;             // e.g., "Hydrogen"
-  readonly atomicMass: number;         // u
+  readonly symbol: string; // e.g., "H", "He"
+  readonly nameKo: string; // e.g., "수소"
+  readonly nameEn: string; // e.g., "Hydrogen"
+  readonly atomicMass: number; // u
   readonly electronegativity: number | null; // Pauling, 비활성 기체 등은 null
-  readonly electronConfig: string;     // e.g., "1s1" (Phase 02 에서 Condensed/Full 로 분리)
-  readonly cpkColorHex: `#${string}`;  // e.g., "#FFFFFF"
+  readonly electronConfig: string; // e.g., "1s1" (Phase 02 에서 Condensed/Full 로 분리)
+  readonly cpkColorHex: `#${string}`; // e.g., "#FFFFFF"
   readonly covalentRadiusPm: number;
   readonly vdwRadiusPm: number | null;
   // TODO: Phase 02 — 다음 필드들로 확정 확장한다 (현재는 플레이스홀더 수준):
@@ -178,17 +200,74 @@ export interface Element {
   //   • 대표 동위원소: `primaryIsotope: IsotopeSummary` (mass number, exact mass, 존재비, 반감기 등)
   //   • 메타: `yearDiscovered: number | null`
   // 전체 필드 확정 스키마는 `details/phase-02-element-data.md` §4.1 참조.
-  // 주의: 현 Phase 01 의 `electronConfig` 단일 필드는 Phase 02 에서 제거되며, 본 Phase 의 placeholder 값만 의미를 가진다.
+  // 주의: 현 Phase 01 의 `electronConfig` 단일 필드는 Phase 02 에서 `electronConfigCondensed`/`electronConfigFull` 로 **파괴적 대체**된다.
+  //   Phase 02 이전에는 어떤 다운스트림 소비자도 `Element` 를 읽지 않는다 (Phase 01 윈도우 내 소비자 없음 — placeholder 전용). 따라서 이 대체는 호환성 파손이 아니다.
+}
+```
+
+**식별 모델 (하이브리드, architecture.md §5.1 동결).** 런타임 도메인 모델은 안정 brand ID 를 보유한다. 직렬화(청크 JSON·세션·SDF)는 컴팩트 정수 인덱스를 쓰고 경계 코덱이 결정적으로 변환한다. brand·팩토리·코덱은 순수 chemistry 계층의 단일 모듈에 둔다.
+
+```ts
+// src/chemistry/compounds/ids.ts — 식별 단일 정의 모듈
+import type { Brand } from '@/types/brand';
+
+export type AtomId = Brand<string, 'AtomId'>;
+export type BondId = Brand<string, 'BondId'>;
+export type MoleculeId = Brand<string, 'MoleculeId'>;
+export type CompoundId = Brand<number, 'CompoundId'>;
+
+// 생성 팩토리 (crypto.randomUUID 기반; Node 20+/모던 브라우저 보장).
+export const createAtomId = (): AtomId => crypto.randomUUID() as AtomId;
+export const createBondId = (): BondId => crypto.randomUUID() as BondId;
+export const createMoleculeId = (): MoleculeId => crypto.randomUUID() as MoleculeId;
+/** PubChem CID 등 외부 정수를 brand 로 승격 (검증은 호출측 책임). */
+export const asCompoundId = (cid: number): CompoundId => cid as CompoundId;
+
+// 직렬화 경계 코덱 — 런타임 brand ID ↔ 결정적 정수 인덱스.
+// 순서는 molecule.atoms / molecule.bonds 배열 순서를 그대로 따른다 (결정적).
+export interface MoleculeIdCodec {
+  /** 직렬화: AtomId/BondId → 배열 인덱스 맵 */
+  readonly atomIndexOf: ReadonlyMap<AtomId, number>;
+  readonly bondIndexOf: ReadonlyMap<BondId, number>;
+}
+export function idToIndex(molecule: Molecule): MoleculeIdCodec;
+/**
+ * 역직렬화: 인덱스 기반 raw 분자(아래 SerializedMolecule 형태)를
+ * 새 brand ID 를 부여한 런타임 Molecule 로 복원. 동일 입력 → 동일 구조(ID 값만 새로 생성).
+ */
+export function indexToId(raw: SerializedMolecule): Molecule;
+
+// 직렬화 형태 (청크 JSON·세션 공용) — ID 없음, 정수 인덱스만.
+export interface SerializedAtom {
+  readonly elementNumber: number; // 1..118
+  readonly position: readonly [number, number, number];
+  readonly formalCharge: number;
+  readonly implicitHCount: number;
+  readonly isotope?: number;
+}
+export interface SerializedBond {
+  readonly aAtomIndex: number; // index into atoms[]
+  readonly bAtomIndex: number;
+  readonly order: BondOrder;
+}
+export interface SerializedMolecule {
+  readonly atoms: ReadonlyArray<SerializedAtom>;
+  readonly bonds: ReadonlyArray<SerializedBond>;
+  readonly totalCharge: number;
+  // canonicalSmiles/inchi/inchiKey/stereo 등은 Phase 03/13 가 확장
 }
 ```
 
 ```ts
 // src/chemistry/bonds/types.ts
-export type BondOrder = 1 | 2 | 3 | 'aromatic';
+import type { AtomId, BondId } from '@/chemistry/compounds/ids';
+
+export type BondOrder = 1 | 2 | 3 | 'aromatic'; // architecture.md §3.10 동결
 
 export interface Bond {
-  readonly aAtomId: number; // index into Molecule.atoms
-  readonly bAtomId: number;
+  readonly id: BondId;
+  readonly aAtomId: AtomId; // 참조 대상 Atom.id (배열 인덱스 아님)
+  readonly bAtomId: AtomId;
   readonly order: BondOrder;
   // TODO: Phase 03 — 기본 결합 길이/각은 RDKit embed 결과에서 파생
 }
@@ -197,35 +276,41 @@ export interface Bond {
 ```ts
 // src/chemistry/compounds/types.ts
 import type { Vec3 } from '@/types/geometry';
+import type { AtomId, MoleculeId, CompoundId } from '@/chemistry/compounds/ids';
+import type { Bond } from '@/chemistry/bonds/types';
 
 export interface Atom {
+  readonly id: AtomId; // 안정 ID (편집·undo·선택 직렬화 기준)
   readonly elementNumber: ElementNumber;
-  readonly position: Vec3;        // Å
-  readonly formalCharge: number;  // 정수 (일반적으로 -4..+8, 전이금속·합성 원소 고산화수 포함)
+  readonly position: Vec3; // Å
+  readonly formalCharge: number; // 정수 (일반적으로 -4..+8, 전이금속·합성 원소 고산화수 포함)
   readonly implicitHCount: number; // RDKit 이 채움 (Phase 03)
   // TODO: Phase 03 — 원자 단위 입체 태그(R/S 등, 표시만)는 Molecule.stereo 로 이동
   // TODO: Phase 03+ — isotope 필드(명시적 동위원소 라벨)는 표시/내보내기 요구가 발생할 때 `isotope: number | null` 로 확장 (기본값은 null). 현재는 canonicalSmiles/InChI 문자열에만 보존.
 }
 
 export interface Molecule {
-  readonly id: string;                // uuid
+  readonly id: MoleculeId; // brand 안정 ID (createMoleculeId)
   readonly atoms: ReadonlyArray<Atom>;
   readonly bonds: ReadonlyArray<Bond>;
-  readonly totalCharge: number;       // 이온 지원 (architecture §1.3)
+  readonly totalCharge: number; // 이온 지원 (architecture §1.3)
   // TODO: Phase 03 — canonicalSmiles, inchi, inchiKey, stereo(StereoAnnotations)
   // TODO: Phase 03 — spinMultiplicity: number | null (architecture §5.1 "스핀 다중도(선택)").
   //   RDKit `GetNumRadicalElectrons()` 에서 파생 (다중도 = 2S+1, S = 홀전자수/2).
   //   라디칼이 없으면 1 (singlet). 반응 엔진/렌더는 이 필드를 읽지 않으며, MoleculeInfo 패널 표시 전용.
 }
 
+export type CompoundProvenance = 'manifest' | 'runtime-fetch';
+
 export interface Compound {
-  readonly cid: number | null;        // PubChem CID, 자체 생성물은 null
+  readonly cid: CompoundId | null; // PubChem CID, 자체 생성물은 null
   readonly name: { readonly ko: string | null; readonly en: string };
-  readonly molecularFormula: string;  // e.g., "H2O"
+  readonly molecularFormula: string; // e.g., "H2O"
   readonly molecularWeight: number;
   readonly smiles: string;
   readonly inchi: string | null;
   readonly defaultMolecule: Molecule | null; // 3D 좌표 포함
+  readonly provenance: CompoundProvenance; // manifest 청크 vs 런타임 PubChem fetch 판별 (Phase 05 §5.3)
   // TODO: Phase 04 — 물성(녹는점 등), 존재 조건
 }
 ```
@@ -233,34 +318,42 @@ export interface Compound {
 ```ts
 // src/chemistry/reactions/types.ts
 export interface Condition {
-  readonly temperatureK: number;  // Kelvin 내부 표준
+  readonly temperatureK: number; // Kelvin 내부 표준
   readonly pressureAtm: number;
-  readonly pH: number | null;     // 액상 반응에만 유효
+  readonly pH: number | null; // 액상 반응에만 유효
 }
 
 export type ThermoFlag = 'exothermic' | 'endothermic' | 'unknown';
 
 export interface ReactionRule {
   readonly id: string;
-  readonly smarts: string;                    // Reaction SMARTS
+  readonly smarts: string; // Reaction SMARTS
   readonly conditionRange: Partial<{
     readonly temperatureK: readonly [number, number];
     readonly pressureAtm: readonly [number, number];
     readonly pH: readonly [number, number];
   }>;
   readonly thermo: ThermoFlag;
-  readonly source: string;                    // 출처 (참고문헌/DB 식별자)
+  readonly source: string; // 출처 (참고문헌/DB 식별자)
   // TODO: Phase 06 — 신뢰도/우선순위
 }
 
 export type ReactionPredictionKind = 'rule-based' | 'heuristic-experimental';
 
+/**
+ * 반응 결과 — **본 인터페이스가 단일 정의 site**. Phase 06 은 재정의하지 않고
+ * 이 타입을 그대로 소비/반환한다 (필드 추가가 필요하면 Phase 06 이 additive 확장,
+ * phase-06 §4 에서 명시). `notes` 는 **i18n 키** (해석된 문자열 아님 — engine 은
+ * UI 비의존, architecture.md §3.4). `confidence` 는 0..1, rule-based 는 규칙
+ * 신뢰도, heuristic 은 휴리스틱 점수.
+ */
 export interface ReactionResult {
   readonly products: ReadonlyArray<Molecule>;
   readonly kind: ReactionPredictionKind;
-  readonly appliedRuleId: string | null;      // rule-based 일 때
+  readonly appliedRuleId: string | null; // rule-based 일 때
   readonly thermo: ThermoFlag;
-  readonly notes: string | null;              // 사용자 안내용
+  readonly confidence: number; // 0..1 (phase-06 §4 산정)
+  readonly notes: string | null; // i18n 키 (사용자 안내용)
 }
 ```
 
@@ -270,7 +363,7 @@ export interface ReactionResult {
 // src/types/settings.ts
 export type Locale = 'ko' | 'en';
 export type Theme = 'light' | 'dark' | 'system';
-export type RenderMode = 'ball-and-stick'; // 확장 가능: | 'space-filling' | 'wireframe'
+export type RenderMode = 'ball-and-stick'; // 확장 후보(arch §3.1.5, Phase 14+ 결정): | 'space-filling' | 'wireframe' | 'stick' | 'surface'
 export type TemperatureUnit = 'K' | 'C';
 export type PressureUnit = 'atm' | 'Pa';
 ```
@@ -320,6 +413,7 @@ export function getLocale(): Locale;
 > **`initialLocale` 결정 책임**: Phase 01 에서는 **`I18nProvider`** 가 §2.4 에 정의된 규칙 (`localStorage['chem.locale']` > `navigator.language` 접두사 > `'en'`) 으로 초기값을 계산해 `initI18n(locale)` 에 전달한다. `initI18n` 자체는 입력받은 로케일을 **그대로 사용**하고 다른 소스를 참조하지 않는다 — 저장소/브라우저 감지 로직은 Provider 에 국한되며, Phase 07 에서 `settingsStore.locale` 이 생기면 Provider 가 동일 위치에서 "저장된 스토어 상태 → `localStorage` fallback" 으로 소스만 교체된다. `initI18n` 시그니처는 바뀌지 않는다.
 
 리소스 디렉터리 구조:
+
 ```
 src/i18n/
 ├── index.ts
@@ -333,6 +427,7 @@ src/i18n/
 ```
 
 초기 키 예시 (실제 문구는 Phase 10/11/15 에서 확장):
+
 ```json
 // en/common.json
 {
@@ -345,6 +440,7 @@ src/i18n/
   "locale.en": "English"
 }
 ```
+
 ```json
 // ko/common.json
 {
@@ -416,18 +512,19 @@ export const logger: Logger = createConsoleLogger(LOG_LEVEL);
 
 후속 phase 가 import 할 공개 표면. **각 디렉터리의 `index.ts` 만이 외부 import 의 진입점** 이며, 형제 파일 직접 import 는 ESLint `no-restricted-paths` 패턴으로 차단 (§6.2).
 
-| 모듈 경로 (import 측) | barrel 위치 | re-export 항목 |
-|-----------------------|-------------|----------------|
-| `@/utils/logger` | `src/utils/logger/index.ts` | `LogLevel`, `Logger`, `createConsoleLogger`, `LOG_LEVEL`, `logger` |
-| `@/utils/result` | `src/utils/result/index.ts` | `Result`, `ok`, `err`, `isOk`, `isErr`, `mapResult`, `flatMapResult` |
-| `@/i18n` | `src/i18n/index.ts` | `Locale`, `initI18n`, `setLocale`, `getLocale`, `I18nProvider`, `useTranslation` (re-export from react-i18next) |
-| `@/types` | `src/types/index.ts` | `Vec3`, `Brand`, `Compound` (placeholder), `Element` (placeholder) 등 §4 의 공용 타입 |
-| `@/chemistry/elements` | `src/chemistry/elements/index.ts` | (Phase 02 가 채움 — 본 Phase 는 빈 barrel) |
-| `@/engine/rdkit` | `src/engine/rdkit/index.ts` | (Phase 03 가 채움) |
-| `@/stores` | `src/stores/index.ts` | (Phase 07 가 채움) |
-| `@/viewport` | `src/viewport/index.ts` | (Phase 08 가 채움) |
+| 모듈 경로 (import 측)   | barrel 위치                        | re-export 항목                                                                                                                                                                                                                                             |
+| ----------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@/utils/logger`        | `src/utils/logger/index.ts`        | `LogLevel`, `Logger`, `createConsoleLogger`, `LOG_LEVEL`, `logger`                                                                                                                                                                                         |
+| `@/types/result`        | `src/types/result.ts` (단일 모듈)  | `Result`, `ok`, `err`, `isOk`, `isErr`, `mapResult`, `flatMapResult`                                                                                                                                                                                       |
+| `@/i18n`                | `src/i18n/index.ts`                | `Locale`, `initI18n`, `setLocale`, `getLocale`, `I18nProvider`, `useTranslation` (re-export from react-i18next)                                                                                                                                            |
+| `@/types`               | `src/types/index.ts`               | `Vec3`, `Brand`, `Compound` (placeholder), `Element` (placeholder) 등 §4 의 공용 타입 (`Result` 는 `@/types/result` 로 직접 import)                                                                                                                        |
+| `@/chemistry/compounds` | `src/chemistry/compounds/index.ts` | `AtomId`, `BondId`, `MoleculeId`, `CompoundId`, `createAtomId`, `createBondId`, `createMoleculeId`, `asCompoundId`, `idToIndex`, `indexToId`, `SerializedMolecule`/`SerializedAtom`/`SerializedBond`, `Atom`, `Molecule`, `Compound`, `CompoundProvenance` |
+| `@/chemistry/elements`  | `src/chemistry/elements/index.ts`  | (Phase 02 가 채움 — 본 Phase 는 빈 barrel)                                                                                                                                                                                                                 |
+| `@/engine/rdkit`        | `src/engine/rdkit/index.ts`        | (Phase 03 가 채움)                                                                                                                                                                                                                                         |
+| `@/stores`              | `src/stores/index.ts`              | (Phase 07 가 채움)                                                                                                                                                                                                                                         |
+| `@/viewport`            | `src/viewport/index.ts`            | (Phase 08 가 채움)                                                                                                                                                                                                                                         |
 
-본 Phase 가 직접 채우는 barrel: `@/utils/logger`, `@/utils/result`, `@/i18n`, `@/types`. 나머지는 빈 `index.ts` 만 두어 후속 phase 가 채워 간다 (placeholder 단계에서 외부 import 는 컴파일만 통과하고 사용 시 의미 없음).
+본 Phase 가 직접 채우는 barrel/모듈: `@/utils/logger`, `@/types/result`, `@/i18n`, `@/types`, `@/chemistry/compounds` (ids + 도메인 타입). 나머지는 빈 `index.ts` 만 두어 후속 phase 가 채워 간다 (placeholder 단계에서 외부 import 는 컴파일만 통과하고 사용 시 의미 없음).
 
 ---
 
@@ -457,6 +554,7 @@ export const logger: Logger = createConsoleLogger(LOG_LEVEL);
 > Flat config 에서는 CLI `--ext` 플래그가 폐지되었다. 따라서 `package.json` 의 `lint` 스크립트는 `eslint .` 이며, 린트 대상 확장자는 각 config 객체의 `files: ['**/*.{ts,tsx}']` (및 필요 시 `'**/*.{js,jsx,cjs,mjs}'`) 로 명시한다.
 
 설정 개념 (flat config rules 블록 내부):
+
 ```ts
 'import/no-restricted-paths': ['error', {
   zones: [
@@ -493,12 +591,14 @@ export const logger: Logger = createConsoleLogger(LOG_LEVEL);
 ### 6.3 Git 훅 전략
 
 `simple-git-hooks` 채택 (husky 대비 의존성·설정 단순). `lint-staged` 와 조합:
+
 - **pre-commit**: `lint-staged` 실행 → 스테이지된 `.{ts,tsx,js,jsx,md,json}` 파일에 ESLint + Prettier 자동 적용
 - **pre-push**: `pnpm typecheck && pnpm test` (실패 시 push 차단)
 
 ### 6.4 TypeScript 설정
 
 핵심 옵션:
+
 ```jsonc
 {
   "compilerOptions": {
@@ -514,12 +614,12 @@ export const logger: Logger = createConsoleLogger(LOG_LEVEL);
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
     },
     "types": ["vite/client", "vitest/globals"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests"],
 }
 ```
 
@@ -560,8 +660,8 @@ jobs:
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "prepare": "simple-git-hooks"
-  }
+    "prepare": "simple-git-hooks",
+  },
 }
 ```
 
@@ -606,7 +706,9 @@ jobs:
     │   ├── elements/
     │   │   └── types.ts
     │   ├── compounds/
-    │   │   └── types.ts
+    │   │   ├── ids.ts                 # AtomId/BondId/MoleculeId/CompoundId + 팩토리 + 코덱
+    │   │   ├── types.ts
+    │   │   └── index.ts               # @/chemistry/compounds barrel
     │   ├── bonds/
     │   │   └── types.ts
     │   ├── reactions/
@@ -667,38 +769,42 @@ jobs:
 본 Phase 의 테스트 범위는 **최소**이다. 핵심 로직이 대부분 후속 Phase 에 있으므로, 여기서는 "뼈대가 무너지지 않았는지"만 보장한다.
 
 ### 8.1 Smoke 테스트 (Vitest + Testing Library)
+
 - `tests/component/App.test.tsx`:
   - `<App />` 렌더링이 크래시 없이 완료
   - `app.title` 번역 키의 기본 값(영어)이 DOM 에 나타남
   - 언어 토글 클릭 시 한국어 번역으로 바뀜 (번역 키 `app.title` 이 ko 리소스에 존재함을 전제)
 
 ### 8.2 타입 레벨 검증 (`pnpm typecheck`)
+
 - `Result<T, E>` 가 판별 유니온으로 동작함 (컴파일 성공을 테스트로 간주)
 - 레이어 alias (`@/chemistry/...`) 가 해석됨
 
 ### 8.3 레이어 가드 검증
+
 - **의도적 위반** 케이스 한 쌍을 `tests/unit/layer-guard.test.md` 로 문서화하고, 실제 규칙 동작은 CI의 `pnpm lint` 가 보장
 - 음성 시나리오 예시 (문서화 + Phase 01 구현 시 1회 수동 확인):
   1. **하위→상위 import**: `src/chemistry/elements/types.ts` 안에 `import { useMoleculeStore } from '@/stores/moleculeStore';` 라인을 추가 → `pnpm lint` 가 `import/no-restricted-paths` 에러로 실패해야 한다 (chemistry 레이어가 stores 를 참조 금지).
   2. **순환 의존**: `src/utils/logger/index.ts` 안에 `import '@/i18n';` + `src/i18n/index.ts` 안에 `import '@/utils/logger';` 양방향 추가 → `import/no-cycle` 가 lint 에러로 잡혀야 한다.
-  3. **barrel 우회**: 외부 코드에서 `import { createConsoleLogger } from '@/utils/logger/console';` 처럼 *형제 파일* 직접 import → `no-restricted-paths` 패턴 (`@/utils/logger/*` 중 `index` 가 아닌 경로) 에 의해 lint 실패. 정상 import 는 `@/utils/logger` 만 허용.
+  3. **barrel 우회**: 외부 코드에서 `import { createConsoleLogger } from '@/utils/logger/console';` 처럼 _형제 파일_ 직접 import → `no-restricted-paths` 패턴 (`@/utils/logger/*` 중 `index` 가 아닌 경로) 에 의해 lint 실패. 정상 import 는 `@/utils/logger` 만 허용.
 - (대안) `tests/lint/` 아래 "레이어 위반 샘플" 파일을 별도 스크립트로 lint 실행 → 실패를 기대 — Phase 15 에서 검토
 
 ### 8.4 CI 통합
+
 - `ci.yml` 에서 `pnpm lint`, `pnpm typecheck`, `pnpm test -- --run`, `pnpm build` 네 단계가 모두 통과해야 머지 가능.
 
 ---
 
 ## 9. 리스크 및 대안
 
-| # | 리스크 | 영향 | 완화 전략 |
-|---|--------|------|-----------|
-| R1 | ESLint `no-restricted-paths` 로는 **타입 전용 import** 까지 막아 과잉 차단 가능 | 중 | `allowTypeImports` 옵션 검토, 또는 TS Project References 로 구조 강제 병행 |
-| R2 | Vite + Tailwind + Vitest 의 `jsdom` 환경에서 CSS 경고/오류 | 하 | `vitest.config.ts` 에서 `css: false` 로 스킵 |
-| R3 | `simple-git-hooks` 가 사용자 로컬에서 동작하지 않는 경우 | 하 | README 에 `pnpm run prepare` 가이드, CI 는 독립적이므로 최후 방어선으로 기능 |
-| R4 | `exactOptionalPropertyTypes` 가 엄격해 후속 Phase 초기에 마찰 | 하 | 그대로 유지 — 도메인 정확성 위해 필요. 경계 사례만 JSDoc 설명 |
-| R5 | i18n 리소스가 비어있는 상태에서 key 누락 시 조용히 빈 문자열 출력 | 하 | `returnEmptyString: false`, 개발 모드에서 missing key 경고 |
-| R6 | pnpm lockfile 이 환경에 따라 달라짐 | 하 | Node 20 고정 + `--frozen-lockfile` in CI |
+| #   | 리스크                                                                          | 영향 | 완화 전략                                                                    |
+| --- | ------------------------------------------------------------------------------- | ---- | ---------------------------------------------------------------------------- |
+| R1  | ESLint `no-restricted-paths` 로는 **타입 전용 import** 까지 막아 과잉 차단 가능 | 중   | `allowTypeImports` 옵션 검토, 또는 TS Project References 로 구조 강제 병행   |
+| R2  | Vite + Tailwind + Vitest 의 `jsdom` 환경에서 CSS 경고/오류                      | 하   | `vitest.config.ts` 에서 `css: false` 로 스킵                                 |
+| R3  | `simple-git-hooks` 가 사용자 로컬에서 동작하지 않는 경우                        | 하   | README 에 `pnpm run prepare` 가이드, CI 는 독립적이므로 최후 방어선으로 기능 |
+| R4  | `exactOptionalPropertyTypes` 가 엄격해 후속 Phase 초기에 마찰                   | 하   | 그대로 유지 — 도메인 정확성 위해 필요. 경계 사례만 JSDoc 설명                |
+| R5  | i18n 리소스가 비어있는 상태에서 key 누락 시 조용히 빈 문자열 출력               | 하   | `returnEmptyString: false`, 개발 모드에서 missing key 경고                   |
+| R6  | pnpm lockfile 이 환경에 따라 달라짐                                             | 하   | Node 20 고정 + `--frozen-lockfile` in CI                                     |
 
 ---
 
@@ -733,7 +839,7 @@ Phase 01 구현 착수 전에 사용자의 답이 필요하다. §3.3 기본안 
 
 이 Phase 가 완료되면 아래가 후속 Phase 에 전달된다:
 
-- **전역 타입**: `ElementNumber`, `Atom`, `Bond`, `Molecule`, `Compound`, `Condition`, `ThermoFlag`, `ReactionRule`, `ReactionResult`, `Result<T,E>`, `Brand<T,K>`
+- **전역 타입**: `ElementNumber`, `AtomId`/`BondId`/`MoleculeId`/`CompoundId` (+ `createAtomId`/`createBondId`/`createMoleculeId`/`asCompoundId`, `idToIndex`/`indexToId` 코덱, `SerializedMolecule`), `Atom`, `Bond`, `Molecule`, `Compound`, `Condition`, `ThermoFlag`, `ReactionRule`, `ReactionResult`, `Result<T,E>`, `Brand<T,K>`
 - **레이어 경계**: ESLint 규칙 + alias
 - **빌드/테스트 파이프라인**: `pnpm dev/build/lint/typecheck/test`
 - **i18n 엔트리**: `initI18n`, 리소스 구조
@@ -743,5 +849,5 @@ Phase 02 (Element Data Layer) 는 `src/chemistry/elements/types.ts` 의 `Element
 
 ---
 
-*문서 버전: 0.1 (초안)*
-*작성일: 2026-04-19*
+_문서 버전: 0.1 (초안)_
+_작성일: 2026-04-19_
