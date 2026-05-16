@@ -1,6 +1,82 @@
-import type { Compound } from '@/chemistry/compounds/types';
+import type {
+  Compound,
+  Molecule,
+  CompoundProvenance,
+  CoordinateSource,
+  CompoundProperties,
+} from '@/chemistry/compounds/types';
+import type { SerializedAtom, SerializedBond } from '@/chemistry/compounds/ids';
+import { indexToId, asCompoundId, moleculeIdForCid } from '@/chemistry/compounds/ids';
+import type { StereoAnnotations } from '@/types/stereo';
 import type { CompoundCategory } from '@/chemistry/compounds/categories';
 import manifestJson from './manifest.json';
+
+// ── 직렬화 청크 형태 (CD1: ID 없음, 정수 인덱스) → 런타임 Compound 변환 ───────
+interface SerializedDefaultMolecule {
+  readonly atoms: ReadonlyArray<SerializedAtom>;
+  readonly bonds: ReadonlyArray<SerializedBond>;
+  readonly totalCharge: number;
+  readonly canonicalSmiles: string;
+  readonly inchi: string | null;
+  readonly inchiKey: string | null;
+  readonly stereo: StereoAnnotations;
+  readonly spinMultiplicity: number;
+}
+
+interface SerializedCompound {
+  readonly cid: number;
+  readonly provenance: CompoundProvenance;
+  readonly name: { readonly ko: string | null; readonly en: string };
+  readonly iupacName: string | null;
+  readonly synonyms: ReadonlyArray<string>;
+  readonly molecularFormula: string;
+  readonly molecularWeight: number;
+  readonly smiles: string;
+  readonly inchi: string | null;
+  readonly inchiKey: string | null;
+  readonly category: CompoundCategory;
+  readonly priority: number;
+  readonly properties: CompoundProperties;
+  readonly coordinateSource: CoordinateSource | null;
+  readonly defaultMolecule: SerializedDefaultMolecule | null;
+}
+
+/** 직렬화 청크 엔트리 → 런타임 Compound (brand ID 부여, 경계 코덱 적용). */
+function materializeCompound(s: SerializedCompound): Compound {
+  let defaultMolecule: Molecule | null = null;
+  if (s.defaultMolecule) {
+    const dm = s.defaultMolecule;
+    const core = indexToId(
+      { atoms: dm.atoms, bonds: dm.bonds, totalCharge: dm.totalCharge },
+      moleculeIdForCid(s.cid),
+    );
+    defaultMolecule = {
+      ...core,
+      canonicalSmiles: dm.canonicalSmiles,
+      inchi: dm.inchi,
+      inchiKey: dm.inchiKey,
+      stereo: dm.stereo,
+      spinMultiplicity: dm.spinMultiplicity,
+    };
+  }
+  return {
+    cid: asCompoundId(s.cid),
+    provenance: s.provenance,
+    name: s.name,
+    molecularFormula: s.molecularFormula,
+    molecularWeight: s.molecularWeight,
+    smiles: s.smiles,
+    inchi: s.inchi,
+    inchiKey: s.inchiKey,
+    iupacName: s.iupacName,
+    synonyms: s.synonyms,
+    category: s.category,
+    priority: s.priority,
+    properties: s.properties,
+    coordinateSource: s.coordinateSource,
+    defaultMolecule,
+  };
+}
 
 export interface ManifestEntry {
   readonly cid: number;
@@ -37,7 +113,9 @@ let manifestCache: CompoundManifest | null = null;
 const chunkCache = new Map<string, Promise<ReadonlyArray<Compound>>>();
 
 // Vite resolves all matching paths at build time → each file becomes a lazy chunk.
-const chunkLoaders = import.meta.glob<{ default: ReadonlyArray<Compound> }>('./chunks/*.json');
+const chunkLoaders = import.meta.glob<{ default: ReadonlyArray<SerializedCompound> }>(
+  './chunks/*.json',
+);
 
 const loaderByChunk = new Map(
   Object.entries(chunkLoaders).map(([path, loader]) => {
@@ -58,7 +136,7 @@ export function loadCompoundChunk(chunk: string): Promise<ReadonlyArray<Compound
   if (!p) {
     const loader = loaderByChunk.get(chunk);
     if (!loader) return Promise.reject(new Error(`Unknown chunk: ${chunk}`));
-    p = loader().then((m) => m.default);
+    p = loader().then((m) => m.default.map(materializeCompound));
     chunkCache.set(chunk, p);
   }
   return p;

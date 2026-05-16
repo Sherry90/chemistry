@@ -1,10 +1,12 @@
 import type { Vec3 } from '@/types/geometry';
 import type { ElementNumber } from '@/chemistry/elements/types';
 import type { Bond } from '@/chemistry/bonds/types';
+import type { AtomId, MoleculeId, CompoundId } from '@/chemistry/compounds/ids';
 import type { StereoAnnotations } from '@/types/stereo';
 import type { CompoundCategory } from './categories';
 
 export interface Atom {
+  readonly id: AtomId;
   readonly elementNumber: ElementNumber;
   readonly position: Vec3;
   readonly formalCharge: number;
@@ -13,7 +15,7 @@ export interface Atom {
 }
 
 export interface Molecule {
-  readonly id: string;
+  readonly id: MoleculeId;
   readonly atoms: ReadonlyArray<Atom>;
   readonly bonds: ReadonlyArray<Bond>;
   readonly totalCharge: number;
@@ -26,6 +28,7 @@ export interface Molecule {
 
 export type PhysicalState = 'solid' | 'liquid' | 'gas' | 'aqueous' | 'unknown';
 export type CoordinateSource = 'pubchem-3d' | 'rdkit-etkdg';
+export type CompoundProvenance = 'manifest' | 'runtime-fetch';
 
 export interface CompoundProperties {
   readonly meltingPointK: number | null;
@@ -37,7 +40,8 @@ export interface CompoundProperties {
 }
 
 export interface Compound {
-  readonly cid: number | null;
+  readonly cid: CompoundId | null;
+  readonly provenance: CompoundProvenance;
   readonly name: { readonly ko: string | null; readonly en: string };
   readonly molecularFormula: string;
   readonly molecularWeight: number;

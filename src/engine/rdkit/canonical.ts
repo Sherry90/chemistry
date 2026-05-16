@@ -1,5 +1,6 @@
 import type { ParsedMol } from './types';
 import type { Molecule } from '@/chemistry/compounds/types';
+import { idToIndex } from '@/chemistry/compounds/ids';
 
 export function toCanonicalSmiles(parsed: ParsedMol): string {
   return parsed.canonicalSmiles;
@@ -34,10 +35,15 @@ export function toSdfBlock(mol: Molecule): string {
     );
   }
 
+  // CD1: SDF 는 직렬화 형태 — 경계에서 AtomId → 0-based 인덱스로 환산 후 1-based 방출.
+  const { atomIndexOf } = idToIndex(mol);
   for (const bond of mol.bonds) {
     const order = bond.order === 'aromatic' ? 4 : bond.order;
+    const a = atomIndexOf.get(bond.aAtomId);
+    const b = atomIndexOf.get(bond.bAtomId);
+    if (a === undefined || b === undefined) continue; // 무결성 위반 결합은 스킵
     lines.push(
-      `${String(bond.aAtomId + 1).padStart(3)}${String(bond.bAtomId + 1).padStart(3)}${String(order).padStart(3)}  0`,
+      `${String(a + 1).padStart(3)}${String(b + 1).padStart(3)}${String(order).padStart(3)}  0`,
     );
   }
 

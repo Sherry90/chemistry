@@ -2,7 +2,7 @@
   "collectedAt": "2026-05-06T00:00:00Z",
   "pubchemApiVersion": "PUG REST",
   "rdkitVersion": "2025.3.4-1.0.0",
-  "normalizeSchemaVersion": 1,
+  "normalizeSchemaVersion": 2,
   "embedSeed": 12648430,
   "totals": {
     "requestedCids": 5,

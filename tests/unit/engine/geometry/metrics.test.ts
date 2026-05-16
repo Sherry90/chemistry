@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { bondLength, bondAngle, dihedral } from '@/engine/geometry/metrics';
 import type { Atom } from '@/chemistry/compounds/types';
+import { createAtomId, indexToId, moleculeIdForCid } from '@/chemistry/compounds/ids';
 import { EMPTY_STEREO } from '@/types/stereo';
 
 function atom(x: number, y: number, z: number): Atom {
   return {
+    id: createAtomId(),
     elementNumber: 6 as never,
     position: { x, y, z },
     formalCharge: 0,
@@ -64,33 +66,24 @@ describe('dihedral', () => {
 describe('validate', () => {
   it('validateMolecule accepts molecule with matching charges', async () => {
     const { validateMolecule } = await import('@/engine/parser/validate');
+    // CD1: 직렬화 인덱스 형태 → indexToId 로 brand ID 부여 후 스칼라 합성.
+    const core = indexToId(
+      {
+        atoms: [
+          { elementNumber: 8, position: [0, 0, 0], formalCharge: 0, implicitHCount: 2 },
+          { elementNumber: 1, position: [1, 0, 0], formalCharge: 0, implicitHCount: 0 },
+          { elementNumber: 1, position: [-1, 0, 0], formalCharge: 0, implicitHCount: 0 },
+        ],
+        bonds: [
+          { aAtomIndex: 0, bAtomIndex: 1, order: 1 },
+          { aAtomIndex: 0, bAtomIndex: 2, order: 1 },
+        ],
+        totalCharge: 0,
+      },
+      moleculeIdForCid(962),
+    );
     const mol = {
-      id: 'test',
-      atoms: [
-        {
-          elementNumber: 8 as never,
-          position: { x: 0, y: 0, z: 0 },
-          formalCharge: 0,
-          implicitHCount: 2,
-        },
-        {
-          elementNumber: 1 as never,
-          position: { x: 1, y: 0, z: 0 },
-          formalCharge: 0,
-          implicitHCount: 0,
-        },
-        {
-          elementNumber: 1 as never,
-          position: { x: -1, y: 0, z: 0 },
-          formalCharge: 0,
-          implicitHCount: 0,
-        },
-      ],
-      bonds: [
-        { aAtomId: 0, bAtomId: 1, order: 1 as const },
-        { aAtomId: 0, bAtomId: 2, order: 1 as const },
-      ],
-      totalCharge: 0,
+      ...core,
       canonicalSmiles: 'O',
       inchi: null,
       inchiKey: null,

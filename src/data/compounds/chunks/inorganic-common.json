@@ -1,6 +1,7 @@
 [
   {
     "cid": 222,
+    "provenance": "manifest",
     "name": { "ko": "암모니아", "en": "Ammonia" },
     "iupacName": "azane",
     "synonyms": ["ammonia", "azane", "nitrogen trihydride"],
@@ -21,7 +22,6 @@
     },
     "coordinateSource": "pubchem-3d",
     "defaultMolecule": {
-      "id": "cid:222",
       "atoms": [
         {
           "elementNumber": 7,
@@ -49,9 +49,9 @@
         }
       ],
       "bonds": [
-        { "aAtomId": 0, "bAtomId": 1, "order": 1 },
-        { "aAtomId": 0, "bAtomId": 2, "order": 1 },
-        { "aAtomId": 0, "bAtomId": 3, "order": 1 }
+        { "aAtomIndex": 0, "bAtomIndex": 1, "order": 1 },
+        { "aAtomIndex": 0, "bAtomIndex": 2, "order": 1 },
+        { "aAtomIndex": 0, "bAtomIndex": 3, "order": 1 }
       ],
       "totalCharge": 0,
       "canonicalSmiles": "N",
@@ -63,6 +63,7 @@
   },
   {
     "cid": 280,
+    "provenance": "manifest",
     "name": { "ko": "이산화탄소", "en": "Carbon dioxide" },
     "iupacName": "carbon dioxide",
     "synonyms": ["carbon dioxide", "CO2", "carbonic anhydride"],
@@ -83,7 +84,6 @@
     },
     "coordinateSource": "pubchem-3d",
     "defaultMolecule": {
-      "id": "cid:280",
       "atoms": [
         {
           "elementNumber": 8,
@@ -100,8 +100,8 @@
         }
       ],
       "bonds": [
-        { "aAtomId": 0, "bAtomId": 1, "order": 2 },
-        { "aAtomId": 1, "bAtomId": 2, "order": 2 }
+        { "aAtomIndex": 0, "bAtomIndex": 1, "order": 2 },
+        { "aAtomIndex": 1, "bAtomIndex": 2, "order": 2 }
       ],
       "totalCharge": 0,
       "canonicalSmiles": "O=C=O",
@@ -113,6 +113,7 @@
   },
   {
     "cid": 947,
+    "provenance": "manifest",
     "name": { "ko": "질소", "en": "Nitrogen" },
     "iupacName": "molecular nitrogen",
     "synonyms": ["nitrogen", "dinitrogen", "N2"],
@@ -133,7 +134,6 @@
     },
     "coordinateSource": "pubchem-3d",
     "defaultMolecule": {
-      "id": "cid:947",
       "atoms": [
         { "elementNumber": 7, "position": [0.0, 0.0, 0.0], "formalCharge": 0, "implicitHCount": 0 },
         {
@@ -143,7 +143,7 @@
           "implicitHCount": 0
         }
       ],
-      "bonds": [{ "aAtomId": 0, "bAtomId": 1, "order": 3 }],
+      "bonds": [{ "aAtomIndex": 0, "bAtomIndex": 1, "order": 3 }],
       "totalCharge": 0,
       "canonicalSmiles": "N#N",
       "inchi": "InChI=1S/N2/c1-2",
@@ -154,6 +154,7 @@
   },
   {
     "cid": 962,
+    "provenance": "manifest",
     "name": { "ko": "물", "en": "Water" },
     "iupacName": "oxidane",
     "synonyms": ["water", "dihydrogen oxide", "oxidane"],
@@ -174,7 +175,6 @@
     },
     "coordinateSource": "pubchem-3d",
     "defaultMolecule": {
-      "id": "cid:962",
       "atoms": [
         {
           "elementNumber": 8,
@@ -196,8 +196,8 @@
         }
       ],
       "bonds": [
-        { "aAtomId": 0, "bAtomId": 1, "order": 1 },
-        { "aAtomId": 0, "bAtomId": 2, "order": 1 }
+        { "aAtomIndex": 0, "bAtomIndex": 1, "order": 1 },
+        { "aAtomIndex": 0, "bAtomIndex": 2, "order": 1 }
       ],
       "totalCharge": 0,
       "canonicalSmiles": "O",
@@ -209,6 +209,7 @@
   },
   {
     "cid": 977,
+    "provenance": "manifest",
     "name": { "ko": "산소", "en": "Oxygen" },
     "iupacName": "molecular oxygen",
     "synonyms": ["oxygen", "dioxygen", "O2"],
@@ -229,7 +230,6 @@
     },
     "coordinateSource": "pubchem-3d",
     "defaultMolecule": {
-      "id": "cid:977",
       "atoms": [
         { "elementNumber": 8, "position": [0.0, 0.0, 0.0], "formalCharge": 0, "implicitHCount": 0 },
         {
@@ -239,7 +239,7 @@
           "implicitHCount": 0
         }
       ],
-      "bonds": [{ "aAtomId": 0, "bAtomId": 1, "order": 2 }],
+      "bonds": [{ "aAtomIndex": 0, "bAtomIndex": 1, "order": 2 }],
       "totalCharge": 0,
       "canonicalSmiles": "O=O",
       "inchi": "InChI=1S/O2/c1-2",

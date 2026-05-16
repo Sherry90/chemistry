@@ -3,14 +3,14 @@ import type { RdkitBackend } from './backend';
 import type { ParsedMol, ParsedAtom, ParsedBond, InputSource, StereoAnnotations } from './types';
 import type { ParseError } from '@/engine/parser/errors';
 import type { EmbedOptions, EmbedError } from '@/engine/geometry/types';
-import type { Molecule, Atom } from '@/chemistry/compounds/types';
-import type { Bond } from '@/chemistry/bonds/types';
+import type { Molecule } from '@/chemistry/compounds/types';
+import type { MoleculeId } from '@/chemistry/compounds/ids';
+import { createMoleculeId } from '@/chemistry/compounds/ids';
 import type { Result } from '@/types/result';
 import { ok, err } from '@/types/result';
 import { ensureRdkit, getRdkitInstance } from './service';
 import { EMPTY_STEREO } from '@/types/stereo';
-import { isValidElementNumber } from '@/chemistry/elements';
-import type { ElementNumber } from '@/chemistry/elements';
+import { toDomainMolecule } from '@/engine/parser/toDomain';
 
 function extractParsedMol(mol: JSMol, source: InputSource): ParsedMol {
   const canonicalSmiles = mol.get_smiles();
@@ -128,39 +128,15 @@ function resolveElementNumber(symbol: string): number {
   return SYMBOL_TO_NUM[symbol] ?? 6;
 }
 
+// CD1: 단일 재구성 경로(toDomainMolecule)에 위임 — brand AtomId/BondId 부여 +
+// 원자 인덱스 정합 보장. (종전 사본은 filter 후 map index 가 원본 인덱스와 어긋나는
+// 잠재 버그가 있었다 — brand id 모델 + 단일 경로로 해소.)
 function parsedMolToMolecule(
   parsed: ParsedMol,
-  id: string,
+  id: MoleculeId,
   coords: Array<{ x: number; y: number; z: number }>,
 ): Molecule {
-  const atoms: Atom[] = parsed.atoms
-    .filter((pa) => isValidElementNumber(pa.elementNumber))
-    .map(
-      (pa, i): Atom => ({
-        elementNumber: pa.elementNumber as ElementNumber,
-        position: coords[i] ?? { x: 0, y: 0, z: 0 },
-        formalCharge: pa.formalCharge,
-        implicitHCount: pa.implicitHCount,
-      }),
-    );
-
-  const bonds: Bond[] = parsed.bonds.map((pb) => ({
-    aAtomId: pb.beginAtomIdx,
-    bAtomId: pb.endAtomIdx,
-    order: pb.order,
-  }));
-
-  return {
-    id,
-    atoms,
-    bonds,
-    totalCharge: parsed.totalCharge,
-    canonicalSmiles: parsed.canonicalSmiles,
-    inchi: parsed.inchi,
-    inchiKey: parsed.inchiKey,
-    stereo: parsed.stereo,
-    spinMultiplicity: parsed.radicalElectrons + 1,
-  };
+  return toDomainMolecule(parsed, coords, id);
 }
 
 export function createMainThreadRdkitBackend(): RdkitBackend {
@@ -235,7 +211,7 @@ export function createMainThreadRdkitBackend(): RdkitBackend {
           const molblock = mol.get_new_coords();
           const coords = parseMolblockCoords(molblock, parsed.atoms.length);
 
-          return ok(parsedMolToMolecule(parsed, crypto.randomUUID(), coords));
+          return ok(parsedMolToMolecule(parsed, createMoleculeId(), coords));
         } finally {
           mol.delete();
         }

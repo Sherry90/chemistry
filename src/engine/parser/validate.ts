@@ -1,4 +1,5 @@
 import type { Molecule } from '@/chemistry/compounds/types';
+import type { AtomId } from '@/chemistry/compounds/ids';
 import type { Result } from '@/types/result';
 import { ok, err } from '@/types/result';
 import type { ValidationIssue } from './errors';
@@ -8,15 +9,15 @@ export function validateMolecule(mol: Molecule): Result<Molecule, ValidationIssu
 
   // Check for disconnected fragments (multiple components via simple connectivity check)
   if (mol.atoms.length > 0) {
-    const adjacency = new Map<number, number[]>();
-    for (let i = 0; i < mol.atoms.length; i++) adjacency.set(i, []);
+    const adjacency = new Map<AtomId, AtomId[]>();
+    for (const a of mol.atoms) adjacency.set(a.id, []);
     for (const bond of mol.bonds) {
       adjacency.get(bond.aAtomId)?.push(bond.bAtomId);
       adjacency.get(bond.bAtomId)?.push(bond.aAtomId);
     }
 
-    const visited = new Set<number>();
-    const queue = [0];
+    const visited = new Set<AtomId>();
+    const queue: AtomId[] = [mol.atoms[0]!.id];
     while (queue.length > 0) {
       const curr = queue.pop()!;
       if (visited.has(curr)) continue;

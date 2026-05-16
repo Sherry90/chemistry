@@ -3,6 +3,7 @@ import type { ParsedMol, InputSource } from '@/engine/rdkit/types';
 import type { ParseError } from '@/engine/parser/errors';
 import type { EmbedOptions, EmbedError } from '@/engine/geometry/types';
 import type { Molecule } from '@/chemistry/compounds/types';
+import { createMoleculeId } from '@/chemistry/compounds/ids';
 import type { Result } from '@/types/result';
 import { ok, err } from '@/types/result';
 import { EMPTY_STEREO } from '@/types/stereo';
@@ -26,7 +27,7 @@ export function makeParsedMol(overrides: Partial<ParsedMol> = {}): ParsedMol {
 
 export function makeMolecule(overrides: Partial<Molecule> = {}): Molecule {
   return {
-    id: 'test-mol',
+    id: createMoleculeId(),
     atoms: [],
     bonds: [],
     totalCharge: 0,
