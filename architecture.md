@@ -141,6 +141,7 @@
 - 다음은 **Undoable 에서 제외**: 반응 실행 결과(독립 이벤트), UI 상태 변경(선택, 패널 토글 등), 설정(`settingsStore`) 변경.
 - 기본 단축키: `Ctrl/Cmd+Z` (Undo), `Shift+Ctrl/Cmd+Z` 또는 `Ctrl/Cmd+Y` (Redo).
 - 히스토리 스택은 **capacity=50 FIFO**, **full `Molecule` snapshot per undoable action** (immer 구조적 공유로 메모리 절약), **200 ms 그룹 합치기 윈도우** (드래그 stream). 세부는 Phase 09 §6.1 / D1+D3.
+- 구현 위치/주입(레이어 규칙 §4.1 정합): undo 본 구현 `createUndoStack()` 은 R3F 비의존 순수 store 로직이므로 **stores 레이어 `@/stores/_shared/undo`** 에 둔다. `_shared/undoable.ts` 가 swappable `dispatcher` 싱글톤(export 변수)을 소유하고, `setUndoDispatcher()` 가 `createUndoStack()` 결과를 주입한다 — 식별자·`UndoableDispatcher` 인터페이스·Phase 07 액션 본문 불변(호출자 무변경). 주입 지점: Phase 09 `<Viewport>`, Phase 10 `AppLayout`(context). 드래그 stream 의 group 합치기는 `moveAtom` meta 를 건드리지 않고 ambient group 컨텍스트(Phase 09 §6.2.2)로 해소한다.
 
 ### 3.9 배포 타깃 (Deployment)
 
