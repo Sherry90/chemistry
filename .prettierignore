@@ -1,0 +1,5 @@
+# Reaction 데이터는 scripts/reactions-build 결정적 생성기가 포맷을 소유한다.
+# prettier 재포맷 시 `pnpm build:reactions` 출력과 어긋나 멱등성(§8.9 결정성 테스트)
+# 이 깨진다. 생성 산출물만 제외 (시드 TSV/스크립트는 prettier 대상 유지).
+src/data/reactions/manifest.json
+src/data/reactions/chunks/

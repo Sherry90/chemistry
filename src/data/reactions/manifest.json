@@ -12,20 +12,39 @@
     "acid-base-neutralization": {
       "chunk": "acid-base-neutralization.json",
       "count": 1,
-      "priorityRange": [0, 0],
-      "requiredElementsUnion": [1, 8, 17]
+      "priorityRange": [
+        0,
+        0
+      ],
+      "requiredElementsUnion": [
+        1,
+        8,
+        17
+      ]
     },
     "esterification-hydrolysis": {
       "chunk": "esterification-hydrolysis.json",
       "count": 1,
-      "priorityRange": [1, 1],
-      "requiredElementsUnion": [6, 8]
+      "priorityRange": [
+        1,
+        1
+      ],
+      "requiredElementsUnion": [
+        6,
+        8
+      ]
     },
     "simple-redox": {
       "chunk": "simple-redox.json",
       "count": 1,
-      "priorityRange": [0, 0],
-      "requiredElementsUnion": [1, 8]
+      "priorityRange": [
+        0,
+        0
+      ],
+      "requiredElementsUnion": [
+        1,
+        8
+      ]
     }
   },
   "entries": [
@@ -36,7 +55,11 @@
       "confidence": "high",
       "thermo": "exothermic",
       "requiresPh": true,
-      "requiredElements": [1, 8, 17],
+      "requiredElements": [
+        1,
+        8,
+        17
+      ],
       "chunk": "acid-base-neutralization.json"
     },
     {
@@ -46,7 +69,10 @@
       "confidence": "high",
       "thermo": "exothermic",
       "requiresPh": false,
-      "requiredElements": [1, 8],
+      "requiredElements": [
+        1,
+        8
+      ],
       "chunk": "simple-redox.json"
     },
     {
@@ -56,7 +82,10 @@
       "confidence": "medium",
       "thermo": "endothermic",
       "requiresPh": false,
-      "requiredElements": [6, 8],
+      "requiredElements": [
+        6,
+        8
+      ],
       "chunk": "esterification-hydrolysis.json"
     }
   ]

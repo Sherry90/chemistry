@@ -6,16 +6,24 @@
       "id": "est-fischer",
       "smarts": "[CX3:1](=[OX1:2])[OX2H1:3].[OX2H1:4][#6:5]>>[CX3:1](=[OX1:2])[OX2:3][#6:5].[OX2H2:4]",
       "conditionRange": {
-        "temperatureK": [298, 420]
+        "temperatureK": [
+          298,
+          420
+        ]
       },
       "thermo": "endothermic",
       "source": "in-house curated",
       "priority": 1,
       "confidence": "medium",
-      "categories": ["esterification-hydrolysis"],
+      "categories": [
+        "esterification-hydrolysis"
+      ],
       "version": "2026-05-17T00:00:00.000Z",
       "license": "in-house",
-      "requiredElements": [6, 8]
+      "requiredElements": [
+        6,
+        8
+      ]
     }
   ]
 }
