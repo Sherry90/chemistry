@@ -15,6 +15,9 @@ export function MoleculeGroup({
 }: {
   readonly molId: MoleculeId;
   readonly transform: MoleculeLayoutTransform;
+  // Phase 09 §6.7 (D15) — fade wrapper 가 주입. 인스턴스 머티리얼 opacity 로의
+  // 실 threading 은 Phase 15 (시각 회귀) — 본 Phase 는 delayed-unmount 계약만.
+  readonly fadeOpacity?: number;
 }): React.ReactElement | null {
   const selector = useMemo(() => selectMoleculeById(molId), [molId]);
   const molecule = useMoleculeStore(selector);

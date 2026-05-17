@@ -6,10 +6,21 @@ import { useMoleculeStore, selectMoleculeIds } from '@/stores';
 import { Background } from './Background';
 import { Lighting } from './Lighting';
 import { ViewportApiBridge } from './ViewportApiBridge';
-import { computeMoleculeLayout } from './layout';
+import { computeMoleculeLayout, type MoleculeLayoutTransform } from './layout';
 import { MoleculeGroup } from '../renderers/MoleculeGroup';
+import { withMoleculeFade } from '../animations/useMoleculeFade';
 import { useSelectionStaleGuard } from '../subscriptions/selectionGuard';
+import type { MoleculeId } from '@/chemistry/compounds/ids';
 import type { ViewportApi } from '../_shared/types';
+
+// Phase 09 §6.7 (D15) — MoleculeGroup 을 fade wrapper 로 감쌈 (mount fade-in 은
+// inner 책임, unmount 시 delayed real-unmount). 모듈-레벨 정의 — 매 렌더 재생성
+// 시 remount 되므로 컴포넌트 identity 안정 필수. 명시 타입 인자: 제네릭이
+// 교차타입에서 fadeOpacity 를 역산 못 하므로 외부 props 를 직접 지정.
+const FadedMoleculeGroup = withMoleculeFade<{
+  readonly molId: MoleculeId;
+  readonly transform: MoleculeLayoutTransform;
+}>(MoleculeGroup);
 
 export function Scene({
   apiRef,
@@ -35,7 +46,7 @@ export function Scene({
       <Lighting />
       <OrbitControls enabled enableDamping dampingFactor={0.08} makeDefault />
       {ids.map((id) => (
-        <MoleculeGroup
+        <FadedMoleculeGroup
           key={id}
           molId={id}
           transform={layout.get(id) ?? { translation: [0, 0, 0] }}

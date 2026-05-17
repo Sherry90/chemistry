@@ -27,3 +27,10 @@ export type {
   ViewportBondId,
   ViewportId,
 } from './_shared/types';
+
+// ── Phase 09 §7.2 추가 공개 경계 ──
+export { createUndoStack, type UndoStackOpts } from './undo/undoStack';
+export { useUndoStack } from './undo/useUndoStack'; // §5.3 권장(1) — Phase 11 Toolbar
+export { KEY_MAP, describeKey, type KeyBinding, type KeyActionId } from './interactions/shortcuts';
+export type { BondCreateFlowApi, BondCreateFlowState } from './interactions/useBondCreateFlow';
+export { isTextInputTarget } from './interactions/textInputGuard';

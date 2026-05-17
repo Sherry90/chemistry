@@ -24,6 +24,7 @@ test-results/
 .idea/
 .vscode/
 .claude/
+.serena/
 *.swp
 *.swo
 
