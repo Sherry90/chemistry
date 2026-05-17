@@ -496,5 +496,12 @@
     "liquid": "Liquid",
     "gas": "Gas",
     "unknown": "Unknown"
+  },
+  "reactions": {
+    "categoryNames": {
+      "acid-base-neutralization": "Acid-base neutralization",
+      "esterification-hydrolysis": "Esterification / hydrolysis",
+      "simple-redox": "Simple redox"
+    }
   }
 }

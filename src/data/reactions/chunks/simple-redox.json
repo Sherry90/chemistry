@@ -1,0 +1,21 @@
+{
+  "version": "2026-05-17T00:00:00.000Z",
+  "category": "simple-redox",
+  "rules": [
+    {
+      "id": "redox-h2-o2-water",
+      "smarts": "[H][H:1].[O:2]=[O]>>[H:1][O:2][H]",
+      "conditionRange": {
+        "temperatureK": [298, 1273]
+      },
+      "thermo": "exothermic",
+      "source": "in-house curated",
+      "priority": 0,
+      "confidence": "high",
+      "categories": ["simple-redox"],
+      "version": "2026-05-17T00:00:00.000Z",
+      "license": "in-house",
+      "requiredElements": [1, 8]
+    }
+  ]
+}

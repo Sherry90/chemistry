@@ -11,6 +11,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "check:schema-version": "node --experimental-strip-types scripts/check-schema-version.ts",
+    "build:reactions": "node --experimental-strip-types scripts/reactions-build/index.ts",
     "test": "vitest",
     "prepare": "simple-git-hooks"
   },

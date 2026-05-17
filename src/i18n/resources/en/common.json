@@ -5,5 +5,13 @@
   "theme.dark": "Dark",
   "theme.system": "System",
   "locale.ko": "한국어",
-  "locale.en": "English"
+  "locale.en": "English",
+  "reaction.experimentalBadge": "Experimental prediction",
+  "reaction.experimentalDisclaimer": "This result was produced by a heuristic engine (valence + electronegativity estimate), not the curated rule DB. It may not match real-world outcomes.",
+  "reaction.noMatchingRule": "No rule matches the given reactants and conditions.",
+  "reaction.conditionOutOfRange": "Conditions fall outside the applicable rule ranges.",
+  "reaction.abstained": "The heuristic engine could not produce a result.",
+  "reaction.rdkitNotReady": "The chemistry engine is still loading.",
+  "reaction.embedFailed": "Failed to generate 3D coordinates for the products.",
+  "reaction.ruleEngineDeferred": "Rule-based prediction is currently disabled (heuristic only)."
 }

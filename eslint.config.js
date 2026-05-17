@@ -10,7 +10,16 @@ import prettierConfig from 'eslint-config-prettier';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  { ignores: ['dist/**', 'node_modules/**', 'coverage/**', '*.config.js', '*.config.ts'] },
+  {
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      '.claude/**',
+      '*.config.js',
+      '*.config.ts',
+    ],
+  },
 
   js.configs.recommended,
 
@@ -184,6 +193,19 @@ export default [
               ],
               message:
                 'Private service modules are internal. Import the public barrel only: @/services/pubchem or @/services/cache.',
+            },
+            // Phase 06 §7.1 / §7.2 — Reaction 엔진 공개 경계.
+            // 공개 진입점: @/engine/reaction, @/data/reactions, @/chemistry/reactions/types.
+            // 모듈 내부 상대 import (./heuristic 등) 는 alias 패턴 비매칭 → 영향 없음.
+            {
+              group: [
+                '@/engine/reaction/*',
+                '@/engine/rdkit/reactions',
+                '@/data/reactions/chunks/*',
+                '@/data/reactions/manifest.json',
+              ],
+              message:
+                'Reaction internals/data are private. Import public barrels only: @/engine/reaction or @/data/reactions (types via @/chemistry/reactions/types).',
             },
           ],
         },

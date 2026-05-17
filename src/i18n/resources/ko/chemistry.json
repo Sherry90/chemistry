@@ -496,5 +496,12 @@
     "liquid": "액체",
     "gas": "기체",
     "unknown": "알 수 없음"
+  },
+  "reactions": {
+    "categoryNames": {
+      "acid-base-neutralization": "산-염기 중화",
+      "esterification-hydrolysis": "에스터화/가수분해",
+      "simple-redox": "단순 산화환원"
+    }
   }
 }

@@ -5,5 +5,13 @@
   "theme.dark": "어두운 테마",
   "theme.system": "시스템 설정",
   "locale.ko": "한국어",
-  "locale.en": "English"
+  "locale.en": "English",
+  "reaction.experimentalBadge": "실험적 예측",
+  "reaction.experimentalDisclaimer": "이 결과는 규칙 DB 가 아닌 휴리스틱(원자가·전기음성도 추정)으로 도출되었습니다. 실제 반응 결과와 다를 수 있습니다.",
+  "reaction.noMatchingRule": "이 조건과 반응물 조합에 일치하는 규칙이 없습니다.",
+  "reaction.conditionOutOfRange": "조건이 규칙 적용 범위 밖입니다.",
+  "reaction.abstained": "휴리스틱 엔진이 결과를 추정하지 못했습니다.",
+  "reaction.rdkitNotReady": "화학 엔진이 아직 준비되지 않았습니다.",
+  "reaction.embedFailed": "생성물의 3D 구조를 만들지 못했습니다.",
+  "reaction.ruleEngineDeferred": "규칙 기반 예측은 현재 비활성화되어 있습니다(휴리스틱만 동작)."
 }

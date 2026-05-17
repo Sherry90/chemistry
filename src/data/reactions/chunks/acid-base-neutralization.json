@@ -1,0 +1,22 @@
+{
+  "version": "2026-05-17T00:00:00.000Z",
+  "category": "acid-base-neutralization",
+  "rules": [
+    {
+      "id": "ab-strong-acid-hydroxide",
+      "smarts": "[OX2H1:1].[#1:2][Cl,Br,I:3]>>[OX2H0-:1].[#1:2]",
+      "conditionRange": {
+        "temperatureK": [273, 373],
+        "pH": [0, 14]
+      },
+      "thermo": "exothermic",
+      "source": "in-house (unverified placeholder — heuristic-era; needs chemist review when rule engine opens)",
+      "priority": 0,
+      "confidence": "high",
+      "categories": ["acid-base-neutralization"],
+      "version": "2026-05-17T00:00:00.000Z",
+      "license": "in-house",
+      "requiredElements": [1, 8, 17]
+    }
+  ]
+}

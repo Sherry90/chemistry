@@ -1,0 +1,3 @@
+# Phase 06 seed — esterification-hydrolysis. Tab-separated. '#' lines = comments.
+id	smarts	categories	thermo	priority	confidence	source	license	condition_t_min	condition_t_max	condition_p_min	condition_p_max	condition_ph_min	condition_ph_max	required_elements	notes_ko	notes_en
+est-fischer	[CX3:1](=[OX1:2])[OX2H1:3].[OX2H1:4][#6:5]>>[CX3:1](=[OX1:2])[OX2:3][#6:5].[OX2H2:4]	esterification-hydrolysis	endothermic	1	medium	in-house curated	in-house	298	420					C,O	피셔 에스터화	Fischer esterification
