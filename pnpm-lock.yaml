@@ -20,6 +20,9 @@ importers:
       idb:
         specifier: ^8.0.3
         version: 8.0.3
+      immer:
+        specifier: ^11.1.8
+        version: 11.1.8
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -34,7 +37,7 @@ importers:
         version: 4.4.3
       zustand:
         specifier: ^5.0.3
-        version: 5.0.12(@types/react@18.3.28)(react@18.3.1)
+        version: 5.0.12(@types/react@18.3.28)(immer@11.1.8)(react@18.3.1)
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -1768,6 +1771,9 @@ packages:
   ignore@7.0.5:
     resolution: {integrity: sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==}
     engines: {node: '>= 4'}
+
+  immer@11.1.8:
+    resolution: {integrity: sha512-/tbkHMW7y10Lx6i1crLjD4/OhNkRG+Fo7byZHtah0547nIeXYcpIXaUh0IAQY6gO5459qpGGYapcEOHtFXkIuA==}
 
   import-fresh@3.3.1:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
@@ -4646,6 +4652,8 @@ snapshots:
 
   ignore@7.0.5: {}
 
+  immer@11.1.8: {}
+
   import-fresh@3.3.1:
     dependencies:
       parent-module: 1.0.1
@@ -5936,7 +5944,8 @@ snapshots:
 
   zod@4.4.3: {}
 
-  zustand@5.0.12(@types/react@18.3.28)(react@18.3.1):
+  zustand@5.0.12(@types/react@18.3.28)(immer@11.1.8)(react@18.3.1):
     optionalDependencies:
       '@types/react': 18.3.28
+      immer: 11.1.8
       react: 18.3.1

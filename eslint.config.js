@@ -207,6 +207,13 @@ export default [
               message:
                 'Reaction internals/data are private. Import public barrels only: @/engine/reaction or @/data/reactions (types via @/chemistry/reactions/types).',
             },
+            // Phase 07 §7 — stores 공개 경계. 외부는 @/stores 배럴만 import.
+            // src/stores/** 자체는 상대 경로(./x)로 내부 결합 → 본 패턴 비매칭.
+            {
+              group: ['@/stores/*'],
+              message:
+                'Stores are private behind the barrel. Import the public barrel only: @/stores (Phase 07 §7).',
+            },
           ],
         },
       ],
