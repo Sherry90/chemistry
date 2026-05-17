@@ -248,6 +248,47 @@ export default [
     },
   },
 
+  // Phase 08 §7.1 — viewport 레이어 가드. viewport 는 @/stores + @/chemistry/* 만.
+  // flat-config 는 매칭 파일당 rule 을 *교체* 하므로 본 블록은 viewport 에 적용될
+  // no-restricted-imports 전체(공유 private 패턴 + viewport 전용)를 자기-완결로 담는다.
+  {
+    files: ['src/viewport/**/*.{ts,tsx}'],
+    rules: {
+      // R3F intrinsic 요소(<group/><instancedMesh/><color/>…)는 three.js props 사용 —
+      // eslint-plugin-react 의 HTML 속성 검사는 viewport 에 부적용.
+      'react/no-unknown-property': 'off',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['idb'],
+              message:
+                'idb must only be imported from src/services/cache/. viewport must not touch it.',
+            },
+            {
+              group: ['@/engine/*', '@/engine', '@/services/*', '@/services', '@/data/*', '@/data'],
+              message:
+                'viewport 는 stores 와 chemistry 만 import 할 수 있습니다 (architecture §4.1).',
+            },
+            {
+              group: ['@/panels/*', '@/app/*', '@/components/*'],
+              message: 'viewport 는 UI 상위 레이어를 import 할 수 없습니다.',
+            },
+            {
+              group: ['@/stores/*'],
+              message: 'Import the stores barrel only: @/stores (Phase 07 §7).',
+            },
+            {
+              group: ['@/viewport/_shared/poolRegistry', '**/viewport/_shared/poolRegistry'],
+              message: 'poolRegistry 는 viewport 내부 전용 (상대 경로로만, 외부 변경 금지).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Node.js globals for build scripts
   {
     files: ['scripts/**/*.ts'],

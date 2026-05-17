@@ -1,0 +1,93 @@
+// Phase 08 §6.3 — 결합 cylinder 풀 (단일 풀, mid-split 2색 + 차수 평행 변위).
+import type * as React from 'react';
+import { useEffect, useMemo, useLayoutEffect, useState } from 'react';
+import * as THREE from 'three';
+import type { Molecule, Atom } from '@/chemistry/compounds/types';
+import type { AtomId } from '@/chemistry/compounds/ids';
+import {
+  bondPoolRegistry,
+  allocBondSlots,
+  freeBondSlots,
+  setBondMatrix,
+} from '../../_shared/poolRegistry';
+import {
+  bondTransform,
+  splitBondTransforms,
+  parallelOffsetFactors,
+  perpendicularTo,
+  type V3,
+} from '../geometry/bondTransform';
+import { bondSplitColors } from '../../_shared/colors';
+import { cylinderGeometryFor } from '../../_shared/lod';
+import { BOND_RADIUS_ANGSTROM, BOND_PARALLEL_OFFSET } from '../../_shared/constants';
+import type { LodLevel } from '../../_shared/types';
+
+const bondMaterial = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0 });
+const _color = new THREE.Color();
+
+export interface BondInstancesProps {
+  readonly molecule: Molecule;
+  readonly lod: LodLevel;
+}
+
+export function BondInstances({ molecule, lod }: BondInstancesProps): React.ReactElement | null {
+  const molId = molecule.id;
+  const [, bump] = useState(0);
+
+  const atomById = useMemo(() => {
+    const m = new Map<AtomId, Atom>();
+    for (const a of molecule.atoms) m.set(a.id, a);
+    return m;
+  }, [molecule]);
+
+  // 부수효과 → useLayoutEffect (useMemo 안 side-effect 금지, advisor 검토 반영).
+  useLayoutEffect(() => {
+    const pool = bondPoolRegistry.ensure(molId, cylinderGeometryFor(lod), bondMaterial);
+    const live = new Set(molecule.bonds.map((b) => b.id));
+    for (const id of [...pool.bondIdToSlots.keys()]) {
+      if (!live.has(id)) freeBondSlots(pool, id);
+    }
+    for (const bond of molecule.bonds) {
+      const a = atomById.get(bond.aAtomId);
+      const b = atomById.get(bond.bAtomId);
+      if (!a || !b) continue;
+      const pa: V3 = [a.position.x, a.position.y, a.position.z];
+      const pb: V3 = [b.position.x, b.position.y, b.position.z];
+      const axis: V3 = [pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]];
+      const perp = perpendicularTo(axis);
+      const factors = parallelOffsetFactors(bond.order);
+      const split = bondSplitColors(a.elementNumber, b.elementNumber);
+      const cylPerLine = split.single ? 1 : 2;
+      const slots = allocBondSlots(pool, bond.id, factors.length * cylPerLine);
+
+      let si = 0;
+      for (const f of factors) {
+        const d = f * BOND_PARALLEL_OFFSET;
+        const ao: V3 = [pa[0] + perp[0] * d, pa[1] + perp[1] * d, pa[2] + perp[2] * d];
+        const bo: V3 = [pb[0] + perp[0] * d, pb[1] + perp[1] * d, pb[2] + perp[2] * d];
+        if (split.single) {
+          const slot = slots[si++]!;
+          setBondMatrix(pool, slot, bondTransform(ao, bo, BOND_RADIUS_ANGSTROM));
+          pool.mesh.setColorAt(slot, _color.set(split.a));
+        } else {
+          const [m1, m2] = splitBondTransforms(ao, bo, BOND_RADIUS_ANGSTROM);
+          const s1 = slots[si++]!;
+          const s2 = slots[si++]!;
+          setBondMatrix(pool, s1, m1);
+          pool.mesh.setColorAt(s1, _color.set(split.a));
+          setBondMatrix(pool, s2, m2);
+          pool.mesh.setColorAt(s2, _color.set(split.b));
+        }
+      }
+      if (pool.mesh.instanceColor) pool.mesh.instanceColor.needsUpdate = true;
+    }
+    bump((n) => n + 1);
+  }, [molecule, atomById, lod, molId]);
+
+  useEffect(() => {
+    return () => bondPoolRegistry.deleteAll(molId);
+  }, [molId]);
+
+  const mesh = bondPoolRegistry.find(molId)?.mesh;
+  return mesh ? <primitive object={mesh} /> : null;
+}
