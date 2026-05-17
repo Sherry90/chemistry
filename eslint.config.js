@@ -283,18 +283,9 @@ export default [
               group: ['@/viewport/_shared/poolRegistry', '**/viewport/_shared/poolRegistry'],
               message: 'poolRegistry 는 viewport 내부 전용 (상대 경로로만, 외부 변경 금지).',
             },
-            // Phase 09 §7.1 — undo 내부 모듈은 viewport/undo 내부 전용.
-            // createUndoStack / useUndoStack 만 barrel 노출.
-            {
-              group: [
-                '@/viewport/undo/snapshot',
-                '@/viewport/undo/types',
-                '**/viewport/undo/snapshot',
-                '**/viewport/undo/types',
-              ],
-              message:
-                'undo 내부 모듈은 viewport/undo 내부 전용. createUndoStack/useUndoStack 만 외부 노출 (Phase 09 §7.1).',
-            },
+            // Phase 09 §7.1 — undo 코어는 stores 레이어(`@/stores/_shared/undo`)
+            // 로 이전. 외부 deep-import 는 기존 `@/stores/*` 배럴 가드가 이미
+            // 차단 (createUndoStack/useUndoStack 은 @/stores 배럴로만).
             {
               group: [
                 '@/viewport/animations/animationRegistry',

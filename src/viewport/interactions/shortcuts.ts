@@ -1,7 +1,7 @@
 // Phase 09 §4.3 / §4.4 / §5.2 / §5.5 / §6.8 (D10/D11) — 단축키 표 + 전역 설치.
 // 두 스코프: 'global'(window listener + 텍스트 입력 가드) / 'viewport'(focused
 // 컨테이너 onKeyDown). 라이브러리 0개 — native KeyboardEvent.
-import { undoDispatcher, type UndoableDispatcher } from '@/stores';
+import { dispatcher as activeUndoDispatcher, type UndoableDispatcher } from '@/stores';
 import { isTextInputTarget } from './textInputGuard';
 
 export type KeyActionId =
@@ -109,7 +109,7 @@ export function describeKey(binding: KeyBinding): string {
 export function installGlobalUndoShortcuts(opts?: {
   readonly dispatcher?: UndoableDispatcher;
 }): () => void {
-  const dispatcher = opts?.dispatcher ?? undoDispatcher;
+  const dispatcher = opts?.dispatcher ?? activeUndoDispatcher;
   const onKeyDown = (e: KeyboardEvent): void => {
     if (isTextInputTarget(e.target)) return; // D10
     for (const b of KEY_MAP) {

@@ -1,7 +1,7 @@
 // Phase 09 §8.1 — undoStack push/pop/group 합치기/FIFO drop/pending flush.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createUndoStack } from '@/viewport/undo/undoStack';
-import type { UndoSnapshot } from '@/viewport/undo/types';
+import { createUndoStack } from '@/stores';
+import type { UndoSnapshot } from '@/stores/_shared/undo/types';
 import type { UndoableActionKind, UndoableMeta } from '@/stores';
 
 // 구별 가능한 가짜 snapshot — activeId 를 태그로 재활용.

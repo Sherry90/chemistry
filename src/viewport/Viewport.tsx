@@ -4,12 +4,16 @@ import type * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import { setUndoDispatcher, resetUndoDispatcher } from '@/stores';
+import {
+  setUndoDispatcher,
+  resetUndoDispatcher,
+  createUndoStack,
+  clearActiveUndoStack,
+} from '@/stores';
 import { detectWebGL2 } from './capability/webgl2';
 import { Scene } from './scene/Scene';
 import { atomPoolRegistry, bondPoolRegistry } from './_shared/poolRegistry';
 import { DEFAULT_FOV } from './_shared/constants';
-import { createUndoStack, clearActiveUndoStack } from './undo/undoStack';
 import { installGlobalUndoShortcuts } from './interactions/shortcuts';
 import { createViewportShortcutHandler } from './interactions/useViewportShortcuts';
 import { viewportFocusProps } from './interactions/_focus';

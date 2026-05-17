@@ -6,7 +6,7 @@
 //   immer 래핑 여부와 무관하게 동일 결과(actions/ingest/canUndo 보존 + 정확히
 //   세 키만 교체)를 보장하며, snap 의 frozen 참조를 그대로 대입하므로 D1/P6 의
 //   구조적 공유도 보존된다. replace=false (기본) — 나머지 키 머지 (문서 §6.1.2 주).
-import { useMoleculeStore } from '@/stores';
+import { useMoleculeStore } from '../../moleculeStore';
 import type { UndoSnapshot } from './types';
 
 export function readSnapshot(): UndoSnapshot {

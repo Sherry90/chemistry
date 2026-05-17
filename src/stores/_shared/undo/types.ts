@@ -1,7 +1,9 @@
 // Phase 09 §4.1 — Undo 자료구조. molecules/ids/activeId 만 snapshot (UI/reaction/
 // settings 보존, D14). D1+P6: full snapshot — immer 구조적 공유로 변경 안 된
 // 분자/원자/결합은 prev/next 가 같은 참조 → 메모리 0 추가.
-import type { MoleculeStoreState, UndoableMeta, UndoableActionKind } from '@/stores';
+// 본 모듈은 stores 레이어 내부 — 배럴(@/stores) 대신 상대 import (cycle 회피).
+import type { MoleculeStoreState } from '../../moleculeStore.types';
+import type { UndoableMeta, UndoableActionKind } from '../undoable';
 
 export interface UndoSnapshot {
   readonly molecules: MoleculeStoreState['molecules'];

@@ -3,7 +3,7 @@ import type * as React from 'react';
 import { useImperativeHandle } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useMoleculeStore, undoDispatcher } from '@/stores';
+import { useMoleculeStore, dispatcher } from '@/stores';
 import { createBondFromSelection as createBondFromSelectionImpl } from '../interactions/useBondCreateFlow';
 import {
   computeBBox,
@@ -123,8 +123,8 @@ export function ViewportApiBridge({
       },
       getRenderer: () => gl,
       // ── Phase 09 stub 본문 교체 (인터페이스는 Phase 08 소유·동결) ──
-      canUndo: () => undoDispatcher.canUndo(),
-      canRedo: () => undoDispatcher.canRedo(),
+      canUndo: () => dispatcher.canUndo(),
+      canRedo: () => dispatcher.canRedo(),
       createBondFromSelection: () => createBondFromSelectionImpl(),
     }),
     [gl, scene, camera, controls],

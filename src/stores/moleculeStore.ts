@@ -10,8 +10,9 @@ import type { Result } from '@/types/result';
 import { ok, err } from '@/types/result';
 import { logger } from '@/utils/logger';
 import { createAppStore } from './_shared/createStore';
-// Phase 09: placeholder → undoDispatcher proxy (DI). 액션 본문 불변 — 바인딩만 교체.
-import { undoDispatcher as dispatcher } from './_shared/undoable';
+// Phase 09: placeholder → swappable `dispatcher` 싱글톤 (phase-11 §1942 패턴).
+// 액션 본문 불변 — createUndoStack() 주입은 setUndoDispatcher 가 처리.
+import { dispatcher } from './_shared/undoable';
 import { newMoleculeId, type IngestError, type MoleculeId } from './_shared/types';
 import { withGlobalLoading, cascadeRemoveMolecule } from './_shared/_crossStore';
 import { makeInitialMoleculeState, type MoleculeStoreState } from './moleculeStore.types';

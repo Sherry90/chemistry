@@ -17,10 +17,9 @@ vi.mock('@/engine/reaction', () => ({ predict: vi.fn() }));
 
 import { useMoleculeStore, __resetMoleculeInternals } from '@/stores/moleculeStore';
 import { makeInitialMoleculeState } from '@/stores/moleculeStore.types';
-import { setUndoDispatcher, resetUndoDispatcher } from '@/stores';
-import { createUndoStack } from '@/viewport/undo/undoStack';
+import { setUndoDispatcher, resetUndoDispatcher, createUndoStack } from '@/stores';
 import type { AtomId } from '@/chemistry/compounds/ids';
-import { fakeMolecule, hardReset } from '../../stores/_helpers';
+import { fakeMolecule, hardReset } from '../_helpers';
 
 const acts = () => useMoleculeStore.getState().actions;
 const st = () => useMoleculeStore.getState();

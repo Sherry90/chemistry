@@ -73,13 +73,15 @@ export {
 } from './selectors';
 export type { MoleculeSnapshot } from './selectors';
 
-// ── Undoable 시스템 — Phase 09 가 dispatcher 본 구현을 DI 로 주입 ──
-// undoDispatcher: 스토어/뷰포트가 쓰는 안정 proxy. setUndoDispatcher: viewport
-// 마운트가 createUndoStack() 결과 주입 (stores→viewport 레이어 위반 회피).
+// ── Undoable 시스템 — swappable `dispatcher` 싱글톤 + createUndoStack 본 구현 ──
+// `dispatcher`: 스토어/UI 가 쓰는 안정 식별자 (phase-11 §1942 패턴).
+// setUndoDispatcher: createUndoStack() 결과 주입 (phase-09 <Viewport>,
+// phase-10 §6.6 AppLayout). createUndoStack/useUndoStack 은 stores 레이어
+// `./_shared/undo` (R3F 비의존 → architecture §4.1).
 export type { UndoableActionKind, UndoableDispatcher } from './_shared/undoable';
 export {
   phase07PlaceholderDispatcher,
-  undoDispatcher,
+  dispatcher,
   setUndoDispatcher,
   resetUndoDispatcher,
   getActiveUndoDispatcher,
@@ -87,6 +89,8 @@ export {
   endUndoGroup,
   getCurrentUndoGroup,
 } from './_shared/undoable';
+export { createUndoStack, clearActiveUndoStack, useUndoStack } from './_shared/undo';
+export type { UndoStackOpts } from './_shared/undo';
 
 // ── 알림 큐 상한 (Phase 11 토스트 컴포넌트 참고) ──
 export { NOTIFICATION_QUEUE_MAX } from './_shared/notifications';

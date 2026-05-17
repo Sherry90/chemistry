@@ -1,7 +1,10 @@
 // Phase 09 §4.2 / §5.1 / §6.1 — UndoableDispatcher 본 구현.
 // D1 full snapshot, D2 capacity=50 FIFO, D3 group 200ms 합치기, P7 redo clear.
-// stores→viewport 레이어 위반 회피: 본 모듈은 viewport 에 위치, <Viewport /> 가
-// setUndoDispatcher 로 stores 의 proxy 에 주입 (§5.1, undoable.ts 주석 참조).
+// 위치: stores 레이어 (`@/stores/_shared/undo`) — createUndoStack 은 viewport/
+// R3F 의존이 전혀 없는 순수 store snapshot 로직이므로 architecture §4.1 상
+// 의존을 만족하는 가장 낮은 레이어에 둔다. phase-10 §6.6 / phase-11 §1942 /
+// phase-13 §4.2 가 본 모듈을 stores 싱글톤으로 참조 (DI swap). undoable.ts 의
+// `dispatcher` proxy 가 <Viewport>/AppLayout 마운트 시 setUndoDispatcher 로 주입.
 import { createStore } from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
 import {
@@ -9,7 +12,7 @@ import {
   type UndoableDispatcher,
   type UndoableMeta,
   type UndoableActionKind,
-} from '@/stores';
+} from '../undoable';
 import { readSnapshot as defaultRead, writeSnapshot as defaultWrite } from './snapshot';
 import {
   DEFAULT_UNDO_STACK,

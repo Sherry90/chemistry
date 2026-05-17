@@ -18,8 +18,8 @@ import { useMoleculeStore, __resetMoleculeInternals } from '@/stores/moleculeSto
 import { makeInitialMoleculeState } from '@/stores/moleculeStore.types';
 import { useUiStore } from '@/stores/uiStore';
 import { makeInitialUiState } from '@/stores/uiStore.types';
-import { readSnapshot, writeSnapshot } from '@/viewport/undo/snapshot';
-import { fakeMolecule, hardReset } from '../../stores/_helpers';
+import { readSnapshot, writeSnapshot } from '@/stores/_shared/undo/snapshot';
+import { fakeMolecule, hardReset } from '../_helpers';
 
 function seed(): { m1: Molecule; m2: Molecule } {
   const m1 = fakeMolecule();

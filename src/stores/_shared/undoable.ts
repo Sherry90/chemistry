@@ -48,22 +48,22 @@ export const phase07PlaceholderDispatcher: UndoableDispatcher = {
   canRedo: () => false,
 };
 
-// ── Phase 09 — dispatcher DI (레이어 가드 준수) ────────────────────────────
-// Phase 09 §5.1 / §7 / §12 는 "phase07PlaceholderDispatcher 를 createUndoStack()
-// 결과로 교체" 를 요구한다. 그러나 `createUndoStack` 은 viewport 레이어
-// (src/viewport/undo/) 에 위치하고, architecture §4.1 + eslint no-restricted-paths
-// (`{target:'src/stores', from:['src/viewport',...]}`) 가 stores→viewport import 를
-// 금지한다. 직접 import 는 레이어 위반이므로, 본 모듈은 *안정 proxy* 를 소유하고
-// viewport 의 <Viewport /> 마운트가 `setUndoDispatcher` 로 본 구현을 주입한다
-// (viewport→stores 는 허용 방향). 인터페이스·호출자 코드 불변 — 문서 의도 유지.
+// ── Phase 09 — dispatcher 싱글톤 swap (phase-07 §6.4 / phase-11 §1942 패턴) ──
+// 호출자(moleculeStore 액션, ViewportApiBridge)는 *안정* `dispatcher` 식별자를
+// import 한다. 메소드 본문이 모듈-로컬 `current` 를 위임 read 하므로,
+// `setUndoDispatcher` 가 내부 구현을 createUndoStack() 결과로 교체해도 호출자
+// 코드는 한 줄도 바뀌지 않는다 (phase-11 §1942 "export 시점 swap, 호출자 무변경").
+// createUndoStack 은 동일 stores 레이어(`./undo`)에 있어 레이어 위반 없음 —
+// phase-09 §5.1 의 "교체" 약속을 식별자·인터페이스 동결로 충족 (DI 주입 지점은
+// phase-09 = <Viewport>, phase-10 §6.6 = AppLayout UndoableDispatcherProvider).
 let current: UndoableDispatcher = phase07PlaceholderDispatcher;
 
 /**
- * 스토어/뷰포트가 import 하는 *안정* dispatcher. 메소드 본문이 모듈-로컬
- * `current` 를 위임 read 하므로, `setUndoDispatcher` 가 본 구현을 갈아끼워도
- * import 한 모든 호출자가 즉시 새 구현을 사용한다 (ESM 라이브 바인딩 의존 없음).
+ * 스토어/UI 가 import 하는 *안정* dispatcher (phase-07 §659–664 의 export 변수
+ * 패턴). `setUndoDispatcher` 로 본 구현을 갈아끼워도 import 한 모든 호출자가
+ * 즉시 새 구현을 사용 (ESM 라이브 바인딩 의존 없음).
  */
-export const undoDispatcher: UndoableDispatcher = {
+export const dispatcher: UndoableDispatcher = {
   dispatchUndoable: (meta, mutator) => current.dispatchUndoable(meta, mutator),
   undo: () => current.undo(),
   redo: () => current.redo(),
@@ -71,17 +71,17 @@ export const undoDispatcher: UndoableDispatcher = {
   canRedo: () => current.canRedo(),
 };
 
-/** Phase 09 <Viewport /> 마운트 시 createUndoStack() 결과 주입. */
+/** createUndoStack() 결과 주입 — phase-09 <Viewport>, phase-10 AppLayout. */
 export function setUndoDispatcher(d: UndoableDispatcher): void {
   current = d;
 }
 
-/** <Viewport /> unmount / 테스트 afterEach — placeholder 로 복귀. */
+/** unmount / 테스트 afterEach — placeholder 로 복귀 (R9). */
 export function resetUndoDispatcher(): void {
   current = phase07PlaceholderDispatcher;
 }
 
-/** 현재 활성 dispatcher (테스트/디버그 전용 — 일반 코드는 undoDispatcher 사용). */
+/** 현재 활성 dispatcher (테스트/디버그 전용 — 일반 코드는 `dispatcher` 사용). */
 export function getActiveUndoDispatcher(): UndoableDispatcher {
   return current;
 }
