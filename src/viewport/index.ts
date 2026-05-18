@@ -26,11 +26,18 @@ export type {
   ViewportAtomId,
   ViewportBondId,
   ViewportId,
+  WebGLDetectResult, // Phase 10 §4.3 — useWebGL2Detection / WebGL2FallbackPage
 } from './_shared/types';
 
 // ── Phase 09 §7.2 추가 공개 경계 ──
 // createUndoStack / useUndoStack 은 stores 레이어로 이전 (`@/stores` 배럴) —
 // R3F 비의존 + phase-10/11/13 가 stores 싱글톤으로 참조 (architecture §4.1).
-export { KEY_MAP, describeKey, type KeyBinding, type KeyActionId } from './interactions/shortcuts';
+export {
+  KEY_MAP,
+  describeKey,
+  installGlobalUndoShortcuts, // phase-10 §5.3 — installAppShortcuts 가 배럴로 소비
+  type KeyBinding,
+  type KeyActionId,
+} from './interactions/shortcuts';
 export type { BondCreateFlowApi, BondCreateFlowState } from './interactions/useBondCreateFlow';
 export { isTextInputTarget } from './interactions/textInputGuard';

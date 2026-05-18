@@ -1,20 +1,18 @@
-// Phase 08 §5.1 / §6.11 + Phase 09 §5.5/§6.1/§6.8 (D11/R9) — <Canvas> 진입 +
-// WebGL2 가드 + apiRef bridge + undo dispatcher 주입 + 단축키 설치.
+// Phase 08 §5.1 / §6.11 + Phase 09 §6.8 (D11) — <Canvas> 진입 + WebGL2 가드 +
+// apiRef bridge + viewport-focused 단축키.
+// (v0.x 정합) Phase 10 §6.1 이 AppLayout 에서 createUndoStack()+컨텍스트+
+// installAppShortcuts(전역 단축키) 를 단일 소유한다. 이중 스택/리스너 방지를
+// 위해 Phase 09 가 본 컴포넌트에 두었던 dispatcher/스택/전역단축키 useEffect 는
+// 제거(AppLayout 가 인수 — phase-10 §12.2 정합). viewport-focused(β) 핸들러만
+// 유지. <Viewport> 단독 마운트 시 dispatcher 는 placeholder (AppLayout 가 합성 루트).
 import type * as React from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import {
-  setUndoDispatcher,
-  resetUndoDispatcher,
-  createUndoStack,
-  clearActiveUndoStack,
-} from '@/stores';
 import { detectWebGL2 } from './capability/webgl2';
 import { Scene } from './scene/Scene';
 import { atomPoolRegistry, bondPoolRegistry } from './_shared/poolRegistry';
 import { DEFAULT_FOV } from './_shared/constants';
-import { installGlobalUndoShortcuts } from './interactions/shortcuts';
 import { createViewportShortcutHandler } from './interactions/useViewportShortcuts';
 import { viewportFocusProps } from './interactions/_focus';
 import type { ViewportApi, ViewportProps } from './_shared/types';
@@ -41,22 +39,8 @@ const Viewport: React.FC<ViewportProps> = ({ apiRef: externalApiRef, fallback, c
     };
   }, []);
 
-  // Phase 09 §5.1/§6.1 — placeholder → createUndoStack() 주입 (DI, 레이어 준수).
-  // §6.8 — 전역 undo/redo 단축키 설치. R9 — unmount 시 flush+clear+reset.
-  useEffect(() => {
-    const stack = createUndoStack();
-    setUndoDispatcher(stack);
-    const offShortcuts = installGlobalUndoShortcuts();
-    return () => {
-      offShortcuts();
-      stack.flush();
-      stack.clear();
-      clearActiveUndoStack(stack);
-      resetUndoDispatcher();
-    };
-  }, []);
-
   // Viewport-focused 단축키 (β 스코프) — 포커스된 컨테이너 onKeyDown 위임.
+  // 전역(α) undo/redo + createUndoStack 주입은 Phase 10 AppLayout 소유.
   const onKeyDown = useMemo(
     () =>
       createViewportShortcutHandler({
