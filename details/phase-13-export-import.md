@@ -18,7 +18,7 @@
 6. **phase-09 §12 #13 (a–b) 2 항목 닫음** — export 직전 selection 보존은 viewport rendering 자동 (a), import 시 ID 충돌 → `replaceAll` 패턴 + `dispatcher.clear()` 명시 호출 (b).
 7. **phase-08 captureBlob entry 활용** — `viewportApi.captureBlob({ format, dpr?, transparentBackground? })` 호출. **`format` 을 `'png'|'jpeg'|'webp'` 로 widen 하는 phase-08 retrofit 을 본 Phase 가 소유** (§12.1, Phase 14 로 미루지 않음). `dpr`/`transparentBackground` 시그니처 불변.
 8. **phase-07 `MoleculeSnapshot` 동결** — phase-07 §5.1 line 461 의 책임 ("Phase 13 가 export 포맷 결정 시 동결") 닫음.
-9. **`UndoableDispatcher` 인터페이스 retrofit** — `clear(): void` + `flush(): void` 추가 (phase-09 §4.2 createUndoStack + phase-07 §6.4 placeholder 양쪽 갱신, phase-07 line 1147 명시 허용). phase-09 R9 / §12 line 1140 의 약속 형식적 닫음.
+9. **`UndoableDispatcher` 인터페이스 retrofit (v0.2 정합)** — `clear(): void` + `flush(): void` 를 동결 인터페이스 + `phase07PlaceholderDispatcher` + `dispatcher` proxy 위임에 추가. phase-09 v0.2 의 `createUndoStack()`=`UndoStackController` 는 이미 보유 → 본체 구현 불요(additive only). phase-07 line 1147 명시 허용. phase-09 R9 / §12 line 1140 약속 형식적 닫음.
 10. **moleculeStore retrofit** — (a) `replaceAll(molecules, opts?)` 신규 (replace 모드 진입점). (b) `applyImportedSession(session, opts?)` 신규 (import high-level 진입점, **append 모드 안에서 duplicate 검출** — 옵션 Y). (c) `selectAllMoleculeSnapshots()` selector. (d) `mapIoErrorToKey(e)` selector. **`addFromMolecule` 시그니처 무변경** (옵션 Y 의 핵심).
 11. **uiStore retrofit** — `panels.isIoOpen: boolean`, `panels.ioInitialMode: IoMode | null`, `toggleIo(open?, initialMode?)`, `setIoInitialMode(mode)` 추가. PanelKey 유니온에 `'io'` 추가.
 12. **i18n `panels.io.*` + `common.io.error.*` 채움** — 한·영 양쪽. phase-15 가 최종 폴리싱.
@@ -190,12 +190,22 @@ export const phase07PlaceholderDispatcher: UndoableDispatcher = {
   clear: () => logger.debug('clear() called — Phase 09 가 인수'), // ⟵ 신규
   flush: () => logger.debug('flush() called — Phase 09 가 인수'), // ⟵ 신규
 };
+
+// (v0.2 정합) swappable `dispatcher` proxy 의 위임 목록에도 추가 (현재 5메서드만
+// 위임 — 미추가 시 `import { dispatcher }; dispatcher.clear()` 가 undefined):
+export const dispatcher: UndoableDispatcher = {
+  // ... 기존 5개 위임 ...
+  clear: () => current.clear(), // ⟵ 신규 (current = createUndoStack 결과 = UndoStackController)
+  flush: () => current.flush(), // ⟵ 신규
+};
 ```
 
-phase-09 `createUndoStack()` 본 구현 retrofit (소급):
+**(v0.2 정합)** phase-09 v0.2 의 `createUndoStack()` 반환 `UndoStackController` 는 **이미 `clear()`/`flush()` 보유** (소급 retrofit 불요):
 
-- `clear()`: `stack.length = 0; redoStack.length = 0; pendingMergeTimeout && clearTimeout(...)`.
-- `flush()`: pendingMerge timeout 즉시 dispatch (취소 아님 — 발화).
+- `clear()`: 내부 zustand-vanilla 스택을 `DEFAULT_UNDO_STACK` 으로 리셋 (past/future/pending 비움).
+- `flush()`: `flushPending()` — pending 그룹을 past 로 즉시 확정.
+
+→ 본 Phase retrofit 은 인터페이스 + placeholder + `dispatcher` proxy 위임 (위 3곳) 에만 additive. `current` 의 실 구현은 phase-09 v0.2 가 제공.
 
 #### MoleculeCard 변경 없음
 
@@ -259,7 +269,7 @@ phase-09 `createUndoStack()` 본 구현 retrofit (소급):
 - **공용 타입**: `IngestError`, `AsyncState<T,E>`, `MoleculeId`, `Notification`, `PanelKey` (확장), `Condition` (phase-06 의 타입 phase-07 가 re-export).
 - **UndoableDispatcher 인터페이스 retrofit**: `clear()` + `flush()` 추가 (phase-07 §6.4 + phase-09 §4.2 소급). |
   | **08 (Rendering)** | `ViewportApi.captureBlob({ format, dpr?, transparentBackground? }): Promise<Blob>`. App.tsx 가 `<AppLayout viewportApiRef>` 로 ref 노출 — 본 Phase 의 `<IoDialog>` 가 동일 ref 참조 (phase-11 의 Toolbar `apiRef` 와 동일 ref). 다른 ViewportApi 메서드 (frameActive/frameAll/resetCamera/getRenderer) 는 본 Phase 미사용. |
-  | **09 (Interactions)** | `getStoreUndoableDispatcher()` (phase-07 §6.4 / phase-09 §4.2 가 swap 하는 module-level 싱글톤, §6.14) 로 dispatcher 접근. `dispatcher.clear()` 호출 (D8) — JSON Import 후 새 baseline. `dispatcher.flush()` 는 본 Phase 미호출 (HMR 안전 책임은 phase-09). selection slice 그대로 보존 — export 시 PNG 캡처가 자동 포함, JSON 에 _index 기반_ 형식 직렬화. |
+  | **09 (Interactions)** | **(v0.2)** `@/stores` 배럴의 swappable `dispatcher` proxy (phase-07 §659–664 / phase-09 v0.2 가 `createUndoStack()`=`UndoStackController` 로 swap, §6.14) 로 접근. `dispatcher.clear()` 호출 (D8) — JSON Import 후 새 baseline. `dispatcher.flush()` 는 본 Phase 미호출 (HMR 안전 책임은 phase-09). 초안의 `getStoreUndoableDispatcher()` 접근자 폐기 — 식별자 `dispatcher`. selection slice 그대로 보존 — export 시 PNG 캡처가 자동 포함, JSON 에 _index 기반_ 형식 직렬화. |
   | **10 (UI Framework)** | 13 primitives 일부 — `Dialog` (Root/Trigger/Content/Title/Description/Close), `Tabs` (Root/List/Trigger/Content), `Button`, `IconButton`, `Switch`, `Slider`, `Tooltip`, `Spinner`, `Label`, `Separator`, `Popover` (Toolbar dropdown), `VisuallyHidden`. **`<Input>` 미사용** (file input 은 native HTML). `<LoadingOverlay variant="panel">` (모달 안 진행 표시), `<PanelErrorBoundary panelKey="io" slotName="modal">`, `registerPanel`, `<ModalHost>`. **신규 primitive 0**. |
   | **11 (UI Panels)** | Toolbar `<ViewportGroup/>` retrofit (Capture PNG 임시 헬퍼 제거 + Export dropdown + Import 버튼). `<MoleculeCard/>` 변경 없음 (export 미리보기 미사용). `lucide-react` 의 `Download`, `Upload`, `Image`, `FileText`, `Atom`, `AlertCircle`, `RefreshCw`, `X` 아이콘. |
   | **12 (Text Input Pipeline)** | `<TextInputDialog/>` 의 IoDialog 구조 패턴 답습 (Tabs / Footer / Submit / ErrorMessage). `mapIngestErrorToKey` 의 `'pubchem'` 분기 — JSON Import 가 PubChem origin 분자를 포함할 때 활용 (phase-12 §6.11 매핑 정합). phase-12 의 모달 측 duplicate 검출 (옵션 b) 보존 — 본 Phase 의 옵션 Y 와 _공존_ (TextInput Submit 경로 = 옵션 b, JSON Import 경로 = 옵션 Y). |
@@ -1834,7 +1844,7 @@ applyImportedSession: async (session: SessionFile, opts?: { mode: 'replace' | 'a
     }));
 
     // 5. dispatcher.clear() (D8)
-    getStoreUndoableDispatcher().clear(); // module-level 싱글톤 접근 (React 컨텍스트 아님)
+    dispatcher.clear(); // v0.2: @/stores 배럴의 swappable `dispatcher` proxy (React 컨텍스트 아님)
 
     return { ok: true, value: { imported: validMolecules.length, skipped: failures.length } };
   }
@@ -1863,20 +1873,21 @@ applyImportedSession: async (session: SessionFile, opts?: { mode: 'replace' | 'a
   // append 모드 = condition / selection / viewport 옵션 적용 안 함 (사용자 의도 보존)
 
   // 5. dispatcher.clear() (D8)
-  getStoreUndoableDispatcher().clear();
+  dispatcher.clear(); // v0.2: @/stores 배럴의 `dispatcher` proxy
 
   return { ok: true, value: { imported, skipped } };
 };
 ```
 
-**`getStoreUndoableDispatcher(): UndoableDispatcher`** — 정확 정의 (헤지 제거): `src/stores/_shared/undoable.ts` 가 export 하는 **module-level 싱글톤 접근자**. moleculeStore 액션이 내부적으로 쓰는 바로 그 dispatcher 인스턴스를 반환한다 (React 컨텍스트 아님 — store action 안에서 호출되므로 hook 불가). 초기에는 phase-07 `phase07PlaceholderDispatcher`, phase-09 §4.2 가 `createUndoStack()` 결과로 **싱글톤 내부 구현을 swap** (접근자 시그니처·식별자 불변). 시그니처:
+**(v0.2 정합) `dispatcher` swappable 싱글톤 proxy** — 초안의 `getStoreUndoableDispatcher()` 접근자 함수는 폐기. phase-09 v0.2 구현은 `src/stores/_shared/undoable.ts` 가 **안정 식별자 `dispatcher`** (proxy 객체, phase-07 §659–664 / phase-11 §1942 패턴) 를 export 하고 `setUndoDispatcher()` 가 내부 구현(`createUndoStack()` 결과 = `UndoStackController`)을 swap 한다. io 는 `@/stores` 배럴에서 `import { dispatcher } from '@/stores'` 후 `dispatcher.clear()` 호출 (arch §4.1 CD6 — io 의 store 런타임 접근 허용; `@/stores/*` deep-import 가드 회피).
 
 ```ts
-// src/stores/_shared/undoable.ts (phase-07 정의, phase-09 가 본 구현 swap, phase-13 가 clear/flush 추가)
-export function getStoreUndoableDispatcher(): UndoableDispatcher;
+// @/stores 배럴 (phase-07 정의, phase-09 v0.2 가 swap, phase-13 가 clear/flush retrofit)
+import { dispatcher } from '@/stores';
+// dispatcher: UndoableDispatcher (phase-13 retrofit 후 clear()/flush() 포함)
 ```
 
-phase-09 §4.2 가 단일 instance 를 보장하므로 io 가 `@/stores` 배럴 경유로 직접 호출 가능 (arch §4.1 CD6 — io 의 store 런타임 접근 허용). **phase-07 §12.1 인계 등재**: `getStoreUndoableDispatcher` export 추가.
+**phase-13 인터페이스 retrofit 범위 (v0.2 정합)**: `clear()`/`flush()` 는 (a) 동결 `UndoableDispatcher` 인터페이스, (b) `phase07PlaceholderDispatcher`, (c) `dispatcher` proxy 의 위임 목록 — 세 곳에 _추가_. phase-09 v0.2 의 `createUndoStack()` 반환 `UndoStackController` 는 **이미 `clear()`/`flush()` 보유** → 본 retrofit 은 proxy/placeholder/인터페이스에만 additive (구현 본체 불요). 별도 `getStoreUndoableDispatcher` 접근자 export 는 불요 (식별자 = `dispatcher`).
 
 ### 6.15 download 헬퍼 + filename
 
@@ -2414,9 +2425,9 @@ axe 자동 검증은 phase-15.
   - `src/chemistry/session/snapshot.ts` 신설 — `toSnapshot` / `fromSnapshot` 순수 변환 (chemistry 타입 + `createAtomId`/`createBondId` 만 의존).
   - `src/chemistry/session/selection.ts` 신설 — `serializeSelection` / `serializeSelectionWithMolecules` / `deserializeSelection` 순수 변환 (stores `applyImportedSession`·io 양쪽 호출 — chemistry 계층이라 stores→io 역행 없음).
   - `src/chemistry/compounds/regenerateIds.ts` — `withRegeneratedIds(m, newId)` (CD1, 순수; **phase-12 가 신설·소유**, phase-11/13 공용 import; 종전 `@/stores/_shared/regenerateIds` 위치 폐기 — chemistry 계층 상향). 본 Phase 는 신설 아님, import 만.
-  - **`UndoableDispatcher` 인터페이스에 `clear(): void` + `flush(): void` 메서드 추가** (phase-07 §6.4 retrofit). placeholder 도 no-op 추가.
-  - **`getStoreUndoableDispatcher(): UndoableDispatcher` module-level 싱글톤 접근자 export** (`src/stores/_shared/undoable.ts`). io/`applyImportedSession` 이 `clear()` 호출에 사용 (§6.14). phase-09 §4.2 가 내부 구현 swap (접근자 식별자 불변).
-  - barrel `src/stores/index.ts` 갱신 (위 항목 export).
+  - **`UndoableDispatcher` 인터페이스에 `clear(): void` + `flush(): void` 추가** (phase-07 §6.4 retrofit) — (a) 동결 인터페이스, (b) `phase07PlaceholderDispatcher` (no-op), (c) `dispatcher` proxy 위임 목록. **(v0.2)** phase-09 v0.2 의 `createUndoStack()`=`UndoStackController` 는 이미 `clear()`/`flush()` 보유 → 본 retrofit 은 (a)(b)(c) 에만 additive.
+  - **`getStoreUndoableDispatcher` 접근자 신설 불요 (v0.2 폐기)** — phase-09 v0.2 가 이미 `src/stores/_shared/undoable.ts` 의 `dispatcher` 식별자(proxy) + `@/stores` 배럴 export 보유. io/`applyImportedSession` 은 `import { dispatcher } from '@/stores'` 후 `dispatcher.clear()` (§6.14, arch §4.1 CD6).
+  - barrel `src/stores/index.ts`: `dispatcher` 는 phase-09 v0.2 가 이미 export — 본 Phase 는 추가 export 불요 (interface 의 clear/flush 추가만).
 - **phase-09**:
   - `createUndoStack()` 본 구현 (`src/viewport/undo/undoStack.ts`) 에 `clear()` + `flush()` 메서드 본문 추가 — 인터페이스 retrofit 정합.
   - `R9` 의 `dispatcher.flush() + clear()` 호출 약속 = 본 Phase 의 인터페이스 추가로 _형식적으로 닫힘_.
@@ -2471,5 +2482,13 @@ architecture §1.3 ⑧ 충족 (PNG/JSON/SDF export + JSON import). architecture 
 
 ---
 
-_문서 버전: 0.1 (초안)_
-_작성일: 2026-05-01_
+_문서 버전: 0.2 (구현 정합)_
+_작성일: 2026-05-01 (v0.1 초안) / 2026-05-18 (v0.2 — phase-09/10 v0.2 구현과 정합)_
+
+> **v0.2 변경 요약 (forward 정합 — 코드 미변경, phase-13 미구현):**
+>
+> 1. **`getStoreUndoableDispatcher()` 접근자 폐기** — phase-09 v0.2 가 `src/stores/_shared/undoable.ts` 에 안정 식별자 `dispatcher`(proxy) + `@/stores` 배럴 export 를 이미 보유. io 는 `import { dispatcher } from '@/stores'` 후 `dispatcher.clear()` (§6.14/§12.1/hand-off 09 행/§1 #9 정정).
+> 2. **clear/flush retrofit 범위** — 동결 인터페이스 + placeholder + `dispatcher` proxy 위임 3곳에 additive. `createUndoStack()`=`UndoStackController` 는 이미 보유(본체 불요).
+> 3. deep import `@/stores/_shared/undo*` → `@/stores` 배럴 (phase-07 §7 가드 / phase-09 §12 정합).
+>
+> phase-09/10 코드는 본 정합과 무모순. phase-13 구현 시 본 v0.2 spec 대로 작성.

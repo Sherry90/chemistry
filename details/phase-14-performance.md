@@ -113,19 +113,22 @@ Phase 08 의 `format: 'png'` → `'png' | 'jpeg' | 'webp'` 유니온 확장. Pha
 
 ### 2.2 비포함
 
-| 항목                               | 인계 / 확정                     |
-| ---------------------------------- | ------------------------------- |
-| Surface 렌더 모드                  | **post-v1 비목표 최종 확정**    |
-| bond-level crossfade 애니메이션    | **post-v1 비목표 최종 확정**    |
-| SDF Import / drag-and-drop / zod   | §2.1 표 참조 — **post-v1 확정** |
-| E2E Playwright 시나리오            | Phase 15                        |
-| 접근성 자동 검증 (axe)             | Phase 15                        |
-| i18n 문구 최종 폴리싱              | Phase 15                        |
-| WebGL2 fallback 페이지 완성        | Phase 15                        |
-| CVD 모드 완성 (Phase 08 §2.2 인계) | Phase 15                        |
-| ΔH 값 확장                         | **비목표** (architecture §1.4)  |
-| 클라우드 저장 / URL 공유           | **비목표** (architecture §3.9)  |
-| 서버 런타임 / SSR                  | **비목표**                      |
+| 항목                                                                                                                        | 인계 / 확정                      |
+| --------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Surface 렌더 모드                                                                                                           | **post-v1 비목표 최종 확정**     |
+| bond-level crossfade 애니메이션                                                                                             | **post-v1 비목표 최종 확정**     |
+| SDF Import / drag-and-drop / zod                                                                                            | §2.1 표 참조 — **post-v1 확정**  |
+| E2E Playwright 시나리오                                                                                                     | Phase 15                         |
+| 접근성 자동 검증 (axe)                                                                                                      | Phase 15                         |
+| i18n 문구 최종 폴리싱                                                                                                       | Phase 15                         |
+| WebGL2 fallback 페이지 완성                                                                                                 | Phase 15                         |
+| CVD 모드 완성 (Phase 08 §2.2 인계)                                                                                          | Phase 15                         |
+| **(v0.2)** fade 라이브 결선 (Scene retained-id + 렌더러 fadeOpacity threading; phase-09 §11 #13)                            | Phase 15 (시각 회귀 동반)        |
+| **(v0.2)** 인터랙션 컨트롤러 라이브 R3F 결선 (drag/select pointer-event + raycast + per-mol subscription; phase-09 §11 #12) | Phase 15 (Playwright E2E)        |
+| **(v0.2)** multi-hit raycast / 박스 선택 (phase-09 §11 #4·#10)                                                              | Phase 15 인벤토리 (post-v1 검토) |
+| ΔH 값 확장                                                                                                                  | **비목표** (architecture §1.4)   |
+| 클라우드 저장 / URL 공유                                                                                                    | **비목표** (architecture §3.9)   |
+| 서버 런타임 / SSR                                                                                                           | **비목표**                       |
 
 ### 2.3 명시적 비결정 (Phase 14 구현 시 확정)
 
@@ -1461,3 +1464,14 @@ Phase 14 구현 완료 후 아래 수동 검증 수행 (결과를 PR description
 - [ ] `pnpm run lint` 오류 0.
 - [ ] `pnpm run test` (Vitest) 전체 통과.
 - [ ] CI `build-and-test` job 성공 (PR 기준).
+
+---
+
+_문서 버전: 0.2 (구현 정합)_
+_v0.2 (2026-05-18): forward 정합 — 코드 미변경, phase-14 미구현._
+
+> **v0.2 변경 요약:**
+>
+> 1. §2.2 비포함에 phase-09 §11 #12·#13·#4·#10 의 라이브 결선(fade Scene retained-id + 렌더러 fadeOpacity threading, drag/select R3F pointer-event 결선, multi-hit/박스 선택) → **Phase 15** 명시 라우팅 (초안은 phase-09 가 "Phase 14+" 로 모호 인계 → phase-14 §2 perf-only 스코프와 불일치였음).
+> 2. 드래그 throttle 임계(phase-09 §11 #3) 측정·결정은 본 Phase perf 스코프에 포함(§6.x 벤치마크 절차로 처리; 별도 §2.1 행 불요).
+> 3. undo/rrp/fade 식별자·경로 drift 없음(본 Phase 는 LOD/번들/Worker 중심 — 검증 완료).
