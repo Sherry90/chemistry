@@ -71,6 +71,8 @@
 
 **의존 설치 시점**: 위 스택은 **단계적으로 설치**한다. 초기 `package.json` 에는 Phase 01~07 에 필요한 의존(`react`, `zustand`, `@rdkit/rdkit`, `idb`, `zod`, `i18next` 등)만 존재하며, `three` / `@react-three/fiber` / `@react-three/drei` 는 Phase 08, `playwright` 는 Phase 15 착수 시 추가한다 (각 Phase §3 의존성 절에서 명시).
 
+> **(v0.2 진행 현황)** Phase 01–10 구현 완료 → 단계적 설치 narrative 이행됨: `three`/`@react-three/{fiber,drei}` 는 Phase 08 에서, Phase 10 UI 스택(`react-resizable-panels`(**v4**), `@radix-ui/react-*` 9종+`react-slot`, `lucide-react`, `tailwind-merge`)은 Phase 10 에서 설치 완료(현 `package.json` 반영). `playwright` 는 **아직 미설치** — Phase 15(`details/phase-15-testing-polish.md`) 착수 시 추가. (`react-resizable-panels` 는 설치본이 v4 → Group/Panel/Separator API; phase-10 v0.2 정합 참조.)
+
 **주의**: 위 스택 외 라이브러리 추가는 **각 Phase 상세 설계 문서에서 근거와 함께 명시**하고 승인 후 도입한다.
 
 ---
@@ -507,6 +509,22 @@
 1. **상세 설계 문서 작성 → 사용자 검토 → 승인 → 구현**의 순서를 엄수한다.
 2. Phase 간 의존성 역행 금지. 의존 Phase가 미완이면 해당 Phase를 착수하지 않는다.
 3. Phase 완료 시, 해당 Phase 문서에 정의된 **완료 기준(Definition of Done)** 을 모두 만족해야 한다.
+
+> **(v0.2 진행 현황 / 로드맵 정합)**
+>
+> - 구현 완료: Phase 01–10. Phase 09/10 은 구현 중 발생한 spec↔code 모순을
+>   문서에 소급 정합(각 `phase-09/10/11/13/14` v0.2 변경 요약 참조; 코드가
+>   아키텍처 레이어 규칙에 부합하도록 undo 코어를 stores 레이어로 이전 등).
+> - **Phase 15 상세 문서**: `details/phase-15-testing-polish.md` 작성됨 — 전
+>   Phase 가 Phase 15 로 인계한 항목(E2E/i18n/a11y·CVD/번들 검증/에러경계
+>   결정/배포·호스팅/fade·인터랙션 라이브 결선/scope-cut 해소/`playwright`
+>   설치)을 단일 인벤토리·DoD 로 통합. 이전의 "phase-15 doc 부재" orphan 해소.
+> - **post-v1 비목표 (어느 Phase 도 구현하지 않음, 명시 확정)**: 반응 규칙
+>   매칭 엔진(번들 RDKit MinimalLib 에 Reaction API 부재 — phase-06 §2 v1
+>   휴리스틱 전용 확정), bond-level crossfade(§1.3 ⑥), box/drag-drop 선택,
+>   Surface 렌더, SDF/PDB/MOL Import. phase-14 §2.2 / phase-15 §비목표 에 등재.
+> - reaction product → moleculeStore 적재는 **orphan 아님** — phase-11
+>   D-LOAD-PRODUCTS 가 명시 "작업공간에 추가" 버튼으로 닫음.
 
 ---
 
