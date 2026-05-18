@@ -13,5 +13,17 @@
   "reaction.abstained": "휴리스틱 엔진이 결과를 추정하지 못했습니다.",
   "reaction.rdkitNotReady": "화학 엔진이 아직 준비되지 않았습니다.",
   "reaction.embedFailed": "생성물의 3D 구조를 만들지 못했습니다.",
-  "reaction.ruleEngineDeferred": "규칙 기반 예측은 현재 비활성화되어 있습니다(휴리스틱만 동작)."
+  "reaction.ruleEngineDeferred": "규칙 기반 예측은 현재 비활성화되어 있습니다(휴리스틱만 동작).",
+  "common.loading.app": "불러오는 중…",
+  "common.loading.viewport": "3D 뷰포트 불러오는 중…",
+  "common.loading.panel": "패널 불러오는 중…",
+  "panels.empty.hint": "패널을 선택하세요.",
+  "app.webgl2Unsupported.title": "WebGL2 미지원",
+  "app.webgl2Unsupported.reason": "이 브라우저/기기는 3D 분자 뷰포트에 필요한 WebGL2 를 지원하지 않습니다.",
+  "app.webgl2Unsupported.suggestion": "브라우저를 최신 버전으로 업데이트하거나 설정에서 하드웨어 가속/WebGL2 를 활성화하세요.",
+  "app.webgl2Unsupported.docsLink": "https://get.webgl.org/webgl2/",
+  "app.webgl2Unsupported.docsLinkLabel": "WebGL2 활성화 방법",
+  "app.panelError.title": "{{slot}} 패널에서 오류가 발생했습니다",
+  "app.panelError.retry": "다시 시도",
+  "app.panelError.retryExhausted": "재시도 한도 도달"
 }

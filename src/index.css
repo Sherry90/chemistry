@@ -1,3 +1,6 @@
+/* Phase 10 §6.7 — 팔레트 토큰 (base 전 import: utility 가 변수 참조). */
+@import './app/layout/styles/theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

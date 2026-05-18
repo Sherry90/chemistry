@@ -214,6 +214,16 @@ export default [
               message:
                 'Stores are private behind the barrel. Import the public barrel only: @/stores (Phase 07 §7).',
             },
+            // Phase 10 §7.2 — app/layout 내부 helper + components 내부 미노출.
+            // app/layout/** 자체는 상대 경로로 내부 결합 → 본 패턴 비매칭.
+            {
+              group: ['@/app/layout/hooks/*', '@/app/layout/panels/PanelRegistry'],
+              message: 'Use the @/app/layout barrel (Phase 10 §7.2).',
+            },
+            {
+              group: ['@/components/_shared/*'],
+              message: 'Use the @/components barrel (Phase 10 §7.2).',
+            },
           ],
         },
       ],

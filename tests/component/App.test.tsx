@@ -1,20 +1,21 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+// Phase 10 §12.1 — Phase 01 <ErrorBoundary> 삭제·<AppErrorBoundary> 로 교체.
+import { AppErrorBoundary } from '@/app/layout';
 import { I18nProvider } from '@/app/providers/I18nProvider';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
 import { App } from '@/app/App';
 
 function renderApp() {
   return render(
-    <ErrorBoundary>
+    <AppErrorBoundary>
       <I18nProvider>
         <ThemeProvider>
           <App />
         </ThemeProvider>
       </I18nProvider>
-    </ErrorBoundary>,
+    </AppErrorBoundary>,
   );
 }
 
