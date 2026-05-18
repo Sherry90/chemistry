@@ -1035,7 +1035,7 @@ export type { BondCreateFlowApi, BondCreateFlowState } from './interactions/useB
 export { isTextInputTarget } from './interactions/textInputGuard';
 ```
 
-> phase-10 §6.6 은 `import { createUndoStack } from '@/stores/_shared/undo'` 를 쓴다 — 본 경로는 stores 내부 디렉터리 index 라 유효하나, phase-07 §7 의 `@/stores/*` deep-import 가드와의 정합은 **Phase 10 이 `@/stores` 배럴 경유로 정리**(인계 §12). `useFadeOnMount` / `withMoleculeFade` / `installGlobalUndoShortcuts` 등 `<Viewport />` 내부 전용 헬퍼는 barrel 미노출. (`useReactionAnimationDriver` 는 D16 에 따라 v1 미구현.)
+> phase-10 §6.6 은 `import { createUndoStack } from '@/stores/_shared/undo'` 를 쓴다 — 본 경로는 stores 내부 디렉터리 index 라 유효하나, phase-07 §7 의 `@/stores/*` deep-import 가드와의 정합은 **Phase 10 이 `@/stores` 배럴 경유로 정리**(인계 §12). `useFadeOnMount` / `withMoleculeFade` 등 `<Viewport />` 내부 전용 헬퍼는 barrel 미노출. (`useReactionAnimationDriver` 는 D16 에 따라 v1 미구현.) **(phase-10 정합)** `installGlobalUndoShortcuts` 는 phase-10 §5.3 `installAppShortcuts` 가 app 레이어에서 배럴 경유로 필요 → `@/viewport` barrel **노출** (초안의 "미노출" 갱신; Phase 09 가 Viewport 내부에서 호출하던 부분은 phase-10 §12.2 retrofit 으로 AppLayout 이관).
 
 ---
 
