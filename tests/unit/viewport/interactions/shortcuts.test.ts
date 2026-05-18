@@ -22,6 +22,7 @@ const ALL_ACTIONS: ReadonlyArray<KeyActionId> = [
   'setBondOrderAromatic',
   'frameActive',
   'resetCamera',
+  'showShortcutSheet', // Phase 11 retrofit (D-PANEL-SHORTCUTS)
 ];
 
 const ev = (init: Partial<KeyboardEvent>): KeyboardEvent =>

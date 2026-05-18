@@ -10,3 +10,7 @@ export const selectNotifications = (s: UiStoreState): ReadonlyArray<Notification
   s.notifications;
 export const selectCompoundSearch = (s: UiStoreState): CompoundSearchSlice => s.compoundSearch;
 export const selectSelection = (s: UiStoreState): UiStoreState['selection'] => s.selection;
+
+// Phase 11 §6.13 retrofit — undo selection 토스트 단일 관찰자용.
+export const selectHasSelection = (s: UiStoreState): boolean =>
+  s.selection.atomIds.length > 0 || s.selection.bondIds.length > 0;

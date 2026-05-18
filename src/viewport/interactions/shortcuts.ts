@@ -17,7 +17,8 @@ export type KeyActionId =
   | 'setBondOrder3'
   | 'setBondOrderAromatic'
   | 'frameActive'
-  | 'resetCamera';
+  | 'resetCamera'
+  | 'showShortcutSheet'; // ⟵ Phase 11 retrofit (D-PANEL-SHORTCUTS, additive)
 
 export interface KeyBinding {
   /** 고유 ID — i18n 키 + 도움말 표시. */
@@ -68,6 +69,9 @@ export const KEY_MAP: ReadonlyArray<KeyBinding> = [
   bind('setBondOrderAromatic', 'viewport', (e) => keyIs(e, 'a') && !e.shiftKey && noMods(e)),
   bind('frameActive', 'viewport', (e) => keyIs(e, 'f') && !e.shiftKey && noMods(e)),
   bind('resetCamera', 'viewport', (e) => keyIs(e, 'r') && !e.shiftKey && noMods(e)),
+  // Phase 11 (D-PANEL-SHORTCUTS) — '?' (보통 Shift+/ 변환) global. text-input
+  // gate 자동 적용. 디스패치는 installGlobalUndoShortcuts 의 onAction 콜백.
+  bind('showShortcutSheet', 'global', (e) => e.key === '?'),
 ];
 
 /** Toolbar(Phase 11) 도움말 표시용 OS-무관 힌트. 실제 라벨은 i18nLabelKey. */
@@ -99,6 +103,8 @@ export function describeKey(binding: KeyBinding): string {
       return 'F';
     case 'resetCamera':
       return 'R';
+    case 'showShortcutSheet':
+      return '?';
   }
 }
 
@@ -108,6 +114,9 @@ export function describeKey(binding: KeyBinding): string {
  */
 export function installGlobalUndoShortcuts(opts?: {
   readonly dispatcher?: UndoableDispatcher;
+  /** Phase 11 (D-SHORTCUT-OPEN-STATE) — 비-undo global 바인딩 (showShortcutSheet
+   *  등) 을 단일 리스너가 통지. KEY_MAP 단일 소스 유지 (Toolbar 별도 listener 금지). */
+  readonly onAction?: (action: KeyActionId) => void;
 }): () => void {
   const dispatcher = opts?.dispatcher ?? activeUndoDispatcher;
   const onKeyDown = (e: KeyboardEvent): void => {
@@ -118,6 +127,7 @@ export function installGlobalUndoShortcuts(opts?: {
         e.preventDefault();
         if (b.action === 'undo') dispatcher.undo();
         else if (b.action === 'redo') dispatcher.redo();
+        else opts?.onAction?.(b.action); // 비-undo global → 콜백
         return;
       }
     }

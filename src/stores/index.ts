@@ -49,6 +49,7 @@ export {
   selectMoleculeIds,
   selectIngestState,
   selectMoleculeSnapshot,
+  selectBondMetrics,
   selectAtomLabelsOn,
   selectBackgroundOverride,
   selectActivePanel,
@@ -56,6 +57,7 @@ export {
   selectNotifications,
   selectCompoundSearch,
   selectSelection,
+  selectHasSelection,
   selectTheme,
   selectLocale,
   selectRenderMode,
@@ -72,6 +74,7 @@ export {
   mapReactionErrorToKey,
 } from './selectors';
 export type { MoleculeSnapshot } from './selectors';
+export type { BondMetric, BondAngleMetric, BondMetricsResult } from './selectors';
 
 // ── Undoable 시스템 — swappable `dispatcher` 싱글톤 + createUndoStack 본 구현 ──
 // `dispatcher`: 스토어/UI 가 쓰는 안정 식별자 (phase-11 §1942 패턴).

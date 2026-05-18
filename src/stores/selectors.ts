@@ -5,8 +5,10 @@ export {
   selectMoleculeIds,
   selectIngestState,
   selectMoleculeSnapshot,
+  selectBondMetrics, // Phase 11 §4.7 retrofit
 } from './moleculeStore.selectors';
 export type { MoleculeSnapshot } from './moleculeStore.selectors';
+export type { BondMetric, BondAngleMetric, BondMetricsResult } from './moleculeStore.selectors';
 
 export {
   selectAtomLabelsOn,
@@ -16,6 +18,7 @@ export {
   selectNotifications,
   selectCompoundSearch,
   selectSelection,
+  selectHasSelection, // Phase 11 §6.13 retrofit
 } from './uiStore.selectors';
 
 export {

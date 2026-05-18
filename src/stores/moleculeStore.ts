@@ -4,6 +4,7 @@ import { castDraft } from 'immer';
 import type { Molecule, Atom } from '@/chemistry/compounds/types';
 import type { Bond, BondOrder } from '@/chemistry/bonds/types';
 import { createBondId, moleculeIdForCid } from '@/chemistry/compounds/ids';
+import { withRegeneratedIds } from '@/chemistry/compounds/regenerateIds';
 import { parseSmiles, parseInchi, toMoleculeWith3D } from '@/engine';
 import { getCompoundByCid } from '@/services/pubchem';
 import type { Result } from '@/types/result';
@@ -35,6 +36,13 @@ export interface MoleculeStoreActions {
   removeBond(id: MoleculeId, bondIndex: number): void; // undoable: bond.break
   addAtom(id: MoleculeId, atom: Atom): void; // undoable: atom.add
   removeAtom(id: MoleculeId, atomIndex: number): void; // undoable: atom.remove
+
+  // ── Phase 11 retrofit (D-LOAD-PRODUCTS, §6.12) ──
+  /** ReactionResult.products 단일 분자를 작업공간 적재 (단일 entry undoable,
+   *  ID 재발급, setActive). undoable: molecule.add-from-product. */
+  addFromMolecule(m: Molecule): MoleculeId;
+  /** 여러 분자를 하나의 undoable group 으로 적재. 마지막을 active. */
+  addFromMolecules(ms: ReadonlyArray<Molecule>): ReadonlyArray<MoleculeId>;
 
   clear(): void; // 비-undoable (일괄 리셋)
   undo(): void;
@@ -333,6 +341,51 @@ export const useMoleculeStore = createAppStore<MoleculeStore>('moleculeStore', (
             }),
         ),
 
+      // ── Phase 11 retrofit (D-LOAD-PRODUCTS §6.12) ──
+      addFromMolecule: (m) =>
+        dispatcher.dispatchUndoable(
+          {
+            undoable: true,
+            kind: 'molecule.add-from-product',
+            labelKey: 'stores.undo.moleculeAddFromProduct',
+          },
+          () => {
+            const newId = newMoleculeId();
+            const next = withRegeneratedIds(m, newId);
+            set((s) => {
+              s.molecules[newId] = castDraft(next);
+              if (!s.ids.includes(newId)) s.ids.push(newId);
+              s.activeId = newId;
+            });
+            return newId;
+          },
+        ),
+
+      addFromMolecules: (ms) => {
+        const ids: MoleculeId[] = [];
+        if (ms.length === 0) return ids;
+        const batchId = crypto.randomUUID();
+        dispatcher.dispatchUndoable(
+          {
+            undoable: true,
+            kind: 'molecule.add-from-product',
+            labelKey: 'stores.undo.moleculeAddFromProducts',
+            group: `add-products-${batchId}`,
+          },
+          () =>
+            set((s) => {
+              for (const m of ms) {
+                const newId = newMoleculeId();
+                ids.push(newId);
+                s.molecules[newId] = castDraft(withRegeneratedIds(m, newId));
+                if (!s.ids.includes(newId)) s.ids.push(newId);
+              }
+              if (ids.length > 0) s.activeId = ids[ids.length - 1]!;
+            }),
+        );
+        return ids;
+      },
+
       clear: () =>
         set((s) => {
           s.molecules = {};
@@ -341,7 +394,15 @@ export const useMoleculeStore = createAppStore<MoleculeStore>('moleculeStore', (
           s.ingest = { kind: 'idle' };
         }),
 
-      undo: () => dispatcher.undo(),
+      // D-UNDO-TOAST §6.13: undo 성공 시에만 lastUndoSeq +1 (redo/no-op 불변).
+      undo: () => {
+        if (dispatcher.canUndo()) {
+          set((s) => {
+            s.lastUndoSeq += 1;
+          });
+        }
+        dispatcher.undo();
+      },
       redo: () => dispatcher.redo(),
     },
   };

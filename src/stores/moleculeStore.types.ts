@@ -16,6 +16,10 @@ export interface MoleculeStoreState {
   /** Undo/Redo placeholder — Phase 09 가 인수 (현재 항상 false). */
   readonly canUndo: boolean;
   readonly canRedo: boolean;
+
+  /** Phase 11 D-UNDO-TOAST §6.13 — undo 성공 시 +1 (redo/일반 변경 불변).
+   *  단일 관찰자(useUndoSelectionToast)가 구독하는 단조 카운터. */
+  readonly lastUndoSeq: number;
 }
 
 export function makeInitialMoleculeState(): MoleculeStoreState {
@@ -26,5 +30,6 @@ export function makeInitialMoleculeState(): MoleculeStoreState {
     ingest: { kind: 'idle' },
     canUndo: false,
     canRedo: false,
+    lastUndoSeq: 0,
   };
 }

@@ -20,7 +20,8 @@ export type UndoableActionKind =
   | 'bond.setOrder'
   | 'molecule.create'
   | 'molecule.replace'
-  | 'molecule.remove';
+  | 'molecule.remove'
+  | 'molecule.add-from-product'; // ⟵ Phase 11 retrofit (D-LOAD-PRODUCTS, additive)
 
 export interface UndoableDispatcher {
   dispatchUndoable<T>(meta: UndoableMeta & { kind: UndoableActionKind }, mutator: () => T): T;
