@@ -1,0 +1,19 @@
+{
+  "undo": "Undo",
+  "redo": "Redo",
+  "navAtomNext": "Next atom",
+  "navAtomPrev": "Previous atom",
+  "clearSelection": "Clear selection",
+  "deleteSelection": "Delete selection",
+  "createBondFromSelection": "Create bond from selection",
+  "setBondOrder1": "Single bond",
+  "setBondOrder2": "Double bond",
+  "setBondOrder3": "Triple bond",
+  "setBondOrderAromatic": "Aromatic bond",
+  "frameActive": "Frame active molecule",
+  "resetCamera": "Reset camera",
+  "showShortcutSheet": "Show keyboard shortcuts",
+  "bondCreate": {
+    "diffMolecule": "Cannot create a bond between atoms in different molecules."
+  }
+}

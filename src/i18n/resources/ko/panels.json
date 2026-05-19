@@ -1,0 +1,106 @@
+{
+  "periodicTable": {
+    "title": "주기율표",
+    "empty": { "hint": "원소를 클릭하면 상세 정보가 표시됩니다." },
+    "element": {
+      "fields": {
+        "category": "분류",
+        "electronegativity": "전기음성도",
+        "ionizationEnergy": "1차 이온화 에너지",
+        "covalentRadius": "공유 반지름",
+        "vdwRadius": "판데르발스 반지름",
+        "meltingPoint": "녹는점",
+        "boilingPoint": "끓는점",
+        "block": "블록"
+      },
+      "startMolecule": "이 원소로 분자 시작",
+      "startMoleculePlaceholder": "SMILES 입력 파이프라인은 Phase 12 에서 제공됩니다."
+    }
+  },
+  "compoundBrowser": {
+    "title": "화합물 검색",
+    "searchPlaceholder": "이름, CID, 또는 화학식으로 검색",
+    "mode": { "name": "이름", "cid": "CID", "formula": "화학식" },
+    "empty": {
+      "idle": "검색어를 입력하세요.",
+      "noResults": "일치하는 화합물이 없습니다."
+    },
+    "addToWorkspace": "작업공간에 추가",
+    "addedToWorkspace": "작업공간에 추가했습니다.",
+    "addFailed": "추가 실패: {{reason}}",
+    "categoryChips": { "label": "분류로 필터" }
+  },
+  "conditions": {
+    "title": "반응 조건",
+    "temperatureLabel": "온도",
+    "pressureLabel": "압력",
+    "phLabel": "pH",
+    "phDisabled": "해당 없음",
+    "tempUnit": { "kelvin": "K", "celsius": "°C" },
+    "pressureUnit": { "atm": "atm", "pa": "Pa" },
+    "resetToDefaults": "기본값으로",
+    "reactants": "반응물",
+    "runReaction": "반응 실행",
+    "noReactants": "작업공간에서 반응물을 1개 이상 선택하세요."
+  },
+  "moleculeInfo": {
+    "title": "분자 정보",
+    "tabs": { "overview": "개요", "bonds": "결합", "stereo": "입체화학" },
+    "empty": { "noActive": "활성 분자가 없습니다." },
+    "fields": {
+      "smiles": "SMILES",
+      "inchi": "InChI",
+      "molecularFormula": "화학식",
+      "molecularWeight": "분자량",
+      "totalCharge": "총 전하",
+      "spinMultiplicity": "스핀 다중도"
+    },
+    "bond": { "length": "길이", "angle": "각도", "order": "차수" },
+    "stereo": {
+      "atomTag": { "R": "R", "S": "S", "none": "—" },
+      "bondTag": { "E": "E", "Z": "Z", "none": "—" },
+      "empty": "입체화학 정보가 없습니다."
+    },
+    "copied": "SMILES 를 클립보드에 복사했습니다.",
+    "copyFailed": "복사에 실패했습니다."
+  },
+  "reactionResult": {
+    "title": "반응 결과",
+    "tabs": { "products": "생성물", "rule": "규칙", "thermo": "열역학" },
+    "empty": { "idle": "반응을 실행하면 결과가 여기 표시됩니다." },
+    "running": "실행 중…",
+    "addProduct": "이 생성물 추가",
+    "addProductsToWorkspace": "생성물 전체 추가",
+    "addedProducts": "{{count}}개 생성물을 작업공간에 추가했습니다.",
+    "thermo": {
+      "exothermic": "발열",
+      "endothermic": "흡열",
+      "unknown": "알 수 없음"
+    },
+    "confidence": { "high": "높음", "medium": "보통", "low": "낮음" },
+    "rule": { "appliedRule": "적용 규칙: {{id}}" },
+    "retry": "다시 시도"
+  },
+  "toolbar": {
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "createBond": "결합 생성",
+    "smilesInput": "SMILES 입력",
+    "smilesInputPlaceholder": "Phase 12 에서 제공됩니다.",
+    "frameActive": "활성 분자 맞춤",
+    "frameAll": "전체 맞춤",
+    "resetCamera": "카메라 초기화",
+    "capture": "PNG 캡처",
+    "labels": "원자 라벨",
+    "renderMode": { "ballAndStick": "볼-스틱", "comingSoon": "준비 중" },
+    "background": { "theme": "테마", "light": "밝게", "dark": "어둡게" },
+    "theme": "테마",
+    "language": "언어",
+    "shortcuts": "키보드 단축키",
+    "undoSelectionRestored": { "notice": "실행 취소 후 선택이 해제되었습니다." }
+  },
+  "toast": {
+    "dismiss": "닫기",
+    "level": { "info": "정보", "success": "성공", "warn": "경고", "error": "오류" }
+  }
+}

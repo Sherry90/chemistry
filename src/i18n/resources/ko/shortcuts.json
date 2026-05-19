@@ -1,0 +1,19 @@
+{
+  "undo": "실행 취소",
+  "redo": "다시 실행",
+  "navAtomNext": "다음 원자",
+  "navAtomPrev": "이전 원자",
+  "clearSelection": "선택 해제",
+  "deleteSelection": "선택 삭제",
+  "createBondFromSelection": "선택 원자로 결합 생성",
+  "setBondOrder1": "단일 결합",
+  "setBondOrder2": "이중 결합",
+  "setBondOrder3": "삼중 결합",
+  "setBondOrderAromatic": "방향족 결합",
+  "frameActive": "활성 분자 맞춤",
+  "resetCamera": "카메라 초기화",
+  "showShortcutSheet": "키보드 단축키 표시",
+  "bondCreate": {
+    "diffMolecule": "다른 분자의 원자끼리는 결합을 만들 수 없습니다."
+  }
+}

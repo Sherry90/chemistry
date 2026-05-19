@@ -6,18 +6,27 @@ import enCommon from './resources/en/common.json';
 import enChemistry from './resources/en/chemistry.json';
 import koCommon from './resources/ko/common.json';
 import koChemistry from './resources/ko/chemistry.json';
+// Phase 11 — panels = 별도 ns (useTranslation('panels')). shortcuts = common
+// ns 에 'shortcuts' 키로 병합 (phase-09 i18nLabelKey='shortcuts.${action}' 가
+// 기본 ns 'common' 으로 t() 호출 → common.shortcuts.* 해소).
+import enPanels from './resources/en/panels.json';
+import koPanels from './resources/ko/panels.json';
+import enShortcuts from './resources/en/shortcuts.json';
+import koShortcuts from './resources/ko/shortcuts.json';
 
 export type { Locale };
 export { useTranslation } from 'react-i18next';
 
 const resources = {
   en: {
-    common: enCommon,
+    common: { ...enCommon, shortcuts: enShortcuts },
     chemistry: enChemistry,
+    panels: enPanels,
   },
   ko: {
-    common: koCommon,
+    common: { ...koCommon, shortcuts: koShortcuts },
     chemistry: koChemistry,
+    panels: koPanels,
   },
 } as const;
 
@@ -34,7 +43,7 @@ export async function initI18n(initialLocale: Locale): Promise<void> {
     lng: initialLocale,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'chemistry'],
+    ns: ['common', 'chemistry', 'panels'],
     resources,
     interpolation: { escapeValue: false },
     returnEmptyString: false,

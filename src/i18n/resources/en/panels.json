@@ -1,0 +1,106 @@
+{
+  "periodicTable": {
+    "title": "Periodic Table",
+    "empty": { "hint": "Click an element to see details." },
+    "element": {
+      "fields": {
+        "category": "Category",
+        "electronegativity": "Electronegativity",
+        "ionizationEnergy": "First Ionization Energy",
+        "covalentRadius": "Covalent Radius",
+        "vdwRadius": "Van der Waals Radius",
+        "meltingPoint": "Melting Point",
+        "boilingPoint": "Boiling Point",
+        "block": "Block"
+      },
+      "startMolecule": "Start molecule with this element",
+      "startMoleculePlaceholder": "SMILES input pipeline coming in Phase 12."
+    }
+  },
+  "compoundBrowser": {
+    "title": "Compound Browser",
+    "searchPlaceholder": "Search by name, CID, or formula",
+    "mode": { "name": "Name", "cid": "CID", "formula": "Formula" },
+    "empty": {
+      "idle": "Enter a query to search.",
+      "noResults": "No compounds matched."
+    },
+    "addToWorkspace": "Add to workspace",
+    "addedToWorkspace": "Added to workspace.",
+    "addFailed": "Failed to add: {{reason}}",
+    "categoryChips": { "label": "Filter by category" }
+  },
+  "conditions": {
+    "title": "Conditions",
+    "temperatureLabel": "Temperature",
+    "pressureLabel": "Pressure",
+    "phLabel": "pH",
+    "phDisabled": "Not applicable",
+    "tempUnit": { "kelvin": "K", "celsius": "°C" },
+    "pressureUnit": { "atm": "atm", "pa": "Pa" },
+    "resetToDefaults": "Reset to defaults",
+    "reactants": "Reactants",
+    "runReaction": "Run reaction",
+    "noReactants": "Select at least one reactant from the workspace."
+  },
+  "moleculeInfo": {
+    "title": "Molecule Info",
+    "tabs": { "overview": "Overview", "bonds": "Bonds", "stereo": "Stereo" },
+    "empty": { "noActive": "No active molecule." },
+    "fields": {
+      "smiles": "SMILES",
+      "inchi": "InChI",
+      "molecularFormula": "Formula",
+      "molecularWeight": "Molecular Weight",
+      "totalCharge": "Total Charge",
+      "spinMultiplicity": "Spin Multiplicity"
+    },
+    "bond": { "length": "Length", "angle": "Angle", "order": "Order" },
+    "stereo": {
+      "atomTag": { "R": "R", "S": "S", "none": "—" },
+      "bondTag": { "E": "E", "Z": "Z", "none": "—" },
+      "empty": "No stereochemistry."
+    },
+    "copied": "SMILES copied to clipboard.",
+    "copyFailed": "Failed to copy."
+  },
+  "reactionResult": {
+    "title": "Reaction Result",
+    "tabs": { "products": "Products", "rule": "Rule", "thermo": "Thermo" },
+    "empty": { "idle": "Run a reaction to see the result here." },
+    "running": "Running…",
+    "addProduct": "Add this product",
+    "addProductsToWorkspace": "Add all products",
+    "addedProducts": "Added {{count}} product(s) to workspace.",
+    "thermo": {
+      "exothermic": "Exothermic",
+      "endothermic": "Endothermic",
+      "unknown": "Unknown"
+    },
+    "confidence": { "high": "High", "medium": "Medium", "low": "Low" },
+    "rule": { "appliedRule": "Applied rule: {{id}}" },
+    "retry": "Retry"
+  },
+  "toolbar": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "createBond": "Create bond",
+    "smilesInput": "SMILES input",
+    "smilesInputPlaceholder": "Coming in Phase 12.",
+    "frameActive": "Frame active",
+    "frameAll": "Frame all",
+    "resetCamera": "Reset camera",
+    "capture": "Capture PNG",
+    "labels": "Atom labels",
+    "renderMode": { "ballAndStick": "Ball and stick", "comingSoon": "Coming soon" },
+    "background": { "theme": "Theme", "light": "Light", "dark": "Dark" },
+    "theme": "Theme",
+    "language": "Language",
+    "shortcuts": "Keyboard shortcuts",
+    "undoSelectionRestored": { "notice": "Selection cleared after undo." }
+  },
+  "toast": {
+    "dismiss": "Dismiss",
+    "level": { "info": "Info", "success": "Success", "warn": "Warning", "error": "Error" }
+  }
+}
