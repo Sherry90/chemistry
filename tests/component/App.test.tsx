@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, beforeEach } from 'vitest';
-// Phase 10 §12.1 — Phase 01 <ErrorBoundary> 삭제·<AppErrorBoundary> 로 교체.
+// Phase 11 §6.10 — App = <AppLayout><ToolbarBar/></>. Phase 01 placeholder
+// toolbar(title+LocaleToggle) 제거 → 스모크는 ToolbarBar/WebGL2 fallback 기준.
 import { AppErrorBoundary } from '@/app/layout';
 import { I18nProvider } from '@/app/providers/I18nProvider';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
@@ -24,26 +25,28 @@ describe('App smoke tests', () => {
     localStorage.clear();
   });
 
-  it('renders without crashing and shows English title by default', async () => {
+  it('마운트 무crash — Toolbar(undo 버튼) + WebGL2 fallback(jsdom)', async () => {
     renderApp();
+    // ToolbarBar EditGroup 의 Undo IconButton (panels ns 'Undo' 라벨).
     await waitFor(() => {
-      expect(screen.getByText('Chemistry Simulation Platform')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument();
     });
+    // jsdom = WebGL2 미지원 → ViewportHost 가 fallback (영문 기본 locale).
+    expect(screen.getByText('WebGL2 not supported')).toBeInTheDocument();
+    // AppErrorBoundary fallback 미발생.
+    expect(screen.queryByText('Application error')).toBeNull();
   });
 
-  it('switches to Korean when locale toggle is clicked', async () => {
+  it('언어 토글 (AppGroup) → ko 전환', async () => {
     const user = userEvent.setup();
     renderApp();
-
     await waitFor(() => {
-      expect(screen.getByText('Chemistry Simulation Platform')).toBeInTheDocument();
+      expect(screen.getByText('WebGL2 not supported')).toBeInTheDocument();
     });
-
-    const toggleBtn = screen.getByRole('button', { name: /한국어/i });
-    await user.click(toggleBtn);
-
+    // AppGroup 의 Language IconButton (aria-label = panels:toolbar.language 'Language').
+    await user.click(screen.getByRole('button', { name: /language/i }));
     await waitFor(() => {
-      expect(screen.getByText('화학 시뮬레이션 플랫폼')).toBeInTheDocument();
+      expect(screen.getByText('WebGL2 미지원')).toBeInTheDocument();
     });
   });
 });

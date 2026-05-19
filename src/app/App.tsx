@@ -1,24 +1,22 @@
-// Phase 10 §12.1 retrofit — Phase 01 <AppShell> placeholder → <AppLayout/>.
-// Toolbar 슬롯에 Phase 01 title + 토글을 임시 주입 (Phase 11 <ToolbarBar/> 가
-// 교체 — toolbar prop 이 그 주입 지점).
-import { useTranslation } from 'react-i18next';
-import { AppLayout } from '@/app/layout';
-import { LocaleToggle } from '@/components/LocaleToggle';
-import { ThemeToggle } from '@/components/ThemeToggle';
+// Phase 11 §6.10 retrofit — Phase 01/10 placeholder toolbar → <ToolbarBar/>.
+// registerAllPanels() 부팅 1회 (render 前). onShortcutAction = panels
+// shortcutBus emitter (D-SHORTCUT-OPEN-STATE 단일 디스패치 — KEY_MAP 단일 소스).
+import { useRef } from 'react';
+import { AppLayout, registerPanel } from '@/app/layout';
+import { panelRegistrations, ToolbarBar, emitShortcutAction } from '@/panels';
+import type { ViewportApi } from '@/viewport';
+
+// 부팅 1회 — App 모듈 로드 시점 (render 前). registerPanel 호출은 app 레이어
+// (App.tsx)가 수행 — panels→app/layout 상향 위반 회피 (registerAll 은 정의만).
+for (const def of panelRegistrations) registerPanel(def);
 
 export function App() {
-  const { t } = useTranslation('common');
+  const viewportApiRef = useRef<ViewportApi | null>(null);
   return (
     <AppLayout
-      toolbar={
-        <>
-          <h1 className="text-base font-semibold text-fg-primary">{t('app.title')}</h1>
-          <div className="ml-auto flex gap-2">
-            <LocaleToggle />
-            <ThemeToggle />
-          </div>
-        </>
-      }
+      viewportApiRef={viewportApiRef}
+      onShortcutAction={emitShortcutAction}
+      toolbar={<ToolbarBar apiRef={viewportApiRef} />}
     />
   );
 }

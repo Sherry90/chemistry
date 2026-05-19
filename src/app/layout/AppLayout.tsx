@@ -11,7 +11,7 @@ import { useMemo } from 'react';
 import type { ReactNode, Ref } from 'react';
 import { Group, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels';
 import { createUndoStack } from '@/stores';
-import type { ViewportApi } from '@/viewport';
+import type { ViewportApi, KeyActionId } from '@/viewport';
 import { TooltipProvider } from '@/components';
 import { ToolbarSlot } from './ToolbarSlot';
 import { SidePanelHost } from './SidePanelHost';
@@ -28,10 +28,13 @@ export interface AppLayoutProps {
   readonly toolbar?: ReactNode | undefined;
   /** Viewport imperative API ref. Phase 11 ToolbarBar 가 동일 ref 양쪽 forward. */
   readonly viewportApiRef?: Ref<ViewportApi> | undefined;
+  /** Phase 11 D-SHORTCUT-OPEN-STATE — KEY_MAP 비-undo global 바인딩 단일 통지
+   *  (App.tsx 가 panels shortcutBus emitter 주입). */
+  readonly onShortcutAction?: ((action: KeyActionId) => void) | undefined;
 }
 
-function AppLayoutInner({ toolbar, viewportApiRef }: AppLayoutProps) {
-  useInstallAppShortcuts(); // D8 / P6 — mount install + unmount cleanup
+function AppLayoutInner({ toolbar, viewportApiRef, onShortcutAction }: AppLayoutProps) {
+  useInstallAppShortcuts(onShortcutAction); // D8 / P6 + Phase 11 onAction
 
   return (
     <div className="flex h-screen flex-col bg-bg-canvas text-fg-primary">
@@ -61,13 +64,17 @@ function AppLayoutInner({ toolbar, viewportApiRef }: AppLayoutProps) {
   );
 }
 
-export default function AppLayout({ toolbar, viewportApiRef }: AppLayoutProps) {
+export default function AppLayout({ toolbar, viewportApiRef, onShortcutAction }: AppLayoutProps) {
   // D17: 1회 createUndoStack → 컨텍스트. TooltipProvider 루트 1회 (delay 200ms).
   const dispatcher = useMemo(() => createUndoStack({ capacity: 50, mergeWindowMs: 200 }), []);
   return (
     <UndoableDispatcherProvider dispatcher={dispatcher}>
       <TooltipProvider delayDuration={200}>
-        <AppLayoutInner toolbar={toolbar} viewportApiRef={viewportApiRef} />
+        <AppLayoutInner
+          toolbar={toolbar}
+          viewportApiRef={viewportApiRef}
+          onShortcutAction={onShortcutAction}
+        />
       </TooltipProvider>
     </UndoableDispatcherProvider>
   );
