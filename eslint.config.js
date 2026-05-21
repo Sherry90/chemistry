@@ -117,6 +117,15 @@ export default [
             },
             { target: 'src/viewport', from: 'src/app' },
             { target: 'src/panels', from: 'src/app' },
+            // Phase 12 §7.2 — panels 는 engine 직접 import 차단. 단, 얇은
+            // status 모듈 (동작 함수 부재) 은 TextInput 가 RDKit 가용성
+            // 표시 목적으로만 import — narrow whitelist. `except` 경로는
+            // `from` 기준 상대.
+            {
+              target: 'src/panels',
+              from: 'src/engine',
+              except: ['rdkit/status.ts'],
+            },
             { target: 'src/components', from: 'src/app' },
             {
               target: 'src/io',
@@ -223,6 +232,26 @@ export default [
             {
               group: ['@/components/_shared/*'],
               message: 'Use the @/components barrel (Phase 10 §7.2).',
+            },
+            // Phase 12 §7.2 — RDKit 동작 함수는 panels 에서 직접 호출 금지.
+            // 상태 구독은 @/engine/rdkit/status 의 onRdkitStatusChange/
+            // getRdkitStatus 만 허용 (얇은 read-only 모듈, no-restricted-paths
+            // except 와 정합). 동작 함수는 store 액션 (addFromText/
+            // addFromFormula/previewFromText) 경유.
+            {
+              group: ['@/engine/rdkit', '@/engine/rdkit/index'],
+              importNames: [
+                'parseSmiles',
+                'parseInchi',
+                'parseFormula',
+                'parseSdfBlock',
+                'toMoleculeWith3D',
+                'smilesTo3DMolecule',
+                'formulaToParsedMol',
+                'createMainThreadRdkitBackend',
+              ],
+              message:
+                'panels 는 RDKit 동작 함수를 직접 import 할 수 없다. store 액션 경유. 상태 구독은 @/engine/rdkit/status 의 onRdkitStatusChange/getRdkitStatus 만.',
             },
           ],
         },

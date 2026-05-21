@@ -11,7 +11,7 @@ import { Copy, Plus, X } from 'lucide-react';
 import { deriveFormulaWeight } from './formula';
 import { cn } from './cn';
 
-export type MoleculeCardSource = 'compound' | 'reaction-product';
+export type MoleculeCardSource = 'compound' | 'reaction-product' | 'text-input';
 
 export interface MoleculeCardCommonProps {
   readonly actions?: {

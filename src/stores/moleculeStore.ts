@@ -5,7 +5,13 @@ import type { Molecule, Atom } from '@/chemistry/compounds/types';
 import type { Bond, BondOrder } from '@/chemistry/bonds/types';
 import { createBondId, moleculeIdForCid } from '@/chemistry/compounds/ids';
 import { withRegeneratedIds } from '@/chemistry/compounds/regenerateIds';
-import { parseSmiles, parseInchi, toMoleculeWith3D } from '@/engine';
+import {
+  parseSmiles,
+  parseInchi,
+  parseFormula,
+  formulaToParsedMol,
+  toMoleculeWith3D,
+} from '@/engine';
 import { getCompoundByCid } from '@/services/pubchem';
 import type { Result } from '@/types/result';
 import { ok, err } from '@/types/result';
@@ -17,6 +23,7 @@ import { dispatcher } from './_shared/undoable';
 import { newMoleculeId, type IngestError, type MoleculeId } from './_shared/types';
 import { withGlobalLoading, cascadeRemoveMolecule } from './_shared/_crossStore';
 import { makeInitialMoleculeState, type MoleculeStoreState } from './moleculeStore.types';
+import type { TextInputMode } from './uiStore.types';
 
 export type { MoleculeStoreState };
 
@@ -25,6 +32,29 @@ export interface MoleculeStoreActions {
   addFromSmiles(input: string): Promise<Result<MoleculeId, IngestError>>;
   addFromInchi(input: string): Promise<Result<MoleculeId, IngestError>>;
   addFromCompound(cid: number): Promise<Result<MoleculeId, IngestError>>;
+
+  // ── Phase 12 §5.4 retrofit (텍스트 입력 파이프라인) ──
+  /**
+   * 분자식 입력으로 Molecule 생성 + 작업공간 적재.
+   * 1. parseFormula(input) → FormulaComposition 또는 ParseError
+   * 2. formulaToParsedMol(comp) → ParsedMol 또는 ParseError (FormulaUnsupported 포함)
+   * 3. toMoleculeWith3D(parsed) → Molecule 또는 EmbedError
+   * 4. duplicate 검출 (InChIKey)
+   * 5. molecules + activeId commit + ingest AsyncState success
+   */
+  addFromFormula(
+    input: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<Result<MoleculeId, IngestError>>;
+  /**
+   * 텍스트 입력의 preview — Molecule 만 반환, state commit 없음.
+   * ingest AsyncState 변경 안 함. 호출자가 panel-local state 로 보관.
+   */
+  previewFromText(args: {
+    readonly kind: TextInputMode;
+    readonly raw: string;
+    readonly signal?: AbortSignal;
+  }): Promise<Result<Molecule, IngestError>>;
 
   // ── 동기 ──
   setActive(id: MoleculeId | null): void; // 비-undoable (UI 포인터)
@@ -200,6 +230,97 @@ export const useMoleculeStore = createAppStore<MoleculeStore>('moleculeStore', (
           });
           return result;
         });
+      },
+
+      // ── Phase 12 §5.4 retrofit ──
+      addFromFormula: async (input, opts) => {
+        const seq = ++ingestSeq;
+        const signal = opts?.signal;
+        set((s) => {
+          s.ingest = { kind: 'loading', startedAt: Date.now() };
+        });
+        return withGlobalLoading(async (): Promise<Result<MoleculeId, IngestError>> => {
+          let result: Result<MoleculeId, IngestError>;
+          try {
+            if (signal?.aborted) {
+              result = err({ kind: 'internal', message: 'aborted' });
+            } else {
+              const comp = parseFormula(input);
+              if (!comp.ok) {
+                result = err(mapParseError(comp.error));
+              } else if (signal?.aborted) {
+                result = err({ kind: 'internal', message: 'aborted' });
+              } else {
+                const parsed = await formulaToParsedMol(comp.value);
+                if (!parsed.ok) {
+                  result = err(mapParseError(parsed.error));
+                } else if (signal?.aborted) {
+                  result = err({ kind: 'internal', message: 'aborted' });
+                } else {
+                  const embedded = await toMoleculeWith3D(parsed.value);
+                  if (!embedded.ok) {
+                    result = err({ kind: 'embed', detail: embedded.error });
+                  } else {
+                    const dup = findDuplicateId(embedded.value.inchiKey);
+                    if (dup) {
+                      result = err({ kind: 'duplicate', existingId: dup });
+                    } else {
+                      const mol: Molecule = { ...embedded.value, id: newMoleculeId() };
+                      result = ok(commitNewMolecule(mol));
+                    }
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            result = err(classifyThrow(e));
+          }
+          // stale-guard
+          if (seq !== ingestSeq) return result;
+          set((s) => {
+            s.ingest = castDraft(
+              result.ok
+                ? ({ kind: 'success', value: result.value, settledAt: Date.now() } as const)
+                : ({ kind: 'error', error: result.error, settledAt: Date.now() } as const),
+            );
+          });
+          return result;
+        });
+      },
+
+      // state commit 없음 (ingest 변경 안 함, molecules 변경 안 함). 반환값만.
+      previewFromText: async ({ kind, raw, signal }) => {
+        try {
+          if (signal?.aborted) return err({ kind: 'internal', message: 'aborted' });
+          if (kind === 'smiles') {
+            const parsed = await parseSmiles(raw);
+            if (!parsed.ok) return err(mapParseError(parsed.error));
+            if (signal?.aborted) return err({ kind: 'internal', message: 'aborted' });
+            const embedded = await toMoleculeWith3D(parsed.value);
+            if (!embedded.ok) return err({ kind: 'embed', detail: embedded.error });
+            return ok(embedded.value);
+          }
+          if (kind === 'inchi') {
+            const parsed = await parseInchi(raw);
+            if (!parsed.ok) return err(mapParseError(parsed.error));
+            if (signal?.aborted) return err({ kind: 'internal', message: 'aborted' });
+            const embedded = await toMoleculeWith3D(parsed.value);
+            if (!embedded.ok) return err({ kind: 'embed', detail: embedded.error });
+            return ok(embedded.value);
+          }
+          // kind === 'formula'
+          const comp = parseFormula(raw);
+          if (!comp.ok) return err(mapParseError(comp.error));
+          if (signal?.aborted) return err({ kind: 'internal', message: 'aborted' });
+          const parsed = await formulaToParsedMol(comp.value);
+          if (!parsed.ok) return err(mapParseError(parsed.error));
+          if (signal?.aborted) return err({ kind: 'internal', message: 'aborted' });
+          const embedded = await toMoleculeWith3D(parsed.value);
+          if (!embedded.ok) return err({ kind: 'embed', detail: embedded.error });
+          return ok(embedded.value);
+        } catch (e) {
+          return err(classifyThrow(e));
+        }
       },
 
       setActive: (id) =>

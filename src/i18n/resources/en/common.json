@@ -25,5 +25,31 @@
   "app.webgl2Unsupported.docsLinkLabel": "How to enable WebGL2",
   "app.panelError.title": "The {{slot}} panel encountered an error",
   "app.panelError.retry": "Retry",
-  "app.panelError.retryExhausted": "Retry limit reached"
+  "app.panelError.retryExhausted": "Retry limit reached",
+  "ingest": {
+    "error": {
+      "parse": {
+        "empty": "Enter SMILES, formula, or InChI.",
+        "tooLong": "Input is too long (max 2000 characters).",
+        "smilesSyntax": "Invalid SMILES syntax.",
+        "smilesSyntaxAt": "SMILES parse failed near character {{at}}.",
+        "inchiSyntax": "Invalid InChI syntax.",
+        "formulaSyntax": "Invalid formula syntax.",
+        "formulaUnsupported": "No SMILES mapping for this formula. Try SMILES input or compound search.",
+        "unknownElement": "Unknown element symbol.",
+        "sanitization": "Molecule sanitization failed.",
+        "generic": "Parse error: {{message}}"
+      },
+      "embed": {
+        "timeout": "3D structure generation timed out. Try again or use simpler input.",
+        "failed": "3D structure generation failed.",
+        "ionHandling": "Cannot handle this ion / radical for 3D embedding.",
+        "invalidMolecule": "Molecule is invalid for 3D embedding.",
+        "generic": "Embed error: {{message}}"
+      },
+      "duplicate": "An identical molecule already exists in the workspace.",
+      "rdkitNotReady": "Chemistry engine is not ready. Reload the page if this persists.",
+      "internal": "Internal error: {{message}}"
+    }
+  }
 }

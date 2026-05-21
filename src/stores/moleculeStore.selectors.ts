@@ -2,6 +2,8 @@
 import type { Molecule } from '@/chemistry/compounds/types';
 import type { BondOrder } from '@/chemistry/bonds/types';
 import { getElement } from '@/chemistry/elements';
+import type { ParseError } from '@/engine/parser';
+import type { EmbedError } from '@/engine/geometry';
 import type { AsyncState, IngestError, MoleculeId } from './_shared/types';
 import type { MoleculeStoreState } from './moleculeStore.types';
 
@@ -124,4 +126,84 @@ export function selectBondMetrics(m: Molecule | null): BondMetricsResult | null 
   const result: BondMetricsResult = { lengths, angles };
   bondMetricsCache.set(m, result);
   return result;
+}
+
+// ── Phase 12 §6.11 retrofit — IngestError → i18n 매핑 ──
+
+export interface IngestErrorMapping {
+  readonly key: string;
+  readonly params?: Readonly<Record<string, string | number>>;
+  readonly action?: 'open-compound-browser' | 'activate-existing' | 'reload-page' | null;
+}
+
+export function mapIngestErrorToKey(e: IngestError): IngestErrorMapping {
+  switch (e.kind) {
+    case 'parse':
+      return parseErrorToMapping(e.detail);
+    case 'embed':
+      return embedErrorToMapping(e.detail);
+    case 'pubchem':
+      // 본 Phase 미사용 (text input 은 PubChem 미경유). addFromCompound 만 발생.
+      return {
+        key: 'common.ingest.error.internal',
+        params: { message: e.detail.kind },
+      };
+    case 'duplicate':
+      return {
+        key: 'common.ingest.error.duplicate',
+        params: { existingId: e.existingId },
+        action: 'activate-existing',
+      };
+    case 'rdkit-not-ready':
+      return { key: 'common.ingest.error.rdkitNotReady', action: 'reload-page' };
+    case 'internal':
+      return { key: 'common.ingest.error.internal', params: { message: e.message } };
+  }
+}
+
+function parseErrorToMapping(p: ParseError): IngestErrorMapping {
+  switch (p.code) {
+    case 'InputEmpty':
+      return { key: 'common.ingest.error.parse.empty' };
+    case 'InputTooLong':
+      return { key: 'common.ingest.error.parse.tooLong' };
+    case 'SmilesSyntax':
+      return p.at !== undefined
+        ? { key: 'common.ingest.error.parse.smilesSyntaxAt', params: { at: p.at } }
+        : { key: 'common.ingest.error.parse.smilesSyntax' };
+    case 'InchiSyntax':
+      return { key: 'common.ingest.error.parse.inchiSyntax' };
+    case 'FormulaSyntax':
+      return { key: 'common.ingest.error.parse.formulaSyntax' };
+    case 'FormulaUnsupported':
+      return {
+        key: 'common.ingest.error.parse.formulaUnsupported',
+        action: 'open-compound-browser',
+      };
+    case 'UnknownElement':
+      return { key: 'common.ingest.error.parse.unknownElement' };
+    case 'SanitizationFailed':
+      return { key: 'common.ingest.error.parse.sanitization' };
+    case 'RdkitNotReady':
+      return { key: 'common.ingest.error.rdkitNotReady', action: 'reload-page' };
+    case 'InternalError':
+      return { key: 'common.ingest.error.parse.generic', params: { message: p.message } };
+  }
+}
+
+function embedErrorToMapping(e: EmbedError): IngestErrorMapping {
+  switch (e.code) {
+    case 'EmbedTimeout':
+      return { key: 'common.ingest.error.embed.timeout' };
+    case 'EmbedFailed':
+      return { key: 'common.ingest.error.embed.failed' };
+    case 'IonHandlingFailed':
+      return { key: 'common.ingest.error.embed.ionHandling' };
+    case 'InvalidMolecule':
+      return { key: 'common.ingest.error.embed.invalidMolecule' };
+    case 'RdkitNotReady':
+      return { key: 'common.ingest.error.rdkitNotReady', action: 'reload-page' };
+    case 'InternalError':
+      return { key: 'common.ingest.error.embed.generic', params: { message: e.message } };
+  }
 }

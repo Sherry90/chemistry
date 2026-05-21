@@ -139,15 +139,13 @@ describe('ToolbarBar — EditGroup CreateBond / SMILES placeholder', () => {
     expect(notes[0]!.messageKey).toBe('shortcuts.bondCreate.diffMolecule');
   });
 
-  it('SMILES 버튼 클릭 → notify info placeholder', async () => {
+  it('SMILES 버튼 클릭 → TextInput 모달 토글 (notify 미발화)', async () => {
     renderToolbar(buildViewportApiMock());
     const btn = await screen.findByRole('button', { name: /smiles input/i });
     await userEvent.click(btn);
 
-    const notes = useUiStore.getState().notifications;
-    expect(notes).toHaveLength(1);
-    expect(notes[0]!.level).toBe('info');
-    expect(notes[0]!.messageKey).toBe('panels:toolbar.smilesInputPlaceholder');
+    expect(useUiStore.getState().panels.isTextInputOpen).toBe(true);
+    expect(useUiStore.getState().notifications).toHaveLength(0);
   });
 });
 

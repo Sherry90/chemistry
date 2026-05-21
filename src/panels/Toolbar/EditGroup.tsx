@@ -24,6 +24,7 @@ export function EditGroup({ apiRef }: Props): React.ReactElement {
   const undo = useMoleculeStore((s) => s.actions.undo);
   const redo = useMoleculeStore((s) => s.actions.redo);
   const notify = useUiStore((s) => s.actions.notify);
+  const toggleTextInput = useUiStore((s) => s.actions.toggleTextInput);
 
   const onCreateBond = (): void => {
     const ok = apiRef.current?.createBondFromSelection() ?? false;
@@ -34,6 +35,10 @@ export function EditGroup({ apiRef }: Props): React.ReactElement {
         dismissAfterMs: 4000,
       });
     }
+  };
+
+  const onSmiles = (): void => {
+    toggleTextInput(true);
   };
 
   return (
@@ -54,16 +59,7 @@ export function EditGroup({ apiRef }: Props): React.ReactElement {
         </IconButton>
       </Tooltip>
       <Tooltip content={t('toolbar.smilesInput')}>
-        <IconButton
-          aria-label={t('toolbar.smilesInput')}
-          onClick={() =>
-            notify({
-              level: 'info',
-              messageKey: 'panels:toolbar.smilesInputPlaceholder',
-              dismissAfterMs: 3000,
-            })
-          }
-        >
+        <IconButton aria-label={t('toolbar.smilesInput')} onClick={onSmiles}>
           <Plus size={18} />
         </IconButton>
       </Tooltip>

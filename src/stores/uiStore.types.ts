@@ -9,7 +9,15 @@ export type PanelKey =
   | 'conditions'
   | 'molecule-info'
   | 'reaction-result'
-  | 'toolbar';
+  | 'toolbar'
+  | 'text-input'; // Phase 12
+
+export type TextInputMode = 'smiles' | 'inchi' | 'formula';
+
+export interface TextInputSeed {
+  readonly kind: TextInputMode;
+  readonly raw: string;
+}
 
 export type NotificationLevel = 'info' | 'success' | 'warn' | 'error';
 
@@ -47,6 +55,8 @@ export interface UiStoreState {
     readonly isCompoundBrowserOpen: boolean;
     readonly isPeriodicTableOpen: boolean;
     readonly isReactionResultOpen: boolean;
+    readonly isTextInputOpen: boolean; // Phase 12
+    readonly textInputInitial: TextInputSeed | null; // Phase 12
   };
 
   readonly viewport: {
@@ -70,6 +80,8 @@ export function makeInitialUiState(): UiStoreState {
       isCompoundBrowserOpen: false,
       isPeriodicTableOpen: false,
       isReactionResultOpen: false,
+      isTextInputOpen: false,
+      textInputInitial: null,
     },
     viewport: { showAtomLabels: false, backgroundOverride: 'theme' },
     globalLoading: { count: 0 },

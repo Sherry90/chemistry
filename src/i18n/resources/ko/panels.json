@@ -13,8 +13,7 @@
         "boilingPoint": "끓는점",
         "block": "블록"
       },
-      "startMolecule": "이 원소로 분자 시작",
-      "startMoleculePlaceholder": "SMILES 입력 파이프라인은 Phase 12 에서 제공됩니다."
+      "startMolecule": "이 원소로 분자 시작"
     }
   },
   "compoundBrowser": {
@@ -86,7 +85,6 @@
     "redo": "다시 실행",
     "createBond": "결합 생성",
     "smilesInput": "SMILES 입력",
-    "smilesInputPlaceholder": "Phase 12 에서 제공됩니다.",
     "frameActive": "활성 분자 맞춤",
     "frameAll": "전체 맞춤",
     "resetCamera": "카메라 초기화",
@@ -102,5 +100,45 @@
   "toast": {
     "dismiss": "닫기",
     "level": { "info": "정보", "success": "성공", "warn": "경고", "error": "오류" }
+  },
+  "textInput": {
+    "title": "텍스트로 분자 추가",
+    "modeTabs": { "smiles": "SMILES", "formula": "분자식", "inchi": "InChI" },
+    "placeholder": {
+      "smiles": "예: CCO (에탄올)",
+      "formula": "예: H2O, NH4+",
+      "inchi": "예: InChI=1S/H2O/h1H2"
+    },
+    "preview": {
+      "empty": "입력하면 미리보기가 표시됩니다.",
+      "loading": "분석 중…",
+      "sourceLabel": "텍스트 입력 미리보기"
+    },
+    "rdkitLoading": "화학 엔진 로드 중…",
+    "replaceToggle": {
+      "label": "활성 분자 교체",
+      "helpReplace": "활성 분자의 구조를 이 입력으로 교체합니다.",
+      "helpAdd": "새 분자로 작업공간에 추가합니다.",
+      "disabledNoActive": "활성 분자 없음 — 새로 추가됩니다."
+    },
+    "duplicate": {
+      "message": "동일한 분자가 이미 작업공간에 있습니다.",
+      "activateExisting": "기존 분자 활성화"
+    },
+    "formulaUnsupported": {
+      "openCompoundBrowser": "화합물 검색 열기"
+    },
+    "rdkitInitFailed": {
+      "reloadPage": "페이지 새로고침"
+    },
+    "action": {
+      "addToWorkspace": "추가",
+      "replaceActive": "교체",
+      "cancel": "취소"
+    },
+    "submitted": {
+      "added": "작업공간에 추가했습니다.",
+      "replaced": "활성 분자를 교체했습니다."
+    }
   }
 }

@@ -1,5 +1,11 @@
 // Phase 07 §5.3 — uiStore selector helpers.
-import type { CompoundSearchSlice, Notification, PanelKey, UiStoreState } from './uiStore.types';
+import type {
+  CompoundSearchSlice,
+  Notification,
+  PanelKey,
+  TextInputSeed,
+  UiStoreState,
+} from './uiStore.types';
 
 export const selectIsGloballyLoading = (s: UiStoreState): boolean => s.globalLoading.count > 0;
 export const selectActivePanel = (s: UiStoreState): PanelKey | null => s.panels.active;
@@ -14,3 +20,8 @@ export const selectSelection = (s: UiStoreState): UiStoreState['selection'] => s
 // Phase 11 §6.13 retrofit — undo selection 토스트 단일 관찰자용.
 export const selectHasSelection = (s: UiStoreState): boolean =>
   s.selection.atomIds.length > 0 || s.selection.bondIds.length > 0;
+
+// Phase 12 §4.5 / §5.3 — text-input 패널 슬롯 selectors.
+export const selectIsTextInputOpen = (s: UiStoreState): boolean => s.panels.isTextInputOpen;
+export const selectTextInputInitial = (s: UiStoreState): TextInputSeed | null =>
+  s.panels.textInputInitial;

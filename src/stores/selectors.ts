@@ -6,9 +6,11 @@ export {
   selectIngestState,
   selectMoleculeSnapshot,
   selectBondMetrics, // Phase 11 §4.7 retrofit
+  mapIngestErrorToKey, // Phase 12 §6.11 retrofit
 } from './moleculeStore.selectors';
 export type { MoleculeSnapshot } from './moleculeStore.selectors';
 export type { BondMetric, BondAngleMetric, BondMetricsResult } from './moleculeStore.selectors';
+export type { IngestErrorMapping } from './moleculeStore.selectors';
 
 export {
   selectAtomLabelsOn,
@@ -19,6 +21,8 @@ export {
   selectCompoundSearch,
   selectSelection,
   selectHasSelection, // Phase 11 §6.13 retrofit
+  selectIsTextInputOpen, // Phase 12
+  selectTextInputInitial, // Phase 12
 } from './uiStore.selectors';
 
 export {

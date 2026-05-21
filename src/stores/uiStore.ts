@@ -13,6 +13,7 @@ import {
   type CompoundSearchMode,
   type Notification,
   type PanelKey,
+  type TextInputSeed,
   type UiStoreState,
 } from './uiStore.types';
 
@@ -28,6 +29,8 @@ export interface UiStoreActions {
   toggleCompoundBrowser(open?: boolean): void;
   togglePeriodicTable(open?: boolean): void;
   toggleReactionResult(open?: boolean): void;
+  toggleTextInput(open?: boolean): void; // Phase 12
+  setTextInputInitial(seed: TextInputSeed | null): void; // Phase 12
 
   // ── 뷰포트 표시 옵션 ──
   toggleAtomLabels(on?: boolean): void;
@@ -103,6 +106,20 @@ export const useUiStore = createAppStore<UiStore>('uiStore', (set, get) => ({
     toggleReactionResult: (open) =>
       set((s) => {
         s.panels.isReactionResultOpen = open ?? !s.panels.isReactionResultOpen;
+      }),
+
+    // Phase 12 §5.3 — text-input 모달 토글. 닫을 때 seed 자동 cleanup.
+    toggleTextInput: (open) =>
+      set((s) => {
+        const next = open ?? !s.panels.isTextInputOpen;
+        s.panels.isTextInputOpen = next;
+        if (!next) {
+          s.panels.textInputInitial = null;
+        }
+      }),
+    setTextInputInitial: (seed) =>
+      set((s) => {
+        s.panels.textInputInitial = seed;
       }),
 
     toggleAtomLabels: (on) =>

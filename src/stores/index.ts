@@ -20,6 +20,8 @@ export type {
   PanelKey,
   CompoundSearchSlice,
   CompoundSearchMode,
+  TextInputMode,
+  TextInputSeed,
 } from './uiStore.types';
 
 // ── settingsStore 보조 타입/상수 ──
@@ -58,6 +60,8 @@ export {
   selectCompoundSearch,
   selectSelection,
   selectHasSelection,
+  selectIsTextInputOpen,
+  selectTextInputInitial,
   selectTheme,
   selectLocale,
   selectRenderMode,
@@ -72,9 +76,11 @@ export {
   selectAppliedRuleId,
   selectLastResult,
   mapReactionErrorToKey,
+  mapIngestErrorToKey,
 } from './selectors';
 export type { MoleculeSnapshot } from './selectors';
 export type { BondMetric, BondAngleMetric, BondMetricsResult } from './selectors';
+export type { IngestErrorMapping } from './selectors';
 
 // ── Undoable 시스템 — swappable `dispatcher` 싱글톤 + createUndoStack 본 구현 ──
 // `dispatcher`: 스토어/UI 가 쓰는 안정 식별자 (phase-11 §1942 패턴).

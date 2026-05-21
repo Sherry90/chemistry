@@ -43,4 +43,10 @@ export const panelRegistrations: ReadonlyArray<PanelRegistration> = [
     i18nTitleKey: 'panels:reactionResult.title',
     load: () => import('./ReactionResult'),
   },
+  {
+    key: 'text-input',
+    mode: 'modal',
+    i18nTitleKey: 'panels:textInput.title',
+    load: () => import('./TextInput'),
+  },
 ];

@@ -13,8 +13,7 @@
         "boilingPoint": "Boiling Point",
         "block": "Block"
       },
-      "startMolecule": "Start molecule with this element",
-      "startMoleculePlaceholder": "SMILES input pipeline coming in Phase 12."
+      "startMolecule": "Start molecule with this element"
     }
   },
   "compoundBrowser": {
@@ -86,7 +85,6 @@
     "redo": "Redo",
     "createBond": "Create bond",
     "smilesInput": "SMILES input",
-    "smilesInputPlaceholder": "Coming in Phase 12.",
     "frameActive": "Frame active",
     "frameAll": "Frame all",
     "resetCamera": "Reset camera",
@@ -102,5 +100,45 @@
   "toast": {
     "dismiss": "Dismiss",
     "level": { "info": "Info", "success": "Success", "warn": "Warning", "error": "Error" }
+  },
+  "textInput": {
+    "title": "Add Molecule from Text",
+    "modeTabs": { "smiles": "SMILES", "formula": "Formula", "inchi": "InChI" },
+    "placeholder": {
+      "smiles": "e.g., CCO (ethanol)",
+      "formula": "e.g., H2O, NH4+",
+      "inchi": "e.g., InChI=1S/H2O/h1H2"
+    },
+    "preview": {
+      "empty": "Enter input to see a preview.",
+      "loading": "Analyzing…",
+      "sourceLabel": "Text input preview"
+    },
+    "rdkitLoading": "Loading chemistry engine…",
+    "replaceToggle": {
+      "label": "Replace active molecule",
+      "helpReplace": "Replace the active molecule's structure with this input.",
+      "helpAdd": "Add as a new molecule to the workspace.",
+      "disabledNoActive": "No active molecule — will add as new."
+    },
+    "duplicate": {
+      "message": "An identical molecule is already in the workspace.",
+      "activateExisting": "Activate existing"
+    },
+    "formulaUnsupported": {
+      "openCompoundBrowser": "Open compound search"
+    },
+    "rdkitInitFailed": {
+      "reloadPage": "Reload page"
+    },
+    "action": {
+      "addToWorkspace": "Add",
+      "replaceActive": "Replace",
+      "cancel": "Cancel"
+    },
+    "submitted": {
+      "added": "Added to workspace.",
+      "replaced": "Active molecule replaced."
+    }
   }
 }
