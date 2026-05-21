@@ -29,6 +29,12 @@ export interface UndoableDispatcher {
   redo(): void;
   readonly canUndo: () => boolean;
   readonly canRedo: () => boolean;
+  // ── Phase 13 §4.9 / §5.5 retrofit (additive) ──
+  // import 적용 직전 스택 비우기(clear) + 드래그 group 강제 flush 가 필요.
+  // phase-09 v0.2 의 UndoStackController 가 이미 본 메서드를 보유 (undoStack.ts
+  // line 44/46) — 본 인터페이스는 그 표면을 dispatcher 까지 노출만 한다.
+  clear(): void;
+  flush(): void;
 }
 
 /**
@@ -47,6 +53,9 @@ export const phase07PlaceholderDispatcher: UndoableDispatcher = {
   redo: () => logger.debug('redo() called — Phase 09 가 인수'),
   canUndo: () => false,
   canRedo: () => false,
+  // Phase 13 §4.9 retrofit — placeholder 단계에서는 스택이 비어 있으므로 no-op.
+  clear: () => logger.debug('clear() called — Phase 09 가 인수 (placeholder no-op)'),
+  flush: () => logger.debug('flush() called — Phase 09 가 인수 (placeholder no-op)'),
 };
 
 // ── Phase 09 — dispatcher 싱글톤 swap (phase-07 §6.4 / phase-11 §1942 패턴) ──
@@ -70,6 +79,9 @@ export const dispatcher: UndoableDispatcher = {
   redo: () => current.redo(),
   canUndo: () => current.canUndo(),
   canRedo: () => current.canRedo(),
+  // Phase 13 §4.9 / §5.5 — UndoStackController 표면 노출 (additive).
+  clear: () => current.clear(),
+  flush: () => current.flush(),
 };
 
 /** createUndoStack() 결과 주입 — phase-09 <Viewport>, phase-10 AppLayout. */

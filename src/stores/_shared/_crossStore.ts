@@ -6,6 +6,7 @@
 import type { Molecule } from '@/chemistry/compounds/types';
 import type { MoleculeId } from '@/chemistry/compounds/ids';
 import type { ReactionEngineError } from '@/engine/reaction';
+import type { SessionFile } from '@/chemistry/session/types';
 import { useUiStore } from '../uiStore';
 import { useReactionStore } from '../reactionStore';
 import { useMoleculeStore } from '../moleculeStore';
@@ -57,4 +58,19 @@ export function cascadeRemoveMolecule(id: MoleculeId): void {
     atomIds: ui.selection.atomIds.filter((s) => !s.startsWith(prefix)),
     bondIds: ui.selection.bondIds.filter((s) => !s.startsWith(prefix)),
   });
+}
+
+/**
+ * Phase 13 §6.14 — JSON Import (replace 모드) 의 cross-store 적용.
+ * moleculeStore.applyImportedSession 안에서만 호출 (P1 예외 #3).
+ *  - reactionStore: setCondition(session.condition)
+ *  - uiStore: viewport 옵션 (showAtomLabels / backgroundOverride) 액션 경유 적용
+ *  - selection: v1 skip — export 가 index 기반 빈 배열로 직렬화하므로 의미 없음.
+ *    TODO phase-13 follow-up: deserializeSelection helper 도입 후 setSelection 복원.
+ */
+export function applyImportedSessionCrossStore(session: SessionFile): void {
+  useReactionStore.getState().actions.setCondition(session.condition);
+  const ui = useUiStore.getState();
+  ui.actions.toggleAtomLabels(session.viewport.showAtomLabels);
+  ui.actions.setBackgroundOverride(session.viewport.backgroundOverride);
 }

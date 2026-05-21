@@ -22,6 +22,7 @@ export type {
   CompoundSearchMode,
   TextInputMode,
   TextInputSeed,
+  IoMode,
 } from './uiStore.types';
 
 // ── settingsStore 보조 타입/상수 ──
@@ -51,6 +52,7 @@ export {
   selectMoleculeIds,
   selectIngestState,
   selectMoleculeSnapshot,
+  selectAllMoleculeSnapshots, // Phase 13 §4.8 retrofit
   selectBondMetrics,
   selectAtomLabelsOn,
   selectBackgroundOverride,
@@ -62,6 +64,8 @@ export {
   selectHasSelection,
   selectIsTextInputOpen,
   selectTextInputInitial,
+  selectIsIoOpen,
+  selectIoInitialMode,
   selectTheme,
   selectLocale,
   selectRenderMode,
@@ -77,10 +81,14 @@ export {
   selectLastResult,
   mapReactionErrorToKey,
   mapIngestErrorToKey,
+  mapExportErrorToKey, // Phase 13 §6.13 retrofit
+  mapImportErrorToKey, // Phase 13 §6.13 retrofit
+  mapIoErrorToKey, // Phase 13 §6.13 retrofit
 } from './selectors';
 export type { MoleculeSnapshot } from './selectors';
 export type { BondMetric, BondAngleMetric, BondMetricsResult } from './selectors';
 export type { IngestErrorMapping } from './selectors';
+export type { IoErrorMapping } from './selectors'; // Phase 13 §4.6 retrofit
 
 // ── Undoable 시스템 — swappable `dispatcher` 싱글톤 + createUndoStack 본 구현 ──
 // `dispatcher`: 스토어/UI 가 쓰는 안정 식별자 (phase-11 §1942 패턴).

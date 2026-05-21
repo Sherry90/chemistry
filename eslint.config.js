@@ -127,17 +127,12 @@ export default [
               except: ['rdkit/status.ts'],
             },
             { target: 'src/components', from: 'src/app' },
+            // Phase 13 §4.1 CD6 — io 의 런타임 store 접근 명시 허용 (`useMoleculeStore.getState()` /
+            // `actions.applyImportedSession`). 타입 차원에서 `ViewportApi` 도 import (exportPng
+            // 시그니처). 차단되는 downstream 영역: services / panels / components / app / hooks.
             {
               target: 'src/io',
-              from: [
-                'src/services',
-                'src/stores',
-                'src/viewport',
-                'src/panels',
-                'src/components',
-                'src/app',
-                'src/hooks',
-              ],
+              from: ['src/services', 'src/panels', 'src/components', 'src/app', 'src/hooks'],
             },
           ],
         },

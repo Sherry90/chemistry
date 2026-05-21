@@ -1,6 +1,7 @@
 // Phase 07 §5.3 — uiStore selector helpers.
 import type {
   CompoundSearchSlice,
+  IoMode,
   Notification,
   PanelKey,
   TextInputSeed,
@@ -25,3 +26,7 @@ export const selectHasSelection = (s: UiStoreState): boolean =>
 export const selectIsTextInputOpen = (s: UiStoreState): boolean => s.panels.isTextInputOpen;
 export const selectTextInputInitial = (s: UiStoreState): TextInputSeed | null =>
   s.panels.textInputInitial;
+
+// Phase 13 §4.1 / §5.4 — io 패널 슬롯 selectors.
+export const selectIsIoOpen = (s: UiStoreState): boolean => s.panels.isIoOpen;
+export const selectIoInitialMode = (s: UiStoreState): IoMode | null => s.panels.ioInitialMode;

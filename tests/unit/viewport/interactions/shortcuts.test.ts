@@ -80,6 +80,9 @@ describe('installGlobalUndoShortcuts', () => {
       redo,
       canUndo: () => false,
       canRedo: () => false,
+      // Phase 13 §4.9 retrofit — interface additive 멤버 (테스트 no-op).
+      clear: () => {},
+      flush: () => {},
     };
     return { d, undo, redo };
   }

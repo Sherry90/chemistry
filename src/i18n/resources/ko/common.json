@@ -51,5 +51,30 @@
       "rdkitNotReady": "화학 엔진이 준비되지 않았습니다. 지속될 경우 페이지를 새로고침하세요.",
       "internal": "내부 오류: {{message}}"
     }
+  },
+  "io": {
+    "error": {
+      "export": {
+        "canvasNotReady": "뷰포트가 준비되지 않았습니다. 다시 시도하세요.",
+        "captureFailed": "스크린샷 캡처 실패: {{message}}",
+        "sdfFailed": "분자 {{moleculeId}} 의 SDF 직렬화 실패.",
+        "jsonFailed": "JSON 직렬화 실패: {{message}}",
+        "nothingToExport": "내보낼 항목이 없습니다.",
+        "fileTooLarge": "내보내기 크기 {{sizeMb}} MB 가 제한 {{limitMb}} MB 를 초과합니다.",
+        "userAborted": "내보내기 취소됨.",
+        "internal": "내부 내보내기 오류: {{message}}"
+      },
+      "import": {
+        "fileTooLarge": "파일 크기 {{sizeMb}} MB 가 제한 {{limitMb}} MB 를 초과합니다.",
+        "jsonSyntax": "잘못된 JSON 구문: {{message}}",
+        "schemaMismatch": "{{path}} 의 잘못된 세션 파일: {{message}}",
+        "incompatibleVersion": "파일 버전 {{fileVersion}} 은 지원되지 않습니다 (예상: {{supportedVersion}}).",
+        "empty": "파일이 비어있습니다.",
+        "noMolecules": "파일에 분자가 없습니다.",
+        "partial": "부분 가져오기: {{imported}}개 성공, {{skipped}}개 실패.",
+        "userAborted": "가져오기 취소됨.",
+        "internal": "내부 가져오기 오류: {{message}}"
+      }
+    }
   }
 }

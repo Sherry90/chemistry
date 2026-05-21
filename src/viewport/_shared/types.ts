@@ -40,8 +40,11 @@ export type BackgroundResolved =
   | { readonly mode: 'override-dark'; readonly hex: typeof THEME_DARK_BG };
 
 // ── ViewportApi (§4.5, D14) ──
+// Phase 13 §5.5 retrofit — format 을 'png' | 'jpeg' | 'webp' 로 widen.
+// 'png' string literal 은 widened union 의 subset 이므로 기존 호출자
+// (Toolbar ViewportGroup captureBlob({ format: 'png', dpr: 2 })) 무변경.
 export interface CaptureBlobOptions {
-  readonly format: 'png'; // v1 PNG 전용 (Phase 13 이 widen)
+  readonly format: 'png' | 'jpeg' | 'webp';
   readonly dpr?: number;
   readonly transparentBackground?: boolean; // 디폴트 false
 }

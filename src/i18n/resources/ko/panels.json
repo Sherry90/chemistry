@@ -88,7 +88,8 @@
     "frameActive": "활성 분자 맞춤",
     "frameAll": "전체 맞춤",
     "resetCamera": "카메라 초기화",
-    "capture": "PNG 캡처",
+    "export": "내보내기",
+    "import": "가져오기",
     "labels": "원자 라벨",
     "renderMode": { "ballAndStick": "볼-스틱", "comingSoon": "준비 중" },
     "background": { "theme": "테마", "light": "밝게", "dark": "어둡게" },
@@ -140,5 +141,55 @@
       "added": "작업공간에 추가했습니다.",
       "replaced": "활성 분자를 교체했습니다."
     }
+  },
+  "io": {
+    "title": "내보내기 / 가져오기",
+    "modeLabel": {
+      "pngExport": "PNG 스크린샷",
+      "jsonExport": "JSON 세션",
+      "sdfExport": "SDF 구조",
+      "jsonImport": "JSON 가져오기"
+    },
+    "pngExport": {
+      "format": { "label": "형식", "png": "PNG", "jpeg": "JPEG", "webp": "WebP" },
+      "dpr": { "label": "해상도", "1x": "1x", "2x": "2x", "3x": "3x", "4x": "4x" },
+      "transparent": {
+        "label": "투명 배경",
+        "disabledHint": "JPEG 는 투명도를 지원하지 않습니다."
+      },
+      "exportButton": "PNG 내보내기",
+      "success": "스크린샷이 저장되었습니다."
+    },
+    "jsonExport": {
+      "scope": { "active": "활성 분자만", "all": "모든 분자" },
+      "includes": "이 내보내기에 포함되는 항목:",
+      "includesItems": "분자 {{count}}개, 반응 조건, 선택 상태, 뷰포트 옵션",
+      "excludes": "비포함: 앱 설정, 반응 결과",
+      "exportButton": "JSON 내보내기",
+      "success": "세션을 JSON 으로 내보냈습니다."
+    },
+    "sdfExport": {
+      "scope": { "active": "활성 분자만", "all": "모든 분자" },
+      "exportButton": "SDF 내보내기",
+      "success": "구조를 SDF 로 내보냈습니다."
+    },
+    "jsonImport": {
+      "filePicker": { "label": "JSON 파일 선택", "noFile": "파일 미선택" },
+      "mode": {
+        "label": "가져오기 모드",
+        "replace": "교체 (현재 비우고 적재)",
+        "append": "추가 (현재 유지, 중복 자동 skip)"
+      },
+      "importButton": "가져오기",
+      "importing": "분자 적재 중…",
+      "success": "분자 {{count}}개 가져왔습니다.",
+      "partial": "분자 {{imported}}개 가져옴, {{skipped}}개 skip (중복 또는 오류)."
+    },
+    "error": {
+      "retry": "다시 시도",
+      "pickFileAgain": "다른 파일 선택",
+      "reloadPage": "페이지 새로고침"
+    },
+    "close": "닫기"
   }
 }

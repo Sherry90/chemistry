@@ -88,7 +88,8 @@
     "frameActive": "Frame active",
     "frameAll": "Frame all",
     "resetCamera": "Reset camera",
-    "capture": "Capture PNG",
+    "export": "Export",
+    "import": "Import",
     "labels": "Atom labels",
     "renderMode": { "ballAndStick": "Ball and stick", "comingSoon": "Coming soon" },
     "background": { "theme": "Theme", "light": "Light", "dark": "Dark" },
@@ -140,5 +141,55 @@
       "added": "Added to workspace.",
       "replaced": "Active molecule replaced."
     }
+  },
+  "io": {
+    "title": "Export / Import",
+    "modeLabel": {
+      "pngExport": "PNG Screenshot",
+      "jsonExport": "JSON Session",
+      "sdfExport": "SDF Structures",
+      "jsonImport": "Import JSON"
+    },
+    "pngExport": {
+      "format": { "label": "Format", "png": "PNG", "jpeg": "JPEG", "webp": "WebP" },
+      "dpr": { "label": "Resolution", "1x": "1x", "2x": "2x", "3x": "3x", "4x": "4x" },
+      "transparent": {
+        "label": "Transparent background",
+        "disabledHint": "JPEG does not support transparency."
+      },
+      "exportButton": "Export PNG",
+      "success": "Screenshot saved."
+    },
+    "jsonExport": {
+      "scope": { "active": "Active molecule only", "all": "All molecules" },
+      "includes": "This export includes:",
+      "includesItems": "{{count}} molecule(s), reaction conditions, selection, viewport options",
+      "excludes": "Excluded: app settings, reaction results",
+      "exportButton": "Export JSON",
+      "success": "Session exported as JSON."
+    },
+    "sdfExport": {
+      "scope": { "active": "Active molecule only", "all": "All molecules" },
+      "exportButton": "Export SDF",
+      "success": "Structures exported as SDF."
+    },
+    "jsonImport": {
+      "filePicker": { "label": "Select JSON file", "noFile": "No file selected" },
+      "mode": {
+        "label": "Import mode",
+        "replace": "Replace (clear current and load)",
+        "append": "Append (keep current, skip duplicates)"
+      },
+      "importButton": "Import",
+      "importing": "Importing molecules…",
+      "success": "Imported {{count}} molecule(s).",
+      "partial": "Imported {{imported}} molecule(s), skipped {{skipped}} (duplicates or errors)."
+    },
+    "error": {
+      "retry": "Retry",
+      "pickFileAgain": "Pick another file",
+      "reloadPage": "Reload page"
+    },
+    "close": "Close"
   }
 }

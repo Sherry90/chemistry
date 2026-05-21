@@ -1,11 +1,19 @@
 // Phase 07 §5.1 — moleculeStore selector helpers.
+// Phase 13 §4.8 / §6.13 retrofit — MoleculeSnapshot 동결 + IO 에러 매핑.
 import type { Molecule } from '@/chemistry/compounds/types';
 import type { BondOrder } from '@/chemistry/bonds/types';
 import { getElement } from '@/chemistry/elements';
 import type { ParseError } from '@/engine/parser';
 import type { EmbedError } from '@/engine/geometry';
+import type { MoleculeSnapshot } from '@/chemistry/session/types';
+import { toSnapshot } from '@/chemistry/session/snapshot';
+import type { ExportError, ImportError } from '@/io/_shared/errors';
 import type { AsyncState, IngestError, MoleculeId } from './_shared/types';
 import type { MoleculeStoreState } from './moleculeStore.types';
+
+// MoleculeSnapshot 의 출처 = @/chemistry/session/types (CD6).
+// 본 모듈은 외부 호환을 위해 *재수출* (phase-07 §5.1 line 461 동결 책임 이행).
+export type { MoleculeSnapshot };
 
 export const selectActiveMolecule = (s: MoleculeStoreState): Molecule | null =>
   s.activeId ? (s.molecules[s.activeId] ?? null) : null;
@@ -21,17 +29,21 @@ export const selectIngestState = (s: MoleculeStoreState): AsyncState<MoleculeId,
   s.ingest;
 
 /**
- * Phase 13 export 용 — 직렬화 가능한 dump (Date/Map/Set/함수 미포함).
- * 정확한 필드 동결은 Phase 13 가 export 포맷 결정 시 수행 (본 Phase 는 *형태 보장*만).
+ * Phase 07 §5.1 line 461 의 동결 책임을 Phase 13 가 이행. 시그니처는 보존
+ * (id → state → MoleculeSnapshot | null) 하되, **반환 형태가 Molecule → MoleculeSnapshot**
+ * 으로 좁아짐. SerializedAtom/BondSnapshot 기반 직렬화 형식 (atom ID 미보유, bond 는 index 기반).
  */
-export type MoleculeSnapshot = Molecule;
-
 export const selectMoleculeSnapshot =
   (id: MoleculeId) =>
   (s: MoleculeStoreState): MoleculeSnapshot | null => {
     const m = s.molecules[id];
-    return m ? (structuredClone(m) as MoleculeSnapshot) : null;
+    return m ? toSnapshot(m) : null;
   };
+
+/** Phase 13 §4.8 — JSON export 진입점. 모든 분자 (s.ids 순서) 의 snapshot. */
+export const selectAllMoleculeSnapshots = (
+  s: MoleculeStoreState,
+): ReadonlyArray<MoleculeSnapshot> => s.ids.map((id) => toSnapshot(s.molecules[id]!));
 
 // ── Phase 11 §4.7 retrofit — selectBondMetrics (standalone 순수 + WeakMap memo) ──
 
@@ -206,4 +218,120 @@ function embedErrorToMapping(e: EmbedError): IngestErrorMapping {
     case 'InternalError':
       return { key: 'common.ingest.error.embed.generic', params: { message: e.message } };
   }
+}
+
+// ── Phase 13 §4.6 / §6.13 retrofit — ExportError / ImportError → i18n 매핑 ──
+
+export interface IoErrorMapping {
+  readonly key: string;
+  readonly params?: Readonly<Record<string, string | number>>;
+  readonly action?: 'retry' | 'pick-file-again' | 'reload-page' | null;
+}
+
+/** 1 MB 미만은 소수 2 자리, 그 외는 정수. i18n 표시용 helper. */
+function formatMb(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(2);
+}
+
+/** ExportError → IoErrorMapping. i18n 키는 common.io.error.export.* 트리. */
+export function mapExportErrorToKey(e: ExportError): IoErrorMapping {
+  switch (e.kind) {
+    case 'CanvasNotReady':
+      return { key: 'common.io.error.export.canvasNotReady', action: 'retry' };
+    case 'CaptureFailed':
+      return {
+        key: 'common.io.error.export.captureFailed',
+        params: { message: e.message },
+        action: 'retry',
+      };
+    case 'SdfSerializationFailed':
+      return {
+        key: 'common.io.error.export.sdfFailed',
+        params: { moleculeId: e.moleculeId },
+      };
+    case 'JsonSerializationFailed':
+      return {
+        key: 'common.io.error.export.jsonFailed',
+        params: { message: e.message },
+      };
+    case 'NothingToExport':
+      return { key: 'common.io.error.export.nothingToExport' };
+    case 'FileTooLarge':
+      return {
+        key: 'common.io.error.export.fileTooLarge',
+        params: { sizeMb: formatMb(e.sizeBytes), limitMb: formatMb(e.limitBytes) },
+      };
+    case 'UserAborted':
+      return { key: 'common.io.error.export.userAborted' };
+    case 'Internal':
+      return {
+        key: 'common.io.error.export.internal',
+        params: { message: e.message },
+      };
+  }
+}
+
+/** ImportError → IoErrorMapping. i18n 키는 common.io.error.import.* 트리. */
+export function mapImportErrorToKey(e: ImportError): IoErrorMapping {
+  switch (e.kind) {
+    case 'FileTooLarge':
+      return {
+        key: 'common.io.error.import.fileTooLarge',
+        params: { sizeMb: formatMb(e.sizeBytes), limitMb: formatMb(e.limitBytes) },
+        action: 'pick-file-again',
+      };
+    case 'JsonSyntax':
+      return {
+        key: 'common.io.error.import.jsonSyntax',
+        params: { message: e.message },
+        action: 'pick-file-again',
+      };
+    case 'SchemaMismatch':
+      return {
+        key: 'common.io.error.import.schemaMismatch',
+        params: { path: e.path, message: e.message },
+        action: 'pick-file-again',
+      };
+    case 'IncompatibleVersion':
+      return {
+        key: 'common.io.error.import.incompatibleVersion',
+        params: { fileVersion: e.fileVersion, supportedVersion: e.supportedVersion },
+      };
+    case 'EmptyFile':
+      return { key: 'common.io.error.import.empty', action: 'pick-file-again' };
+    case 'NoMolecules':
+      return { key: 'common.io.error.import.noMolecules', action: 'pick-file-again' };
+    case 'PartiallyFailed':
+      return {
+        key: 'common.io.error.import.partial',
+        params: { imported: e.imported, skipped: e.skipped },
+      };
+    case 'UserAborted':
+      return { key: 'common.io.error.import.userAborted' };
+    case 'Internal':
+      return {
+        key: 'common.io.error.import.internal',
+        params: { message: e.message },
+      };
+  }
+}
+
+/**
+ * Phase 13 §6.13 의 통합 진입점. ExportError 와 ImportError 는 일부 kind 가 동일 shape
+ * (`FileTooLarge` / `UserAborted` / `Internal`) 이지만 i18n 키 트리가 export.* / import.*
+ * 로 분리되어 있어, **호출자가 context 를 명시**해야 한다 (advisor 결정).
+ * - 단일 함수 시그니처는 ExportError | ImportError 유니온 + context 필수.
+ * - 내부에서 mapExportErrorToKey / mapImportErrorToKey 로 dispatch.
+ *
+ * Note: TS 의 구조적 타이핑 한계로 유니온의 일부 kind 가 양측에 존재 — 본 함수는
+ * context 파라미터로 i18n 키 트리를 결정하므로 ambiguity 가 사라진다.
+ */
+export function mapIoErrorToKey(
+  e: ExportError | ImportError,
+  context: 'export' | 'import',
+): IoErrorMapping {
+  if (context === 'export') {
+    return mapExportErrorToKey(e as ExportError);
+  }
+  return mapImportErrorToKey(e as ImportError);
 }

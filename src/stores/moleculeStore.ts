@@ -16,12 +16,20 @@ import { getCompoundByCid } from '@/services/pubchem';
 import type { Result } from '@/types/result';
 import { ok, err } from '@/types/result';
 import { logger } from '@/utils/logger';
+// Phase 13 §4.8 / §6.14 — CD6: 세션 변환 helper 는 chemistry 계층 (stores→io 역행 없음).
+import type { SessionFile } from '@/chemistry/session/types';
+import { fromSnapshot } from '@/chemistry/session/snapshot';
+import type { ImportError } from '@/io/_shared/errors';
 import { createAppStore } from './_shared/createStore';
 // Phase 09: placeholder → swappable `dispatcher` 싱글톤 (phase-11 §1942 패턴).
 // 액션 본문 불변 — createUndoStack() 주입은 setUndoDispatcher 가 처리.
 import { dispatcher } from './_shared/undoable';
 import { newMoleculeId, type IngestError, type MoleculeId } from './_shared/types';
-import { withGlobalLoading, cascadeRemoveMolecule } from './_shared/_crossStore';
+import {
+  withGlobalLoading,
+  cascadeRemoveMolecule,
+  applyImportedSessionCrossStore,
+} from './_shared/_crossStore';
 import { makeInitialMoleculeState, type MoleculeStoreState } from './moleculeStore.types';
 import type { TextInputMode } from './uiStore.types';
 
@@ -73,6 +81,34 @@ export interface MoleculeStoreActions {
   addFromMolecule(m: Molecule): MoleculeId;
   /** 여러 분자를 하나의 undoable group 으로 적재. 마지막을 active. */
   addFromMolecules(ms: ReadonlyArray<Molecule>): ReadonlyArray<MoleculeId>;
+
+  // ── Phase 13 retrofit (§4.8 / §5.4 / §6.14) ──
+  /**
+   * 모든 분자 clear + imported batch 적재 (replace 모드 진입점).
+   * 단일 entry undoable. activeMoleculeId 가 molecules 안에 있으면 그 ID 로 setActive,
+   * 아니면 첫 id 또는 null.
+   * **kind 결정**: phase-07 UndoableActionKind union 에 `'molecule.import-replace'` 미존재 →
+   * 새 kind 추가 회피하기 위해 기존 `'molecule.replace'` 재사용 (advisor 결정).
+   */
+  replaceAll(
+    molecules: ReadonlyArray<Molecule>,
+    opts?: { activeMoleculeId?: MoleculeId | null },
+  ): void;
+
+  /**
+   * JSON Import 의 high-level 진입점.
+   * 1. 사전 검증 단계 (G8 트랜잭션 보장) — 모든 fromSnapshot 시도. 실패 시 PartiallyFailed
+   *    즉시 반환 (상태 변경 없음).
+   * 2. mode='replace' → replaceAll + cross-store (condition/viewport) 적용.
+   * 3. mode='append' → 각 분자 InChIKey 매칭 검사 → 매칭 시 skip, 아니면 addFromMolecule
+   *    호출. duplicate 검출은 본 함수 내부에 격리 (옵션 Y — addFromMolecule 시그니처 무변경).
+   * 4. dispatcher.clear() — 양쪽 모드 (D8: import = 새 baseline).
+   * 5. selection 복원은 v1 skip (W2.1 export 시 selection 빈 배열로 직렬화).
+   */
+  applyImportedSession(
+    session: SessionFile,
+    opts?: { mode: 'replace' | 'append' },
+  ): Promise<Result<{ imported: number; skipped: number }, ImportError>>;
 
   clear(): void; // 비-undoable (일괄 리셋)
   undo(): void;
@@ -505,6 +541,113 @@ export const useMoleculeStore = createAppStore<MoleculeStore>('moleculeStore', (
             }),
         );
         return ids;
+      },
+
+      // ── Phase 13 §4.8 / §6.14 retrofit ──
+      replaceAll: (molecules, opts) =>
+        dispatcher.dispatchUndoable(
+          { undoable: true, kind: 'molecule.replace', labelKey: 'stores.undo.moleculeReplace' },
+          () =>
+            set((s) => {
+              s.molecules = {};
+              s.ids = [];
+              for (const m of molecules) {
+                s.molecules[m.id] = castDraft(m);
+                s.ids.push(m.id);
+              }
+              const requested = opts?.activeMoleculeId;
+              if (requested && s.molecules[requested]) {
+                s.activeId = requested;
+              } else {
+                s.activeId = s.ids[0] ?? null;
+              }
+            }),
+        ),
+
+      applyImportedSession: async (session, opts) => {
+        const mode = opts?.mode ?? 'replace';
+
+        // 1. 사전 검증 단계 (G8 트랜잭션 보장) — fromSnapshot 은 순수 변환이지만
+        //    방어적으로 try/catch 로 감싼다.
+        const conversions: Array<
+          { ok: true; value: Molecule } | { ok: false; reason: string; index: number }
+        > = session.molecules.map((snap, index) => {
+          try {
+            return { ok: true, value: fromSnapshot(snap) } as const;
+          } catch (e) {
+            return {
+              ok: false,
+              reason: e instanceof Error ? e.message : String(e),
+              index,
+            } as const;
+          }
+        });
+
+        const failures = conversions.flatMap((r) =>
+          r.ok ? [] : [{ moleculeIndex: r.index, reason: r.reason }],
+        );
+
+        // 모두 실패 — 진행 무의미
+        if (failures.length === session.molecules.length && session.molecules.length > 0) {
+          return err({
+            kind: 'PartiallyFailed',
+            imported: 0,
+            skipped: 0,
+            errors: failures,
+          });
+        }
+
+        // replace 모드의 부분 실패 — clear 전 즉시 반환 (상태 변경 없음, G8 트랜잭션 보장)
+        if (failures.length > 0 && mode === 'replace') {
+          return err({
+            kind: 'PartiallyFailed',
+            imported: 0,
+            skipped: failures.length,
+            errors: failures,
+          });
+        }
+
+        const validMolecules: ReadonlyArray<Molecule> = conversions.flatMap((r) =>
+          r.ok ? [r.value] : [],
+        );
+
+        // 2. mode='replace'
+        if (mode === 'replace') {
+          get().actions.replaceAll(validMolecules, {
+            activeMoleculeId: session.activeMoleculeId,
+          });
+          // 3. cross-store: condition / viewport (selection 복원은 v1 skip — TODO phase-13 follow-up)
+          applyImportedSessionCrossStore(session);
+          // 4. dispatcher.clear() (D8 — import = 새 baseline)
+          dispatcher.clear();
+          return ok({ imported: validMolecules.length, skipped: failures.length });
+        }
+
+        // 3. mode='append' — duplicate 검출 (옵션 Y)
+        const { molecules: existingMols, ids: existingIds } = get();
+        const existingInchiKeys = new Set<string>();
+        for (const id of existingIds) {
+          const k = existingMols[id]?.inchiKey;
+          if (k) existingInchiKeys.add(k);
+        }
+
+        let imported = 0;
+        let skipped = failures.length;
+
+        for (const m of validMolecules) {
+          if (m.inchiKey && existingInchiKeys.has(m.inchiKey)) {
+            skipped++;
+            continue;
+          }
+          get().actions.addFromMolecule(m);
+          imported++;
+          if (m.inchiKey) existingInchiKeys.add(m.inchiKey);
+        }
+
+        // append 모드 = condition / viewport 미적용 (사용자 의도 보존, §6.14)
+        // 4. dispatcher.clear() (D8 — replace/append 양쪽)
+        dispatcher.clear();
+        return ok({ imported, skipped });
       },
 
       clear: () =>

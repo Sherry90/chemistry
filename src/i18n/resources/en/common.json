@@ -51,5 +51,30 @@
       "rdkitNotReady": "Chemistry engine is not ready. Reload the page if this persists.",
       "internal": "Internal error: {{message}}"
     }
+  },
+  "io": {
+    "error": {
+      "export": {
+        "canvasNotReady": "Viewport is not ready. Try again.",
+        "captureFailed": "Failed to capture screenshot: {{message}}",
+        "sdfFailed": "Failed to serialize SDF for molecule {{moleculeId}}.",
+        "jsonFailed": "Failed to serialize JSON: {{message}}",
+        "nothingToExport": "Nothing to export.",
+        "fileTooLarge": "Export size {{sizeMb}} MB exceeds limit {{limitMb}} MB.",
+        "userAborted": "Export cancelled.",
+        "internal": "Internal export error: {{message}}"
+      },
+      "import": {
+        "fileTooLarge": "File size {{sizeMb}} MB exceeds limit {{limitMb}} MB.",
+        "jsonSyntax": "Invalid JSON syntax: {{message}}",
+        "schemaMismatch": "Invalid session file at {{path}}: {{message}}",
+        "incompatibleVersion": "File version {{fileVersion}} is not supported (expected {{supportedVersion}}).",
+        "empty": "File is empty.",
+        "noMolecules": "No molecules found in the file.",
+        "partial": "Partial import: {{imported}} succeeded, {{skipped}} failed.",
+        "userAborted": "Import cancelled.",
+        "internal": "Internal import error: {{message}}"
+      }
+    }
   }
 }

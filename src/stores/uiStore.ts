@@ -11,6 +11,7 @@ import { clampNotifications } from './_shared/notifications';
 import {
   makeInitialUiState,
   type CompoundSearchMode,
+  type IoMode,
   type Notification,
   type PanelKey,
   type TextInputSeed,
@@ -31,6 +32,8 @@ export interface UiStoreActions {
   toggleReactionResult(open?: boolean): void;
   toggleTextInput(open?: boolean): void; // Phase 12
   setTextInputInitial(seed: TextInputSeed | null): void; // Phase 12
+  toggleIo(open?: boolean, initialMode?: IoMode): void; // Phase 13
+  setIoInitialMode(mode: IoMode | null): void; // Phase 13
 
   // ── 뷰포트 표시 옵션 ──
   toggleAtomLabels(on?: boolean): void;
@@ -120,6 +123,24 @@ export const useUiStore = createAppStore<UiStore>('uiStore', (set, get) => ({
     setTextInputInitial: (seed) =>
       set((s) => {
         s.panels.textInputInitial = seed;
+      }),
+
+    // Phase 13 §4.1 / §5.4 — IO 패널 토글. open=true 시 initialMode 적용,
+    // 닫을 때 ioInitialMode cleanup (text-input 패턴 답습).
+    toggleIo: (open, initialMode) =>
+      set((s) => {
+        const next = open ?? !s.panels.isIoOpen;
+        s.panels.isIoOpen = next;
+        if (next && initialMode !== undefined) {
+          s.panels.ioInitialMode = initialMode;
+        }
+        if (!next) {
+          s.panels.ioInitialMode = null;
+        }
+      }),
+    setIoInitialMode: (mode) =>
+      set((s) => {
+        s.panels.ioInitialMode = mode;
       }),
 
     toggleAtomLabels: (on) =>

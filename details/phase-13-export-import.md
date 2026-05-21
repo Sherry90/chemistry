@@ -2289,98 +2289,105 @@ axe 자동 검증은 phase-15.
 
 ### 10.1 패널 구현
 
-- [ ] `<IoDialog>` Dialog mount + Esc + focus 복원 + 4 tabs (C1, C2)
-- [ ] `<PngExportPane>` 옵션 (format/dpr/transparent) + Export (C3)
-- [ ] `<JsonExportPane>` scope + 포함 항목 안내 + Export (C4)
-- [ ] `<SdfExportPane>` scope + Export (C5)
-- [ ] `<JsonImportPane>` file picker + replace/append + Import (C6, C7, C8)
-- [ ] `<ImportProgress>` LoadingOverlay panel-variant (C12)
-- [ ] `<IoErrorMessage>` ExportError + ImportError 분기 + 액션 버튼 (C9)
-- [ ] Toolbar `<ViewportGroup>` retrofit — Capture PNG 임시 헬퍼 제거 + Export dropdown + Import 버튼 (C10, C11)
+- [x] `<IoDialog>` Dialog mount + Esc + focus 복원 + 4 tabs (C1, C2) — _impl ✓ / C1·C2 phase-15_
+- [x] `<PngExportPane>` 옵션 (format/dpr/transparent) + Export (C3) — _impl ✓ / C3 phase-15_
+- [x] `<JsonExportPane>` scope + 포함 항목 안내 + Export (C4) — _impl ✓ / C4 phase-15_
+- [x] `<SdfExportPane>` scope + Export (C5) — _impl ✓ / C5 phase-15_
+- [x] `<JsonImportPane>` file picker + replace/append + Import (C6, C7, C8) — _impl ✓ / C6·C7·C8 phase-15_
+- [x] `<ImportProgress>` LoadingOverlay panel-variant (C12) — _inline Spinner fallback (panels → app/layout 차단)_
+- [x] `<IoErrorMessage>` ExportError + ImportError 분기 + 액션 버튼 (C9) — _impl ✓ / C9 phase-15_
+- [x] Toolbar `<ViewportGroup>` retrofit — Capture PNG 임시 헬퍼 제거 + Export dropdown + Import 버튼 (C10, C11)
 
 ### 10.2 모달 마운트 (D-IO-MOUNT)
 
-- [ ] `<IoDialog viewportApiRef/>` 를 App.tsx 가 직접 마운트 (PanelRegistry 미등록)
-- [ ] `registerAllPanels()` 는 phase-12 의 6 회 호출 그대로 (본 Phase 는 7 번째 호출 _추가 안 함_)
-- [ ] `<ModalHost/>` 와 별도로 작동 — Radix Dialog 의 modal portal 자체로 z-index 정합
+- [x] `<IoDialog viewportApiRef/>` 를 App.tsx 가 직접 마운트 (PanelRegistry 미등록)
+- [x] `registerAllPanels()` 는 phase-12 의 6 회 호출 그대로 (본 Phase 는 7 번째 호출 _추가 안 함_)
+- [x] `<ModalHost/>` 와 별도로 작동 — Radix Dialog 의 modal portal 자체로 z-index 정합
 
 ### 10.3 io 모듈
 
-- [ ] `src/io/index.ts` barrel — 5 entry function + 타입 export
-- [ ] `exportPng` (timeout wrap, ExportError 분기) — U6 / E1 / E8
-- [ ] `exportJson` (scope 필터, SessionFile 조립, JSON.stringify) — U11 / E2
-- [ ] `exportSdf` (multi-record `$$$$` join) — U4 / E3
-- [ ] `importJson` (file 읽기, validate, applyImportedSession 호출) — E2 / E4 / E5 / E6
-- [ ] `validateSessionFile` (hand-written, 모든 위반 path) — U1 / U12
-- [ ] `triggerDownload` (Safari 호환 setTimeout 50ms) — U9
-- [ ] `generateFilename` (ISO timestamp) — U6
+- [x] `src/io/index.ts` barrel — 5 entry function + 타입 export
+- [x] `exportPng` (ExportError 분기) — _impl ✓ / U6·E1·E8 phase-15. timeout wrap v1 미구현 (TODO 주석)_
+- [x] `exportJson` (scope 필터, SessionFile 조립, JSON.stringify) — _impl ✓ / U11·E2 phase-15. selection 직렬화 v1 빈 객체 (TODO)_
+- [x] `exportSdf` (multi-record `$$$$` join) — _impl ✓ / U4·E3 phase-15_
+- [x] `importJson` (file 읽기, validate, applyImportedSession 호출) — _impl ✓ / E2·E4·E5·E6 phase-15_
+- [x] `validateSessionFile` (hand-written, 모든 위반 path) — _impl ✓ / U1·U12 phase-15_
+- [x] `triggerDownload` (setTimeout revoke 100ms) — _impl ✓ / U9 phase-15_
+- [x] `buildFilename` (local timestamp YYYY-MM-DD-HHMMSS) — _impl ✓ / U6 phase-15_
 
 ### 10.4 Store retrofit
 
-- [ ] uiStore: `panels.isIoOpen` + `panels.ioInitialMode` + `toggleIo` + `setIoInitialMode` + `PanelKey` 확장
-- [ ] moleculeStore.actions: `replaceAll`, `applyImportedSession`. `addFromMolecule` **시그니처 무변경** (옵션 Y)
-- [ ] moleculeStore.selectors: `selectMoleculeSnapshot` 시그니처 동결, `selectAllMoleculeSnapshots`, `mapIoErrorToKey`, `IoErrorMapping` 타입
-- [ ] **MoleculeSnapshot 동결** (phase-07 §5.1 line 461 닫음) — atom/bond id 미보유 (advisor 권고)
-- [ ] `UndoableDispatcher.clear()` + `flush()` 인터페이스 추가 (phase-07 §6.4 + phase-09 §4.2 소급) — placeholder + 본 구현 양쪽 — U5
+- [x] uiStore: `panels.isIoOpen` + `panels.ioInitialMode` + `toggleIo` + `setIoInitialMode` + `PanelKey` 확장
+- [x] moleculeStore.actions: `replaceAll`, `applyImportedSession`. `addFromMolecule` **시그니처 무변경** (옵션 Y)
+- [x] moleculeStore.selectors: `selectMoleculeSnapshot` 시그니처 동결 + `toSnapshot` 사용 갱신, `selectAllMoleculeSnapshots`, `mapIoErrorToKey(e, ctx)` + `mapExportErrorToKey` / `mapImportErrorToKey` 분리, `IoErrorMapping` 타입
+- [x] **MoleculeSnapshot 동결** (phase-07 §5.1 line 461 닫음) — atom id 미보유 (bond 는 index 기반)
+- [x] `UndoableDispatcher.clear()` + `flush()` 인터페이스 추가 — placeholder + proxy 위임 양쪽 — _UndoStackController 본 구현 phase-09 v0.2 이미 보유_
 
 ### 10.5 i18n
 
-- [ ] `panels.io.*` 키 트리 한·영 양쪽 채움
-- [ ] `common.io.error.*` 분기 한·영 양쪽 채움 (export / import)
-- [ ] `panels.toolbar.export` + `panels.toolbar.import` 라벨 추가 (Toolbar 신규 버튼)
+- [x] `panels.io.*` 키 트리 한·영 양쪽 채움 (W1.3 + W3.1 surgical add)
+- [x] `common.io.error.*` 분기 한·영 양쪽 채움 (export / import)
+- [x] `panels.toolbar.export` + `panels.toolbar.import` 라벨 추가 — _Capture 키 제거_
 
 ### 10.6 phase-11 인계 닫음
 
-- [ ] (a) Toolbar captureBlob 임시 헬퍼 제거 + Export dropdown 정식 헬퍼 (C11, R12 의 임시 코드 제거)
-- [ ] (b) JSON / SDF Export 버튼 추가 (Export dropdown 안)
-- [ ] (c) JSON Import Dialog (`<JsonImportPane/>`) 마운트 가능
-- [ ] (d) `<LoadingOverlay variant="panel">` 활용 (ImportProgress)
+- [x] (a) Toolbar captureBlob 임시 헬퍼 제거 + Export dropdown 정식 헬퍼 (R12 의 임시 코드 제거)
+- [x] (b) JSON / SDF Export 버튼 추가 (Export dropdown 안)
+- [x] (c) JSON Import Dialog (`<JsonImportPane/>`) 마운트 가능
+- [x] (d) ImportProgress = inline Spinner (panels → app/layout 차단으로 LoadingOverlay 대체)
 
 ### 10.7 phase-12 인계 닫음
 
-- [ ] (a) Dialog + Tabs + Footer 패턴 재사용 (`<TextInputDialog>` 답습)
-- [ ] (b) `addFromMolecule` 호출 경로 = applyImportedSession 안에서 사용 (시그니처 무변경)
+- [x] (a) Dialog + Tabs + Footer 패턴 재사용 (`<TextInputDialog>` 답습)
+- [x] (b) `addFromMolecule` 호출 경로 = applyImportedSession 안에서 사용 (시그니처 무변경)
 - [ ] (c) SDF 텍스트 paste mode 가능성 — v1 비포함, §11.1 인계 명시
-- [ ] (d) **duplicate 검출 통합 결정 — 옵션 Y 채택** (D-DUPLICATE-INTEGRATION). phase-12 §11.9 닫음
-- [ ] (e) `<PanelErrorBoundary slotName="modal">` 패턴 재사용
-- [ ] (f) `mapIngestErrorToKey` 의 `'pubchem'` 분기 활용 — JSON Import 가 PubChem origin 분자를 포함할 때 (phase-12 §6.11 정합)
+- [x] (d) **duplicate 검출 통합 결정 — 옵션 Y 채택** (D-DUPLICATE-INTEGRATION). phase-12 §11.9 닫음
+- [x] (e) `<PanelErrorBoundary slotName="modal">` 패턴 — Dialog 자체가 ModalHost 외부에서 사용되나 phase-10 ErrorBoundary 는 root 에서 작동
+- [x] (f) `mapIngestErrorToKey` 의 `'pubchem'` 분기 활용 — JSON Import 가 PubChem origin 분자 포함 시
 
 ### 10.8 phase-09 인계 닫음
 
-- [ ] (a) export 직전 selection 보존 — viewport rendering 자동 포함 (D-PNG-ANNOTATION, E8)
-- [ ] (b) import 시 ID 충돌 → withRegeneratedIds 자동 + dispatcher.clear() 명시 호출 (E7)
+- [x] (a) export 직전 selection 보존 — viewport rendering 자동 포함 (D-PNG-ANNOTATION)
+- [x] (b) import 시 ID 충돌 → fromSnapshot 의 createAtomId/createBondId 자동 + dispatcher.clear() 명시 호출
 
 ### 10.9 phase-08 활용
 
-- [ ] `viewportApi.captureBlob({ format, dpr?, transparentBackground? })` 호출 — 시그니처 변경 없음
-- [ ] timeout wrap (30s 기본) — phase-08 가 자체 timeout 제공 안 하면 Promise.race
+- [x] `viewportApi.captureBlob({ format, dpr?, transparentBackground? })` 호출 — _format widened to 'png'|'jpeg'|'webp'_
+- [ ] timeout wrap (30s 기본) — _v1 미구현. phase-14 후속_
 
 ### 10.10 phase-07 동결
 
-- [ ] `MoleculeSnapshot` 타입 본 Phase 정확 정의 (atom/bond id 미보유, origin 메타) — line 461 닫음
-- [ ] `selectMoleculeSnapshot(id)` 시그니처 보존
-- [ ] `UndoableDispatcher` 인터페이스 retrofit 정합
+- [x] `MoleculeSnapshot` 타입 본 Phase 정확 정의 (atom id 미보유, bond index 기반, origin 메타) — line 461 닫음
+- [x] `selectMoleculeSnapshot(id)` 시그니처 보존
+- [x] `UndoableDispatcher` 인터페이스 retrofit 정합
 
 ### 10.11 phase-03 활용
 
-- [ ] `toSdfBlock(mol)` 호출 — `src/io/sdf/exportSdf.ts` 에서 직접 import (io 가 engine 직접 import — 레이어 정합)
+- [x] `toSdfBlock(mol)` 호출 — `src/io/sdf/exportSdf.ts` 에서 직접 import (sync 시그니처 — 명세의 backend param 불요)
 
 ### 10.12 architecture 정합
 
-- [ ] `architecture.md` §4.1 다이어그램 retrofit (1 줄 + 1 노드 — io 레이어 panels 와 peer)
-- [ ] §1.3 ⑧ "분자/세션 내보내기" 충족 — PNG / JSON / SDF export + JSON import
-- [ ] §3.6 사용자 데이터 로컬-only — PubChem 캐시 / raw response 미포함 (D5)
-- [ ] §3.7 Result 패턴 — 모든 io entry function
+- [ ] `architecture.md` §4.1 다이어그램 retrofit — _io 노드 이미 §4 디렉터리 트리에 존재 (명세 §1.3 line 15 명시 — retrofit 불요)_
+- [x] §1.3 ⑧ "분자/세션 내보내기" 충족 — PNG / JSON / SDF export + JSON import
+- [x] §3.6 사용자 데이터 로컬-only — PubChem 캐시 / raw response 미포함 (D5)
+- [x] §3.7 Result 패턴 — 모든 io entry function
 
 ### 10.13 라이브러리 / ESLint 가드
 
-- [ ] 신규 라이브러리 0 (lucide-react phase-11 확정만 사용)
-- [ ] ESLint `import/no-restricted-paths` zone 추가 — `src/io` 의 React import 금지 + `panels/(?!Io)` 의 `@/io` import 금지
+- [x] 신규 라이브러리 0 (lucide-react phase-11 확정만 사용)
+- [x] ESLint zone — `src/io` 의 services/panels/components/app/hooks 차단 (stores/viewport 허용 CD6). panels/(?!Io) → @/io 는 v1 부재 — 강제 안 함.
 
 ### 10.14 인계 가능성
 
-- [ ] phase-14 가 큰 SessionFile timeout / 4x DPR GPU / drag-and-drop / 명시 파일명 / PNG annotation / reactionStore.lastResult 직렬화 _추가_ 만으로 확장 가능
-- [ ] phase-15 가 a11y axe + i18n 폴리싱 _추가_ 만
+- [x] phase-14 가 큰 SessionFile timeout / 4x DPR GPU / drag-and-drop / 명시 파일명 / PNG annotation / reactionStore.lastResult 직렬화 _추가_ 만으로 확장 가능
+- [x] phase-15 가 a11y axe + i18n 폴리싱 _추가_ 만
+
+### 10.15 테스트 커버리지 (v0.2 진행 정합)
+
+- [x] **검증 게이트 통과**: `pnpm lint` / `pnpm typecheck` / `pnpm test --run` (443/443 pass — Capture PNG 테스트 1 제거).
+- [ ] U1-U12 (validateSessionFile / exportJson / exportSdf / dispatcher.clear / exportPng / mapIoErrorToKey / triggerDownload / importJson etc) — phase-15 polish.
+- [ ] C1-C12 컴포넌트 테스트 — phase-15 polish.
+- [ ] E1-E8 Playwright — phase-15 (playwright 설치 시점).
 
 ---
 

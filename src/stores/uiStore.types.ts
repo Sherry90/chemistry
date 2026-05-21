@@ -10,9 +10,13 @@ export type PanelKey =
   | 'molecule-info'
   | 'reaction-result'
   | 'toolbar'
-  | 'text-input'; // Phase 12
+  | 'text-input' // Phase 12
+  | 'io'; // Phase 13
 
 export type TextInputMode = 'smiles' | 'inchi' | 'formula';
+
+// Phase 13 §4.1 / §4.7 — IO 패널 초기 모드.
+export type IoMode = 'png-export' | 'json-export' | 'sdf-export' | 'json-import';
 
 export interface TextInputSeed {
   readonly kind: TextInputMode;
@@ -57,6 +61,8 @@ export interface UiStoreState {
     readonly isReactionResultOpen: boolean;
     readonly isTextInputOpen: boolean; // Phase 12
     readonly textInputInitial: TextInputSeed | null; // Phase 12
+    readonly isIoOpen: boolean; // Phase 13
+    readonly ioInitialMode: IoMode | null; // Phase 13
   };
 
   readonly viewport: {
@@ -82,6 +88,8 @@ export function makeInitialUiState(): UiStoreState {
       isReactionResultOpen: false,
       isTextInputOpen: false,
       textInputInitial: null,
+      isIoOpen: false,
+      ioInitialMode: null,
     },
     viewport: { showAtomLabels: false, backgroundOverride: 'theme' },
     globalLoading: { count: 0 },

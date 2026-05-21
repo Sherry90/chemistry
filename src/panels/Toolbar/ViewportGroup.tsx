@@ -1,12 +1,15 @@
-// Phase 11 §6.6 — Frame Active/All/Reset/Capture (apiRef null → disabled).
-// captureBlob 은 임시 download 헬퍼 (phase-13 이 io/png 정식 교체).
+// Phase 13 §6.16 — Capture PNG IconButton 제거 → Export dropdown (PNG/JSON/SDF) + Import.
+// 클릭 시 uiStore.setIoInitialMode + toggleIo(true) 로 IoDialog 오픈 (D-IO-MOUNT).
+// Frame Active/All/Reset Camera 는 phase-11 원형 그대로 유지 (KEY_MAP hint 포함).
 import type * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RefObject } from 'react';
 import type { ViewportApi } from '@/viewport';
 import { KEY_MAP, describeKey } from '@/viewport';
-import { IconButton, Tooltip } from '@/components';
-import { Maximize, Box, RotateCcw, Camera } from 'lucide-react';
+import { useUiStore } from '@/stores';
+import type { IoMode } from '@/stores';
+import { IconButton, Tooltip, Popover, PopoverTrigger, PopoverContent } from '@/components';
+import { Maximize, Box, RotateCcw, Download, Upload, Image, FileText, Atom } from 'lucide-react';
 
 interface Props {
   readonly apiRef: RefObject<ViewportApi | null>;
@@ -20,17 +23,12 @@ const hint = (t: (k: string) => string, label: string, id: string): string => {
 export function ViewportGroup({ apiRef }: Props): React.ReactElement {
   const { t } = useTranslation('panels');
   const noApi = !apiRef.current;
+  const toggleIo = useUiStore((s) => s.actions.toggleIo);
+  const setIoInitialMode = useUiStore((s) => s.actions.setIoInitialMode);
 
-  const onCapture = async (): Promise<void> => {
-    const api = apiRef.current;
-    if (!api) return;
-    const blob = await api.captureBlob({ format: 'png', dpr: 2 });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chemistry-${Date.now()}.png`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const openIo = (mode: IoMode): void => {
+    setIoInitialMode(mode);
+    toggleIo(true);
   };
 
   return (
@@ -62,13 +60,47 @@ export function ViewportGroup({ apiRef }: Props): React.ReactElement {
           <RotateCcw size={18} />
         </IconButton>
       </Tooltip>
-      <Tooltip content={t('toolbar.capture')}>
-        <IconButton
-          aria-label={t('toolbar.capture')}
-          disabled={noApi}
-          onClick={() => void onCapture()}
-        >
-          <Camera size={18} />
+
+      {/* Export dropdown — PNG/JSON/SDF (Phase 13 §6.16). */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Tooltip content={t('toolbar.export')}>
+            <IconButton aria-label={t('toolbar.export')}>
+              <Download size={18} />
+            </IconButton>
+          </Tooltip>
+        </PopoverTrigger>
+        <PopoverContent>
+          <div className="flex min-w-40 flex-col gap-1">
+            <button
+              type="button"
+              onClick={() => openIo('png-export')}
+              className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-bg-panel-elevated"
+            >
+              <Image size={14} /> {t('io.modeLabel.pngExport')}
+            </button>
+            <button
+              type="button"
+              onClick={() => openIo('json-export')}
+              className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-bg-panel-elevated"
+            >
+              <FileText size={14} /> {t('io.modeLabel.jsonExport')}
+            </button>
+            <button
+              type="button"
+              onClick={() => openIo('sdf-export')}
+              className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-bg-panel-elevated"
+            >
+              <Atom size={14} /> {t('io.modeLabel.sdfExport')}
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Import button (JSON only). */}
+      <Tooltip content={t('toolbar.import')}>
+        <IconButton aria-label={t('toolbar.import')} onClick={() => openIo('json-import')}>
+          <Upload size={18} />
         </IconButton>
       </Tooltip>
     </>

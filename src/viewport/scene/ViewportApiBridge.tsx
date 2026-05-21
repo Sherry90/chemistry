@@ -110,10 +110,18 @@ export function ViewportApiBridge({
         const prevAlpha = gl.getClearAlpha();
         if (opts.transparentBackground) gl.setClearColor(0x000000, 0);
         gl.render(scene, camera);
+        // Phase 13 §5.5 retrofit — format → mimeType 매핑 (canvas.toBlob 가
+        // 'image/png'|'image/jpeg'|'image/webp' 모두 지원, 변환 로직 동일).
+        const mime =
+          opts.format === 'jpeg'
+            ? 'image/jpeg'
+            : opts.format === 'webp'
+              ? 'image/webp'
+              : 'image/png';
         const blob = await new Promise<Blob>((resolve, reject) => {
           gl.domElement.toBlob(
             (b) => (b ? resolve(b) : reject(new Error('toBlob returned null'))),
-            'image/png',
+            mime,
           );
         });
         gl.setPixelRatio(prevDpr);

@@ -1,4 +1,5 @@
-// Phase 11 §8.2 C6 — ToolbarBar 14 슬롯 + Undo/Redo disabled 기본 + 그룹별 액션.
+// Phase 11 §8.2 C6 / Phase 13 §6.16 — ToolbarBar 15 슬롯 (Capture PNG 제거, Export/Import 추가)
+// + Undo/Redo disabled 기본 + 그룹별 액션. PNG export 경로는 panels/Io + io 레이어 테스트가 커버.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -63,16 +64,16 @@ beforeEach(() => {
 });
 
 describe('ToolbarBar — slot inventory + disabled state', () => {
-  it('14 컨트롤 렌더 (4 EditGroup + 4 ViewportGroup + 3 DisplayGroup + 3 AppGroup)', async () => {
+  it('15 컨트롤 렌더 (4 EditGroup + 5 ViewportGroup + 3 DisplayGroup + 3 AppGroup)', async () => {
     renderToolbar(buildViewportApiMock());
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /undo/i })).toBeInTheDocument();
     });
-    // IconButton 11 개 (Undo, Redo, CreateBond, SMILES, FrameActive, FrameAll,
-    // ResetCamera, Capture, RenderMode, Background, Language, Shortcuts) + Switch 2 개
-    // (Labels, Theme) + Popover trigger 안의 IconButton 중복 → role=button 합산 13~14.
+    // IconButton 12 개 (Undo, Redo, CreateBond, SMILES, FrameActive, FrameAll,
+    // ResetCamera, Export, Import, RenderMode, Background, Language, Shortcuts) + Switch 2 개
+    // (Labels, Theme) + Popover trigger 안의 IconButton 중복 → role=button 합산 13~15.
     const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(12);
+    expect(buttons.length).toBeGreaterThanOrEqual(13);
     // Switch (Radix) 는 role=switch.
     const switches = screen.getAllByRole('switch');
     expect(switches).toHaveLength(2);
@@ -105,24 +106,8 @@ describe('ToolbarBar — ViewportGroup actions', () => {
     expect(api.resetCamera).toHaveBeenCalledTimes(1);
   });
 
-  it('Capture 클릭 → api.captureBlob 호출 (jsdom URL/anchor stub)', async () => {
-    const createObjUrl = vi.fn(() => 'blob:fake');
-    const revokeObjUrl = vi.fn();
-    Object.defineProperty(URL, 'createObjectURL', { value: createObjUrl, configurable: true });
-    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeObjUrl, configurable: true });
-    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-
-    const api = buildViewportApiMock();
-    renderToolbar(api);
-    const btn = await screen.findByRole('button', { name: /capture png/i });
-    await userEvent.click(btn);
-
-    await waitFor(() => expect(api.captureBlob).toHaveBeenCalledTimes(1));
-    expect(api.captureBlob).toHaveBeenCalledWith({ format: 'png', dpr: 2 });
-    expect(createObjUrl).toHaveBeenCalled();
-    expect(anchorClick).toHaveBeenCalled();
-    expect(revokeObjUrl).toHaveBeenCalled();
-  });
+  // Phase 13 §6.16 — Capture PNG IconButton 제거. PNG export 경로는
+  // panels/Io PngExportPane + src/io/png 레이어 테스트가 커버.
 });
 
 describe('ToolbarBar — EditGroup CreateBond / SMILES placeholder', () => {

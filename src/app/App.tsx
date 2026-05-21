@@ -1,9 +1,11 @@
 // Phase 11 §6.10 retrofit — Phase 01/10 placeholder toolbar → <ToolbarBar/>.
 // registerAllPanels() 부팅 1회 (render 前). onShortcutAction = panels
 // shortcutBus emitter (D-SHORTCUT-OPEN-STATE 단일 디스패치 — KEY_MAP 단일 소스).
+// Phase 13 §2.1 D-IO-MOUNT — <IoDialog/> 는 PanelRegistry 비등록, App.tsx 직접 마운트.
 import { useRef } from 'react';
 import { AppLayout, registerPanel } from '@/app/layout';
 import { panelRegistrations, ToolbarBar, emitShortcutAction } from '@/panels';
+import IoDialog from '@/panels/Io';
 import type { ViewportApi } from '@/viewport';
 
 // 부팅 1회 — App 모듈 로드 시점 (render 前). registerPanel 호출은 app 레이어
@@ -13,10 +15,13 @@ for (const def of panelRegistrations) registerPanel(def);
 export function App() {
   const viewportApiRef = useRef<ViewportApi | null>(null);
   return (
-    <AppLayout
-      viewportApiRef={viewportApiRef}
-      onShortcutAction={emitShortcutAction}
-      toolbar={<ToolbarBar apiRef={viewportApiRef} />}
-    />
+    <>
+      <AppLayout
+        viewportApiRef={viewportApiRef}
+        onShortcutAction={emitShortcutAction}
+        toolbar={<ToolbarBar apiRef={viewportApiRef} />}
+      />
+      <IoDialog viewportApiRef={viewportApiRef} />
+    </>
   );
 }
