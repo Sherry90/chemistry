@@ -1,4 +1,9 @@
 // Phase 08 §6.3 — 결합 cylinder 풀 (단일 풀, mid-split 2색 + 차수 평행 변위).
+// Phase 14 §5.4 / §6.4 W3-C1 retrofit:
+//   - props 에 `lodLevel: LodLevel` + `renderMode: RenderMode` 추가.
+//   - lod 변경 시 cached cylinder geometry 로 pool.mesh.geometry reassign (cache 소유 → dispose 금지).
+//   - renderMode === 'space-filling' | 'wireframe' 또는 lodLevel === 'line' 인 경우는
+//     parent 가 비마운트 (LineBonds 가 대체). 본 컴포넌트는 prop 만 받고 동작.
 import type * as React from 'react';
 import { useEffect, useMemo, useLayoutEffect, useState } from 'react';
 import * as THREE from 'three';
@@ -20,17 +25,23 @@ import {
 import { bondSplitColors } from '../../_shared/colors';
 import { cylinderGeometryFor } from '../../_shared/lod';
 import { BOND_RADIUS_ANGSTROM, BOND_PARALLEL_OFFSET } from '../../_shared/constants';
-import type { LodLevel } from '../../_shared/types';
+import type { LodLevel, RenderMode } from '../../_shared/types';
 
 const bondMaterial = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0 });
 const _color = new THREE.Color();
 
 export interface BondInstancesProps {
   readonly molecule: Molecule;
-  readonly lod: LodLevel;
+  readonly lodLevel: LodLevel;
+  readonly renderMode: RenderMode;
 }
 
-export function BondInstances({ molecule, lod }: BondInstancesProps): React.ReactElement | null {
+export function BondInstances({
+  molecule,
+  lodLevel,
+  renderMode: _renderMode,
+}: BondInstancesProps): React.ReactElement | null {
+  // _renderMode — §5.4 spec props 충족용 prefix (mount/unmount 분기는 parent 가 수행).
   const molId = molecule.id;
   const [, bump] = useState(0);
 
@@ -41,8 +52,13 @@ export function BondInstances({ molecule, lod }: BondInstancesProps): React.Reac
   }, [molecule]);
 
   // 부수효과 → useLayoutEffect (useMemo 안 side-effect 금지, advisor 검토 반영).
+  // Phase 14: lod 변경 시 cached geometry 로 pool.mesh.geometry swap (dispose 금지 — cache 소유).
+  // renderMode 는 §5.4 spec props 충족용으로 받지만, BondInstances 자체 분기에는
+  // 영향이 없어 effect deps 에서 제외 (mode toggle 마다 전체 bond 매트릭스 재기입 회피).
   useLayoutEffect(() => {
-    const pool = bondPoolRegistry.ensure(molId, cylinderGeometryFor(lod), bondMaterial);
+    const geom = cylinderGeometryFor(lodLevel);
+    const pool = bondPoolRegistry.ensure(molId, geom, bondMaterial);
+    if (pool.mesh.geometry !== geom) pool.mesh.geometry = geom;
     const live = new Set(molecule.bonds.map((b) => b.id));
     for (const id of [...pool.bondIdToSlots.keys()]) {
       if (!live.has(id)) freeBondSlots(pool, id);
@@ -82,7 +98,7 @@ export function BondInstances({ molecule, lod }: BondInstancesProps): React.Reac
       if (pool.mesh.instanceColor) pool.mesh.instanceColor.needsUpdate = true;
     }
     bump((n) => n + 1);
-  }, [molecule, atomById, lod, molId]);
+  }, [molecule, atomById, lodLevel, molId]);
 
   useEffect(() => {
     return () => bondPoolRegistry.deleteAll(molId);

@@ -1,6 +1,8 @@
 // Phase 08 §6.8 — ball-and-stick 단일 갈래 (atoms + bonds + aromatic + labels + hover).
+// Phase 14 §6.4 W3-C1 retrofit: lodLevel === 'line' 시 BondInstances → LineBonds 로 swap.
+//   AtomInstances 는 line 레벨에서도 소형 sphere 유지 (segments 6/3, atom picking 보존).
 import type * as React from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import type { Molecule } from '@/chemistry/compounds/types';
 import {
@@ -16,6 +18,7 @@ import { BondInstances } from './BondInstances';
 import { AromaticOverlay } from './AromaticOverlay';
 import { AtomLabels } from './AtomLabels';
 import { HoverTooltip } from './HoverTooltip';
+import { LineBonds } from '../LineBonds';
 import { getAtomIdFromIntersection } from '../../ids/picking';
 import { resolveBackground } from '../../scene/Background';
 import type { HoverState, LodLevel } from '../../_shared/types';
@@ -36,6 +39,9 @@ export function BallAndStickRenderer({
   const labelColor = bg.hex === '#FFFFFF' ? '#000000' : '#FFFFFF';
   const showLabels = labelsOn || cvdOn;
 
+  // LineBonds 의 molecules prop (단일 분자 wrap).
+  const lineMolecules = useMemo(() => [molecule], [molecule]);
+
   const onPointerOver = useCallback((e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const picked = getAtomIdFromIntersection(e);
@@ -49,11 +55,16 @@ export function BallAndStickRenderer({
     <group>
       <AtomInstances
         molecule={molecule}
-        lod={lod}
+        lodLevel={lod}
+        renderMode="ball-and-stick"
         onPointerOver={onPointerOver}
         onPointerOut={onPointerOut}
       />
-      <BondInstances molecule={molecule} lod={lod} />
+      {lod === 'line' ? (
+        <LineBonds molecules={lineMolecules} />
+      ) : (
+        <BondInstances molecule={molecule} lodLevel={lod} renderMode="ball-and-stick" />
+      )}
       <AromaticOverlay molecule={molecule} />
       {showLabels && <AtomLabels molecule={molecule} color={labelColor} />}
       {hover && hover.molId === molecule.id && (

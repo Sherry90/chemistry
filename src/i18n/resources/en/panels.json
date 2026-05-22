@@ -91,7 +91,14 @@
     "export": "Export",
     "import": "Import",
     "labels": "Atom labels",
-    "renderMode": { "ballAndStick": "Ball and stick", "comingSoon": "Coming soon" },
+    "renderMode": {
+      "ballAndStick": "Ball and stick",
+      "spaceFilling": "Space-filling",
+      "wireframe": "Wireframe",
+      "stick": "Stick",
+      "surface": "Surface (coming soon)",
+      "comingSoon": "Coming soon"
+    },
     "background": { "theme": "Theme", "light": "Light", "dark": "Dark" },
     "theme": "Theme",
     "language": "Language",

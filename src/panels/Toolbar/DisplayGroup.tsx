@@ -7,6 +7,7 @@ import {
   selectBackgroundOverride,
   useSettingsStore,
   selectRenderMode,
+  type RenderMode,
 } from '@/stores';
 import { Switch, Popover, PopoverTrigger, PopoverContent, IconButton } from '@/components';
 import { Tag, Atom, Palette, ChevronDown } from 'lucide-react';
@@ -20,6 +21,13 @@ export function DisplayGroup(): React.ReactElement {
   const setBg = useUiStore((s) => s.actions.setBackgroundOverride);
   const renderMode = useSettingsStore(selectRenderMode);
   const setRenderMode = useSettingsStore((s) => s.actions.setRenderMode);
+
+  const KEY: Record<RenderMode, string> = {
+    'ball-and-stick': 'ballAndStick',
+    'space-filling': 'spaceFilling',
+    wireframe: 'wireframe',
+    stick: 'stick',
+  };
 
   return (
     <>
@@ -40,23 +48,27 @@ export function DisplayGroup(): React.ReactElement {
           </IconButton>
         </PopoverTrigger>
         <PopoverContent>
-          <div className="flex min-w-40 flex-col gap-1">
-            <button
-              type="button"
-              onClick={() => setRenderMode('ball-and-stick')}
-              className={cn(
-                'rounded px-2 py-1 text-left text-sm',
-                renderMode === 'ball-and-stick' && 'bg-bg-panel-elevated',
-              )}
-            >
-              {t('toolbar.renderMode.ballAndStick')}
-            </button>
+          <div className="flex min-w-44 flex-col gap-1">
+            {(['ball-and-stick', 'space-filling', 'wireframe', 'stick'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setRenderMode(mode)}
+                className={cn(
+                  'rounded px-2 py-1 text-left text-sm',
+                  renderMode === mode && 'bg-bg-panel-elevated',
+                )}
+              >
+                {t(`toolbar.renderMode.${KEY[mode]}`)}
+              </button>
+            ))}
             <button
               type="button"
               disabled
+              aria-disabled="true"
               className="cursor-not-allowed rounded px-2 py-1 text-left text-sm text-fg-muted"
             >
-              {t('toolbar.renderMode.comingSoon')}
+              {t('toolbar.renderMode.surface')}
             </button>
           </div>
         </PopoverContent>

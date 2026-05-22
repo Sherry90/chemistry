@@ -12,22 +12,25 @@ export type ViewportId =
   | { readonly kind: 'atom'; readonly molId: MoleculeId; readonly atomId: AtomId }
   | { readonly kind: 'bond'; readonly molId: MoleculeId; readonly bondId: BondId };
 
-// ── LOD (§4.3) ──
-export type LodLevel = 'high' | 'low';
+// ── LOD (§4.3, Phase 14 §4.1/§4.2 확장) ──
+export type LodLevel = 'high' | 'medium' | 'line';
 
 export interface LodThresholds {
   readonly atomCountForLowSegments: number;
   readonly atomCountForLineBonds: number;
 }
 
-/** Phase 14 가 튜닝, 본 Phase 는 보수적 디폴트. */
-export const DEFAULT_LOD_THRESHOLDS: LodThresholds = {
-  atomCountForLowSegments: 300,
-  atomCountForLineBonds: 1500,
+/** Phase 14 §4.2 — atomCount 기반 LOD 전환 임계값. */
+export const LOD_THRESHOLDS: LodThresholds = {
+  atomCountForLowSegments: 100,
+  atomCountForLineBonds: 500,
 };
 
-/** settingsStore RenderMode 와 동일 별칭 — 본 Phase 는 ball-and-stick 한 갈래. */
-export type RenderMode = 'ball-and-stick';
+/** @deprecated Phase 14 가 LOD_THRESHOLDS 로 대체. 하위 호환용. */
+export const DEFAULT_LOD_THRESHOLDS: LodThresholds = LOD_THRESHOLDS;
+
+/** settingsStore RenderMode 와 동일 별칭 (Phase 07 §3.1 P5 정합). */
+export type RenderMode = 'ball-and-stick' | 'space-filling' | 'wireframe' | 'stick';
 
 // ── Background 해상 (§4.4) ──
 export const THEME_LIGHT_BG = '#FFFFFF' as const;

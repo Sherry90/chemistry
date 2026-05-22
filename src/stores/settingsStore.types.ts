@@ -51,7 +51,8 @@ export const LEGACY_LOCALE_KEY = 'chem.locale';
 
 export const isTheme = (v: unknown): v is Theme => v === 'light' || v === 'dark' || v === 'system';
 export const isLocale = (v: unknown): v is Locale => v === 'ko' || v === 'en';
-export const isRenderMode = (v: unknown): v is RenderMode => v === 'ball-and-stick';
+export const isRenderMode = (v: unknown): v is RenderMode =>
+  v === 'ball-and-stick' || v === 'space-filling' || v === 'wireframe' || v === 'stick';
 
 export function isValidSettings(s: unknown): s is SettingsStoreState {
   if (s == null || typeof s !== 'object') return false;

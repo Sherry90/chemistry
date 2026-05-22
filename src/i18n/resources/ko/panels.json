@@ -91,7 +91,14 @@
     "export": "내보내기",
     "import": "가져오기",
     "labels": "원자 라벨",
-    "renderMode": { "ballAndStick": "볼-스틱", "comingSoon": "준비 중" },
+    "renderMode": {
+      "ballAndStick": "Ball-and-stick",
+      "spaceFilling": "공간 채움",
+      "wireframe": "와이어프레임",
+      "stick": "스틱",
+      "surface": "표면 (준비 중)",
+      "comingSoon": "준비 중"
+    },
     "background": { "theme": "테마", "light": "밝게", "dark": "어둡게" },
     "theme": "테마",
     "language": "언어",

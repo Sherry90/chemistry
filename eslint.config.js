@@ -333,9 +333,9 @@ export default [
     },
   },
 
-  // Node.js globals for build scripts
+  // Node.js globals for build scripts (.ts + .mjs — Phase 14 §6.1 size-check).
   {
-    files: ['scripts/**/*.ts'],
+    files: ['scripts/**/*.{ts,mjs}'],
     languageOptions: {
       globals: {
         ...globals.node,

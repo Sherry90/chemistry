@@ -1,4 +1,6 @@
 // Phase 08 §6.1 — Scene 합성 (Background/Lighting/OrbitControls/Molecules/ApiBridge).
+// Phase 14 §5.2 / §6.4 W3-C1 retrofit — LodProvider 로 분자 그룹 트리를 감싸 lodLevel
+// 을 MoleculeGroup 자손에 broadcast (useLodContext 소비). hysteresis 는 useLodLevel 내부.
 import type * as React from 'react';
 import { useMemo } from 'react';
 import { OrbitControls } from '@react-three/drei';
@@ -8,6 +10,7 @@ import { Lighting } from './Lighting';
 import { ViewportApiBridge } from './ViewportApiBridge';
 import { computeMoleculeLayout, type MoleculeLayoutTransform } from './layout';
 import { MoleculeGroup } from '../renderers/MoleculeGroup';
+import { LodProvider } from '../renderers/lod/LodContext';
 import { withMoleculeFade } from '../animations/useMoleculeFade';
 import { useSelectionStaleGuard } from '../subscriptions/selectionGuard';
 import type { MoleculeId } from '@/chemistry/compounds/ids';
@@ -45,13 +48,15 @@ export function Scene({
       <Background />
       <Lighting />
       <OrbitControls enabled enableDamping dampingFactor={0.08} makeDefault />
-      {ids.map((id) => (
-        <FadedMoleculeGroup
-          key={id}
-          molId={id}
-          transform={layout.get(id) ?? { translation: [0, 0, 0] }}
-        />
-      ))}
+      <LodProvider>
+        {ids.map((id) => (
+          <FadedMoleculeGroup
+            key={id}
+            molId={id}
+            transform={layout.get(id) ?? { translation: [0, 0, 0] }}
+          />
+        ))}
+      </LodProvider>
       <ViewportApiBridge apiRef={apiRef} />
     </>
   );
