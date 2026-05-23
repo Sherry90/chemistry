@@ -50,7 +50,17 @@
       },
       "duplicate": "동일한 분자가 이미 작업공간에 있습니다.",
       "rdkitNotReady": "화학 엔진이 준비되지 않았습니다. 지속될 경우 페이지를 새로고침하세요.",
-      "internal": "내부 오류: {{message}}"
+      "internal": "내부 오류: {{message}}",
+      "pubchem": {
+        "network": "네트워크 오류. 인터넷 연결을 확인하고 다시 시도하세요.",
+        "timeout": "PubChem 응답 시간초과 ({{elapsedMs}}ms). 다시 시도하세요.",
+        "rateLimited": "PubChem 호출 제한. 잠시 후 다시 시도하세요.",
+        "httpStatus": "PubChem 오류 (HTTP {{status}}).",
+        "schema": "PubChem 응답 형식이 예상과 다릅니다.",
+        "notFound": "PubChem 에서 찾을 수 없습니다: {{value}}.",
+        "rdkitFailed": "RDKit 처리 실패: {{reason}}.",
+        "aborted": "요청이 취소되었습니다."
+      }
     }
   },
   "io": {

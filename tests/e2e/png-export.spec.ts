@@ -18,6 +18,9 @@ test.describe('S4 — PNG export', () => {
     const exportSubmit = page.getByTestId('io-png-export-submit');
     await expect(exportSubmit).toBeVisible({ timeout: 5_000 });
 
+    // Phase 15 hotfix C — dialog-open axe scan (TabsList aria-controls IDREF 검증).
+    await app.axeScan('[role="dialog"]');
+
     // 다운로드 캡처.
     const downloadPromise = page.waitForEvent('download', { timeout: 10_000 });
     await exportSubmit.click();

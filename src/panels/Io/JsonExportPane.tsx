@@ -3,7 +3,7 @@
 import type * as React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Tabs, TabsList, TabsTrigger } from '@/components';
+import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components';
 import { exportJson, triggerDownload } from '@/io';
 import type { ExportError } from '@/io';
 import {
@@ -56,6 +56,8 @@ export function JsonExportPane({ onClose }: Props): React.ReactElement {
           </TabsTrigger>
           <TabsTrigger value="all">{t('io.jsonExport.scope.all')}</TabsTrigger>
         </TabsList>
+        <TabsContent value="active" />
+        <TabsContent value="all" />
       </Tabs>
       <div className="flex flex-col gap-1 rounded-md border border-border bg-bg-panel-elevated p-3 text-sm">
         <p className="font-medium text-fg-primary">{t('io.jsonExport.includes')}</p>

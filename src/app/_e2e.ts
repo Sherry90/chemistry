@@ -25,6 +25,10 @@ declare global {
   interface Window {
     __e2e__?: {
       readonly setActivePanel: (key: PanelKey | null) => void;
+      readonly togglePanel: (
+        key: 'compound-browser' | 'periodic-table' | 'reaction-result' | 'text-input' | 'io',
+        open: boolean,
+      ) => void;
       // ── 선택 (S2/S11/S12) ──
       readonly getSelection: () => {
         readonly atomIds: ReadonlyArray<string>;
@@ -49,6 +53,12 @@ declare global {
       readonly isCvdOn: () => boolean;
       readonly getTheme: () => Theme;
       readonly getAtomLabelsOn: () => boolean;
+      // ── canvas raycast 검증 (A — hotfix) ──
+      readonly getCameraMatrix: () => readonly number[] | null;
+      readonly projectAtomToScreen: (
+        molId: string,
+        atomIndex: number,
+      ) => { readonly x: number; readonly y: number } | null;
     };
   }
 }
@@ -60,6 +70,26 @@ export function installE2EBackdoor(): void {
   window.__e2e__ = {
     setActivePanel(key) {
       useUiStore.getState().actions.setActivePanel(key);
+    },
+    togglePanel(key, open) {
+      const a = useUiStore.getState().actions;
+      switch (key) {
+        case 'compound-browser':
+          a.toggleCompoundBrowser(open);
+          return;
+        case 'periodic-table':
+          a.togglePeriodicTable(open);
+          return;
+        case 'reaction-result':
+          a.toggleReactionResult(open);
+          return;
+        case 'text-input':
+          a.toggleTextInput(open);
+          return;
+        case 'io':
+          a.toggleIo(open);
+          return;
+      }
     },
     getSelection() {
       const sel = useUiStore.getState().selection;
@@ -108,6 +138,56 @@ export function installE2EBackdoor(): void {
     },
     getAtomLabelsOn() {
       return useUiStore.getState().viewport.showAtomLabels;
+    },
+    getCameraMatrix() {
+      const t = window.__e2e_three__;
+      if (!t) return null;
+      // viewMatrix 안정성 polling 용. matrixWorld 16 element flat.
+      t.camera.updateMatrixWorld();
+      return Array.from(t.camera.matrixWorld.elements);
+    },
+    projectAtomToScreen(molId, atomIndex) {
+      const t = window.__e2e_three__;
+      if (!t) return null;
+      const st = useMoleculeStore.getState();
+      const m = st.molecules[molId as never];
+      if (!m) return null;
+      const a = m.atoms[atomIndex];
+      if (!a) return null;
+      // Scene 의 MoleculeGroup transform 도 반영 — layout.get(molId)?.translation.
+      // 단일 분자 케이스는 (0,0,0). 멀티-mol 케이스는 layout module 동일 결과 재계산.
+      // Phase 15 hotfix A — 단일 분자 가정 (멀티 mol 별도 spec).
+      const pos = a.position;
+      // dynamic three import — module top 에서 import 시 vite 평시 번들 영향.
+      // Camera 가 이미 THREE.Camera 인스턴스 → vec.project(camera) 직접 호출.
+      const v = { x: pos.x, y: pos.y, z: pos.z } as { x: number; y: number; z: number };
+      // NDC 좌표로 project.
+      const cam = t.camera as unknown as {
+        matrixWorldInverse: { elements: number[] };
+        projectionMatrix: { elements: number[] };
+      };
+      // 수동 4x4 곱 (three.js Vector3.project 동등 — three import 회피).
+      const projectVec = (vx: number, vy: number, vz: number): [number, number, number] => {
+        const mvw = cam.matrixWorldInverse.elements;
+        const mp = cam.projectionMatrix.elements;
+        // view = matrixWorldInverse * (vx, vy, vz, 1)
+        const ex = mvw[0]! * vx + mvw[4]! * vy + mvw[8]! * vz + mvw[12]!;
+        const ey = mvw[1]! * vx + mvw[5]! * vy + mvw[9]! * vz + mvw[13]!;
+        const ez = mvw[2]! * vx + mvw[6]! * vy + mvw[10]! * vz + mvw[14]!;
+        const ew = mvw[3]! * vx + mvw[7]! * vy + mvw[11]! * vz + mvw[15]!;
+        // proj = projectionMatrix * (ex, ey, ez, ew)
+        const px = mp[0]! * ex + mp[4]! * ey + mp[8]! * ez + mp[12]! * ew;
+        const py = mp[1]! * ex + mp[5]! * ey + mp[9]! * ez + mp[13]! * ew;
+        const pz = mp[2]! * ex + mp[6]! * ey + mp[10]! * ez + mp[14]! * ew;
+        const pw = mp[3]! * ex + mp[7]! * ey + mp[11]! * ez + mp[15]! * ew;
+        return [px / pw, py / pw, pz / pw];
+      };
+      const [ndcX, ndcY] = projectVec(v.x, v.y, v.z);
+      const rect = t.gl.domElement.getBoundingClientRect();
+      // NDC (-1..1) → CSS pixel.
+      const x = ((ndcX + 1) / 2) * rect.width + rect.left;
+      const y = ((-ndcY + 1) / 2) * rect.height + rect.top;
+      return { x, y };
     },
   };
 }

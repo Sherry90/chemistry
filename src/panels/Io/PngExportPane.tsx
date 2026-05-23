@@ -4,7 +4,17 @@ import type * as React from 'react';
 import type { RefObject } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Switch, Label, Tabs, TabsList, TabsTrigger, Tooltip, Spinner } from '@/components';
+import {
+  Button,
+  Switch,
+  Label,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Tooltip,
+  Spinner,
+} from '@/components';
 import { exportPng, triggerDownload, DEFAULT_PNG_OPTIONS } from '@/io';
 import type { PngExportOptions, ExportError } from '@/io';
 import { useUiStore } from '@/stores';
@@ -58,6 +68,9 @@ export function PngExportPane({ apiRef, onClose }: Props): React.ReactElement {
             <TabsTrigger value="jpeg">{t('io.pngExport.format.jpeg')}</TabsTrigger>
             <TabsTrigger value="webp">{t('io.pngExport.format.webp')}</TabsTrigger>
           </TabsList>
+          <TabsContent value="png" />
+          <TabsContent value="jpeg" />
+          <TabsContent value="webp" />
         </Tabs>
       </div>
       <div className="flex items-center gap-3">
@@ -72,6 +85,10 @@ export function PngExportPane({ apiRef, onClose }: Props): React.ReactElement {
             <TabsTrigger value="3">{t('io.pngExport.dpr.3x')}</TabsTrigger>
             <TabsTrigger value="4">{t('io.pngExport.dpr.4x')}</TabsTrigger>
           </TabsList>
+          <TabsContent value="1" />
+          <TabsContent value="2" />
+          <TabsContent value="3" />
+          <TabsContent value="4" />
         </Tabs>
       </div>
       <div className="flex items-center gap-3">

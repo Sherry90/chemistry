@@ -2,10 +2,10 @@
 import type * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useUiStore, selectCompoundSearch, useMoleculeStore } from '@/stores';
+import { useUiStore, selectCompoundSearch, useMoleculeStore, mapIngestErrorToKey } from '@/stores';
 import type { Compound } from '@/chemistry/compounds/types';
 import type { CompoundCategory } from '@/chemistry/compounds/categories';
-import { Tabs, TabsList, TabsTrigger } from '@/components';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components';
 import { SearchInput } from './SearchInput';
 import { CategoryChips } from './CategoryChips';
 import { ResultList, type ResultState } from './ResultList';
@@ -39,14 +39,18 @@ export default function CompoundBrowserPanel(): React.ReactElement {
         messageKey: 'panels:compoundBrowser.addedToWorkspace',
         dismissAfterMs: 2000,
       });
-    } else {
-      notify({
-        level: 'error',
-        messageKey: 'panels:compoundBrowser.addFailed',
-        messageParams: { reason: result.error.kind },
-        dismissAfterMs: 5000,
-      });
+      return;
     }
+    // Phase 15 hotfix B — IngestError 를 지역화 키 + params 로 변환.
+    // ToastItem 은 default ns 로 t() 호출 → 'common.X' → 'common:X' colon-form.
+    const mapped = mapIngestErrorToKey(result.error);
+    if (mapped.action === 'suppress') return; // 사용자 의도 (Aborted) — toast 발화 안 함.
+    notify({
+      level: 'error',
+      messageKey: mapped.key.replace(/^common\./, 'common:'),
+      ...(mapped.params ? { messageParams: mapped.params } : {}),
+      dismissAfterMs: 5000,
+    });
   };
 
   const onToggleCategory = (c: CompoundCategory): void =>
@@ -84,6 +88,10 @@ export default function CompoundBrowserPanel(): React.ReactElement {
             <TabsTrigger value="cid">{t('compoundBrowser.mode.cid')}</TabsTrigger>
             <TabsTrigger value="formula">{t('compoundBrowser.mode.formula')}</TabsTrigger>
           </TabsList>
+          {/* Phase 15 §6.4 retrofit — TabsTrigger aria-controls IDREF 가리킬 컨테이너 (axe). */}
+          <TabsContent value="name" />
+          <TabsContent value="cid" />
+          <TabsContent value="formula" />
         </Tabs>
         <SearchInput value={search.query} onChange={setQuery} />
       </header>

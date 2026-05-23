@@ -3,7 +3,7 @@
 import type * as React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Tabs, TabsList, TabsTrigger } from '@/components';
+import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components';
 import { exportSdf, triggerDownload } from '@/io';
 import type { ExportError } from '@/io';
 import { useMoleculeStore, useUiStore, selectActiveMolecule } from '@/stores';
@@ -48,6 +48,8 @@ export function SdfExportPane({ onClose }: Props): React.ReactElement {
           </TabsTrigger>
           <TabsTrigger value="all">{t('io.sdfExport.scope.all')}</TabsTrigger>
         </TabsList>
+        <TabsContent value="active" />
+        <TabsContent value="all" />
       </Tabs>
       {error && (
         <IoErrorMessage

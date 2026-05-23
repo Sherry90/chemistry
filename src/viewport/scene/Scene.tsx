@@ -8,6 +8,7 @@ import { useMoleculeStore, selectMoleculeIds } from '@/stores';
 import { Background } from './Background';
 import { Lighting } from './Lighting';
 import { ViewportApiBridge } from './ViewportApiBridge';
+import { SceneE2eBridge } from './SceneE2eBridge';
 import { computeMoleculeLayout, type MoleculeLayoutTransform } from './layout';
 import { MoleculeGroup } from '../renderers/MoleculeGroup';
 import { LodProvider } from '../renderers/lod/LodContext';
@@ -58,6 +59,7 @@ export function Scene({
         ))}
       </LodProvider>
       <ViewportApiBridge apiRef={apiRef} />
+      <SceneE2eBridge />
     </>
   );
 }

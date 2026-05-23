@@ -9,6 +9,7 @@ import type { MoleculeSnapshot } from '@/chemistry/session/types';
 import { toSnapshot } from '@/chemistry/session/snapshot';
 import type { ExportError, ImportError } from '@/io/_shared/errors';
 import type { AsyncState, IngestError, MoleculeId } from './_shared/types';
+import type { PubChemError } from '@/services/pubchem';
 import type { MoleculeStoreState } from './moleculeStore.types';
 
 // MoleculeSnapshot 의 출처 = @/chemistry/session/types (CD6).
@@ -154,7 +155,13 @@ export function selectBondMetrics(m: Molecule | null): BondMetricsResult | null 
 export interface IngestErrorMapping {
   readonly key: string;
   readonly params?: Readonly<Record<string, string | number>>;
-  readonly action?: 'open-compound-browser' | 'activate-existing' | 'reload-page' | null;
+  readonly action?:
+    | 'open-compound-browser'
+    | 'activate-existing'
+    | 'reload-page'
+    | 'retry'
+    | 'suppress'
+    | null;
 }
 
 export function mapIngestErrorToKey(e: IngestError): IngestErrorMapping {
@@ -164,11 +171,7 @@ export function mapIngestErrorToKey(e: IngestError): IngestErrorMapping {
     case 'embed':
       return embedErrorToMapping(e.detail);
     case 'pubchem':
-      // 본 Phase 미사용 (text input 은 PubChem 미경유). addFromCompound 만 발생.
-      return {
-        key: 'common.ingest.error.internal',
-        params: { message: e.detail.kind },
-      };
+      return pubchemErrorToMapping(e.detail);
     case 'duplicate':
       return {
         key: 'common.ingest.error.duplicate',
@@ -179,6 +182,40 @@ export function mapIngestErrorToKey(e: IngestError): IngestErrorMapping {
       return { key: 'common.ingest.error.rdkitNotReady', action: 'reload-page' };
     case 'internal':
       return { key: 'common.ingest.error.internal', params: { message: e.message } };
+  }
+}
+
+// Phase 15 hotfix B — PubChemError 8 kind → 지역화 키 + retryable→retry action.
+function pubchemErrorToMapping(e: PubChemError): IngestErrorMapping {
+  switch (e.kind) {
+    case 'Network':
+      return { key: 'common.ingest.error.pubchem.network', action: 'retry' };
+    case 'Timeout':
+      return {
+        key: 'common.ingest.error.pubchem.timeout',
+        params: { elapsedMs: e.elapsedMs },
+        action: 'retry',
+      };
+    case 'RateLimited':
+      return { key: 'common.ingest.error.pubchem.rateLimited', action: 'retry' };
+    case 'HttpStatus':
+      return {
+        key: 'common.ingest.error.pubchem.httpStatus',
+        params: { status: e.status },
+        action: e.retryable ? 'retry' : null,
+      };
+    case 'Schema':
+      return { key: 'common.ingest.error.pubchem.schema' };
+    case 'NotFound':
+      return {
+        key: 'common.ingest.error.pubchem.notFound',
+        params: { value: String(e.query.value) },
+      };
+    case 'RdkitFailed':
+      return { key: 'common.ingest.error.pubchem.rdkitFailed', params: { reason: e.reason } };
+    case 'Aborted':
+      // 사용자 의도 취소 — panel 은 onAdd 에서 early-return, toast 발화 안 함.
+      return { key: 'common.ingest.error.pubchem.aborted', action: 'suppress' };
   }
 }
 

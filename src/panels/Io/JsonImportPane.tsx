@@ -4,7 +4,7 @@
 import type * as React from 'react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Tabs, TabsList, TabsTrigger, Spinner } from '@/components';
+import { Button, Tabs, TabsList, TabsTrigger, TabsContent, Spinner } from '@/components';
 import { importJson } from '@/io';
 import type { ImportError } from '@/io';
 import { useUiStore } from '@/stores';
@@ -95,6 +95,8 @@ export function JsonImportPane({ onClose }: Props): React.ReactElement {
             <TabsTrigger value="replace">{t('io.jsonImport.mode.replace')}</TabsTrigger>
             <TabsTrigger value="append">{t('io.jsonImport.mode.append')}</TabsTrigger>
           </TabsList>
+          <TabsContent value="replace" />
+          <TabsContent value="append" />
         </Tabs>
       </div>
       {error && (

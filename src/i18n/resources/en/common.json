@@ -50,7 +50,17 @@
       },
       "duplicate": "An identical molecule already exists in the workspace.",
       "rdkitNotReady": "Chemistry engine is not ready. Reload the page if this persists.",
-      "internal": "Internal error: {{message}}"
+      "internal": "Internal error: {{message}}",
+      "pubchem": {
+        "network": "Network error. Check your connection and try again.",
+        "timeout": "PubChem timed out after {{elapsedMs}}ms. Retry.",
+        "rateLimited": "PubChem rate-limited. Retry shortly.",
+        "httpStatus": "PubChem error (HTTP {{status}}).",
+        "schema": "Unexpected PubChem response shape.",
+        "notFound": "Not found in PubChem: {{value}}.",
+        "rdkitFailed": "RDKit processing failed: {{reason}}.",
+        "aborted": "Request cancelled."
+      }
     }
   },
   "io": {
