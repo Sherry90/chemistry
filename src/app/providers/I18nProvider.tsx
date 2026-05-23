@@ -18,10 +18,15 @@ function detectLocale(): Locale {
 export function I18nProvider({ children }: { readonly children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(detectLocale);
   const [ready, setReady] = useState(false);
+  const [initError, setInitError] = useState<Error | null>(null);
   const initialLocaleRef = useRef(locale);
 
+  // Phase 15 §6.6 I10 — initI18n 실패 시 AppErrorBoundary 정적 영문 fallback 으로 위임.
   useEffect(() => {
-    void initI18n(initialLocaleRef.current).then(() => setReady(true));
+    initI18n(initialLocaleRef.current).then(
+      () => setReady(true),
+      (err: unknown) => setInitError(err instanceof Error ? err : new Error(String(err))),
+    );
   }, []);
 
   // Phase 15 §6.5 I8 — <html lang> 동기. locale 변경 시 즉시 반영.
@@ -35,6 +40,7 @@ export function I18nProvider({ children }: { readonly children: ReactNode }) {
     void setLocale(l);
   };
 
+  if (initError) throw initError;
   if (!ready) return null;
 
   return (

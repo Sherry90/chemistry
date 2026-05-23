@@ -6,6 +6,7 @@ import './index.css';
 import { AppErrorBoundary } from '@/app/layout';
 import { I18nProvider } from '@/app/providers/I18nProvider';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
+import { CvdSync } from '@/app/providers/CvdSync';
 import { App } from '@/app/App';
 import { installE2EBackdoor } from '@/app/_e2e';
 import { setRdkitBackend, createMainThreadRdkitBackend } from '@/engine';
@@ -26,6 +27,7 @@ createRoot(rootEl).render(
     <AppErrorBoundary>
       <I18nProvider>
         <ThemeProvider>
+          <CvdSync />
           <App />
         </ThemeProvider>
       </I18nProvider>

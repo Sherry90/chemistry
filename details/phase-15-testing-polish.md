@@ -279,12 +279,20 @@ vitest run` green).
 - [ ] 전 유닛/컴포넌트 테스트 회귀 green (retrofit 무영향)
 - [ ] §2.2 post-v1 비목표 목록 최종 확정·문서화 (rule-engine 등)
 
-## 11. 열린 질문 (User Decision Required)
+## 11. 열린 질문 → 결정 (2026-05-23 사용자 확정)
 
-1. 호스팅 타깃 — GitHub Pages(기본) vs 사내 CDN/Vercel/Netlify (배포 직전 확정).
-2. 보조 ErrorBoundary 세분화 — axe/실사용 결과 따라 사용자 확정.
-3. phase-09 §11 #1 Esc focus 해제 / #8 undo selection 토스트 — a11y 결과 기반.
-4. post-v1 항목 중 사용자 강력 요구 시 우선순위 재조정(기본: 전부 post-v1 유지).
+1. **호스팅 타깃 = GitHub Pages.**
+   - `vite base='/chemistry/'` 프로덕션 빌드 + `.github/workflows/deploy.yml` (`upload-pages-artifact` + `deploy-pages`) 유지.
+   - **호스팅 독립성 검증**: `src/` 어디에도 절대 경로(`"/chemistry/..."`) 하드코딩 0건. WASM 은 `?url` import (vite 가 base 자동 prepend). PubChem fetch 는 외부 절대 URL (호스팅 무관). 다른 정적 호스트로 이전 시 vite `base` 만 교체.
+
+2. **보조 ErrorBoundary 세분화 미도입.**
+   - 근거: phase-10 의 4-슬롯 `<PanelErrorBoundary>` + 최상위 `<AppErrorBoundary>` 로 Phase 15 핵심 5 E2E 진행 중 viewport/Scene throw 미발생. axe 0 critical/serious. 추가 경계는 실사용 후 입증 시 검토.
+
+3. **phase-09 §11 #1(Esc focus 해제) / #8(undo selection 토스트) 미도입.**
+   - 근거: a11y 자동(axe) 통과 + 핵심 5 E2E 시나리오에서 focus 누락/사용자 혼란 미관측. v1 후 사용자 피드백 기반 재평가. UX-만 항목으로 v1 게이트 비차단.
+
+4. **post-v1 항목 전부 유지.**
+   - rule-engine, bond-level crossfade, 박스 선택, Surface 렌더, SDF/PDB/MOL/XYZ Import, 클라우드 저장/URL 공유/PWA, 모바일 반응형 — 모두 §2.2 비목표 유지.
 
 ## 12. 다음 Phase 로의 인계 (Hand-off)
 

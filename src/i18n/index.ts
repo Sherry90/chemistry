@@ -3,9 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import type { Locale } from '@/types/settings';
 
 import enCommon from './resources/en/common.json';
-import enChemistry from './resources/en/chemistry.json';
 import koCommon from './resources/ko/common.json';
-import koChemistry from './resources/ko/chemistry.json';
 // Phase 11 — panels = 별도 ns (useTranslation('panels')). shortcuts = common
 // ns 에 'shortcuts' 키로 병합 (phase-09 i18nLabelKey='shortcuts.${action}' 가
 // 기본 ns 'common' 으로 t() 호출 → common.shortcuts.* 해소).
@@ -17,15 +15,14 @@ import koShortcuts from './resources/ko/shortcuts.json';
 export type { Locale };
 export { useTranslation } from 'react-i18next';
 
+// Phase 15 — chemistry ns 삭제 (registry-driven naming.ts 가 element 이름 제공).
 const resources = {
   en: {
     common: { ...enCommon, shortcuts: enShortcuts },
-    chemistry: enChemistry,
     panels: enPanels,
   },
   ko: {
     common: { ...koCommon, shortcuts: koShortcuts },
-    chemistry: koChemistry,
     panels: koPanels,
   },
 } as const;
@@ -43,7 +40,7 @@ export async function initI18n(initialLocale: Locale): Promise<void> {
     lng: initialLocale,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'chemistry', 'panels'],
+    ns: ['common', 'panels'],
     resources,
     interpolation: { escapeValue: false },
     returnEmptyString: false,

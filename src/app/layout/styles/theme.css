@@ -29,10 +29,22 @@
   --success: 74 222 128;
 }
 
+/* Phase 15 §6.4 / I6 — CVD 안전 팔레트 확정.
+   Wong (2011) 8-color colorblind-safe palette 변형 + WCAG AA 명도 분리.
+   .cvd = 라이트 테마 위 오버레이, .dark.cvd = 다크 테마 위 오버레이.
+   architecture §3.5: red→orange, green→cyan/blue, yellow 유지 (3 색 명도 분리). */
 .cvd {
-  /* Phase 15 가 색약 안전 팔레트로 확정 (D9 / R4) — 본 Phase 는 비파괴 자리만. */
-  --accent: 29 78 216; /* blue-700 */
-  --error: 234 88 12; /* orange-600 — red 대비 명도/색조 분리 */
+  --accent: 29 78 216; /* blue-700 — 진한 청색, 라이트 위 대비 7:1 */
+  --accent-fg: 255 255 255;
+  --error: 194 65 12; /* orange-700 — red→orange 색조 분리 */
+  --warn: 161 98 7; /* yellow-700 — yellow 명도 낮춰 대비 확보 */
+  --success: 14 116 144; /* cyan-700 — green→cyan 색조 분리 */
+}
+
+.dark.cvd {
+  --accent: 96 165 250; /* blue-400 — 다크 위 4.5:1 이상 */
+  --accent-fg: 15 23 42;
+  --error: 251 146 60; /* orange-400 */
   --warn: 250 204 21; /* yellow-400 */
-  --success: 22 78 99; /* cyan-900 — green 대체 */
+  --success: 103 232 249; /* cyan-300 */
 }

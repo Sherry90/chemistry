@@ -1,7 +1,6 @@
 {
   "periodicTable": {
     "title": "Periodic Table",
-    "empty": { "hint": "Click an element to see details." },
     "element": {
       "fields": {
         "category": "Category",
@@ -56,8 +55,6 @@
     },
     "bond": { "length": "Length", "angle": "Angle", "order": "Order" },
     "stereo": {
-      "atomTag": { "R": "R", "S": "S", "none": "—" },
-      "bondTag": { "E": "E", "Z": "Z", "none": "—" },
       "empty": "No stereochemistry."
     },
     "copied": "SMILES copied to clipboard.",
@@ -68,7 +65,6 @@
     "tabs": { "products": "Products", "rule": "Rule", "thermo": "Thermo" },
     "empty": { "idle": "Run a reaction to see the result here." },
     "running": "Running…",
-    "addProduct": "Add this product",
     "addProductsToWorkspace": "Add all products",
     "addedProducts": "Added {{count}} product(s) to workspace.",
     "thermo": {
@@ -106,8 +102,7 @@
     "undoSelectionRestored": { "notice": "Selection cleared after undo." }
   },
   "toast": {
-    "dismiss": "Dismiss",
-    "level": { "info": "Info", "success": "Success", "warn": "Warning", "error": "Error" }
+    "dismiss": "Dismiss"
   },
   "textInput": {
     "title": "Add Molecule from Text",
@@ -119,8 +114,7 @@
     },
     "preview": {
       "empty": "Enter input to see a preview.",
-      "loading": "Analyzing…",
-      "sourceLabel": "Text input preview"
+      "loading": "Analyzing…"
     },
     "rdkitLoading": "Loading chemistry engine…",
     "replaceToggle": {
