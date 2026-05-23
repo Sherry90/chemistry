@@ -49,9 +49,9 @@ async function walkSrc(dir, files = []) {
 // messageKey/i18nLabelKey/i18nTitleKey: 소비 시점에 ToastItem/Dialog 등에서 default ns='common'
 // 으로 t() 호출됨 (producer 파일의 useTranslation ns 와 무관). 명시 ns prefix 없으면 common 강제.
 const MSGKEY_RE = /\b(?:messageKey|i18nLabelKey|i18nTitleKey)\s*[:=]\s*\{?['"]([a-zA-Z0-9_:.-]+?)['"]/g;
-// 오류 매핑 패턴: `key: 'common.X.Y'` (절대 경로, 점 구분 ns). 매핑 객체 리터럴.
-// stores/*.selectors.ts 에서 export function map*ErrorToKey() 가 반환하는 {key:string}.
-const MAPPING_KEY_RE = /\bkey\s*:\s*['"]((?:common|panels)\.[a-zA-Z0-9_.-]+)['"]/g;
+// 절대 경로 i18n 키 리터럴 (객체 프로퍼티 값). `<ident>: 'common.X.Y'` / `key: 'panels.X'`.
+// 매퍼/룩업 테이블 모두 커버. ns 명시 prefix 가 anchor 라 false-positive 낮음.
+const MAPPING_KEY_RE = /\b[a-zA-Z_$][\w$]*\s*:\s*['"]((?:common|panels)\.[a-zA-Z0-9_.-]+)['"]/g;
 // 매퍼 함수 직반환 패턴: `return 'X.Y.Z'` — 점 2개 이상. selectors.ts 의 ...ErrorToKey()
 // 가 string 반환 → 호출처에서 t(value, {ns:'common'}) 로 해소.
 const RETURN_KEY_RE = /\breturn\s+['"]([a-z][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+){2,})['"]/g;
@@ -123,8 +123,13 @@ async function scanCode() {
     for (const m of text.matchAll(MAPPING_KEY_RE)) {
       const dot = m[1].indexOf('.');
       const ns = m[1].slice(0, dot);
-      const key = m[1].slice(dot + 1);
-      staticUses.push({ raw: m[1], candidates: new Set([`${ns}:${key}`]) });
+      const stripped = m[1].slice(dot + 1);
+      // 두 해석 모두 허용 (ErrorMessage 의 strip 패턴 vs LoadingOverlay 의 flat 패턴).
+      // 어느 한 쪽 매치되면 used.
+      staticUses.push({
+        raw: m[1],
+        candidates: new Set([`${ns}:${stripped}`, `${ns}:${m[1]}`]),
+      });
     }
     for (const m of text.matchAll(RETURN_KEY_RE)) {
       staticUses.push({ raw: m[1], candidates: new Set([`common:${m[1]}`]) });
