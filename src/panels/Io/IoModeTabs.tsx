@@ -1,6 +1,7 @@
 // Phase 13 §6.2 — IoModeTabs. Radix Tabs (←/→ nav + aria-selected 무료).
 // 4 tabs: png-export / json-export / sdf-export / json-import.
-import { Tabs, TabsList, TabsTrigger } from '@/components';
+// Phase 15 §6.4 retrofit — 빈 TabsContent 동반 (axe aria-valid-attr-value 해소).
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components';
 import { useTranslation } from 'react-i18next';
 import { Image, FileText, Atom, Upload } from 'lucide-react';
 import type { IoMode } from './types';
@@ -32,6 +33,10 @@ export function IoModeTabs({ mode, onChange }: Props) {
           {t('io.modeLabel.jsonImport')}
         </TabsTrigger>
       </TabsList>
+      <TabsContent value="png-export" />
+      <TabsContent value="json-export" />
+      <TabsContent value="sdf-export" />
+      <TabsContent value="json-import" />
     </Tabs>
   );
 }

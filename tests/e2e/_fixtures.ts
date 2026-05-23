@@ -39,8 +39,9 @@ export const test = base.extend<Fixtures>({
 
     const helper: AppHelper = {
       page,
-      async gotoFresh(path = '') {
-        // 첫 방문은 base path 절대 — webServer.url 기준 path 추가.
+      async gotoFresh(path = '?e2e=1') {
+        // 첫 방문은 base path 절대 — webServer.url 기준 path 추가. 기본 `?e2e=1`
+        // 로 window.__e2e__ 백도어 노출 (평시 production 빌드는 dead code).
         await page.goto(path);
         // localStorage clear 후 reload — locale/theme/molecules 모두 초기화.
         await page.evaluate(() => {
@@ -83,7 +84,16 @@ export const test = base.extend<Fixtures>({
         );
         if (blockers.length > 0) {
           const report = blockers
-            .map((v) => `  - [${v.impact}] ${v.id}: ${v.description}`)
+            .map((v) => {
+              const nodes = v.nodes
+                .slice(0, 3)
+                .map(
+                  (n) =>
+                    `      target=${JSON.stringify(n.target)} html=${n.html.slice(0, 200)} fail=${n.failureSummary?.slice(0, 200) ?? ''}`,
+                )
+                .join('\n');
+              return `  - [${v.impact}] ${v.id}: ${v.description}\n${nodes}`;
+            })
             .join('\n');
           throw new Error(`axe blockers:\n${report}`);
         }

@@ -65,6 +65,7 @@ const Viewport: React.FC<ViewportProps> = ({ apiRef: externalApiRef, fallback, c
       role={focusProps.role}
       tabIndex={focusProps.tabIndex}
       onKeyDown={onKeyDown}
+      data-testid="viewport-canvas"
     >
       <Canvas
         dpr={[1, 2]}

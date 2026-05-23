@@ -35,6 +35,7 @@ export function AppGroup(): React.ReactElement {
           checked={theme === 'dark'}
           onCheckedChange={(c) => setTheme(c ? 'dark' : 'light')}
           aria-label={t('toolbar.theme')}
+          data-testid="toolbar-theme"
         />
       </Tooltip>
       <Tooltip content={t('toolbar.language')}>
