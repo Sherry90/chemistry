@@ -7,10 +7,14 @@ import { getElement } from '@/chemistry/elements';
 export function AtomLabels({
   molecule,
   color,
+  fadeOpacity,
 }: {
   readonly molecule: Molecule;
   readonly color: string;
+  // Phase 15 §6.2 (I3) — drei Text 의 fillOpacity 로 전달 (Material opacity 동작).
+  readonly fadeOpacity?: number;
 }): React.ReactElement {
+  const op = fadeOpacity ?? 1;
   return (
     <>
       {molecule.atoms.map((a) => (
@@ -19,6 +23,7 @@ export function AtomLabels({
           position={[a.position.x, a.position.y, a.position.z]}
           fontSize={0.5}
           color={color}
+          fillOpacity={op}
           anchorX="center"
           anchorY="middle"
         >

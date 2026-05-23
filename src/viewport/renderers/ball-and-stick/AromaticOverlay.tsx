@@ -8,8 +8,11 @@ import { AROMATIC_DASH_SIZE, AROMATIC_GAP_SIZE } from '../../_shared/constants';
 
 export function AromaticOverlay({
   molecule,
+  fadeOpacity,
 }: {
   readonly molecule: Molecule;
+  // Phase 15 §6.2 (I3) — drei Line 의 LineMaterial opacity 로 전달 (transparent on).
+  readonly fadeOpacity?: number;
 }): React.ReactElement | null {
   const segments = useMemo(() => {
     const byId = new Map<AtomId, Atom>();
@@ -37,6 +40,7 @@ export function AromaticOverlay({
   }, [molecule]);
 
   if (segments.length === 0) return null;
+  const op = fadeOpacity ?? 1;
   return (
     <>
       {segments.map((pts, i) => (
@@ -48,6 +52,8 @@ export function AromaticOverlay({
           dashed
           dashSize={AROMATIC_DASH_SIZE}
           gapSize={AROMATIC_GAP_SIZE}
+          transparent
+          opacity={op}
         />
       ))}
     </>

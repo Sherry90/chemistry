@@ -12,9 +12,11 @@ import { getElement } from '@/chemistry/elements';
 
 interface Props {
   readonly molecules: ReadonlyArray<Molecule>;
+  // Phase 15 §6.2 (I3) — LineBasicMaterial opacity 로 전달 (transparent on).
+  readonly fadeOpacity?: number;
 }
 
-export function LineBonds({ molecules }: Props): React.ReactElement {
+export function LineBonds({ molecules, fadeOpacity }: Props): React.ReactElement {
   const meshRef = useRef<LineSegments>(null);
 
   // position + color buffers 구축. 결합당 2 vertex × 3 float.
@@ -61,8 +63,16 @@ export function LineBonds({ molecules }: Props): React.ReactElement {
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
-  const material = useMemo(() => new LineBasicMaterial({ vertexColors: true }), []);
+  const material = useMemo(
+    () => new LineBasicMaterial({ vertexColors: true, transparent: true }),
+    [],
+  );
   useEffect(() => () => material.dispose(), [material]);
+
+  // I3 — fade 시 material.opacity 갱신 (전 분자 공유 X — LineBonds 인스턴스마다 own).
+  useEffect(() => {
+    material.opacity = fadeOpacity ?? 1;
+  }, [material, fadeOpacity]);
 
   // R3F intrinsic <lineSegments>. count=0 일 때도 마운트 (빈 geometry).
   return <lineSegments ref={meshRef} geometry={geometry} material={material} />;

@@ -6,7 +6,7 @@
 //     vdwRadiusPm === null fallback → covalent radius × ATOM_RADIUS_SCALE.
 //   - renderMode === 'wireframe' | 'stick' 비마운트(parent 조건 렌더) — 본 컴포넌트는 prop 만 받고 동작.
 import type * as React from 'react';
-import { useEffect, useMemo, useLayoutEffect, useState } from 'react';
+import { useEffect, useMemo, useLayoutEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import type { Molecule, Atom } from '@/chemistry/compounds/types';
 import type { ElementNumber } from '@/chemistry/elements/types';
@@ -23,6 +23,9 @@ import { sphereGeometryFor } from '../../_shared/lod';
 import { ATOM_RADIUS_SCALE } from '../../_shared/constants';
 import type { LodLevel, RenderMode } from '../../_shared/types';
 import type { ThreeEvent } from '@react-three/fiber';
+import type { DragController } from '../../interactions/usePointerDrag';
+import { getAtomIdFromIntersection } from '../../ids/picking';
+import { selectFromPick } from '../../interactions/usePointerSelect';
 
 const PM_TO_ANGSTROM = 0.01;
 /** Phase 14 §6.4 — space-filling: vdW 반지름 그대로. */
@@ -64,6 +67,12 @@ export interface AtomInstancesProps {
   readonly renderMode: RenderMode;
   readonly onPointerOver?: (e: ThreeEvent<PointerEvent>) => void;
   readonly onPointerOut?: (e: ThreeEvent<PointerEvent>) => void;
+  // Phase 15 §6.2 (I3) — exit fade × (mount fade) 합성 opacity (caller 합성).
+  // cloned material 이 pool 마다 격리되어 다른 분자에 영향 없음 (poolRegistry).
+  readonly fadeOpacity?: number;
+  // Phase 15 §6.3 (I4) — atom drag/select 컨트롤러 (MoleculeGroup 제공). undef 시
+  // 단독 마운트(테스트 등) 폴백 — pointer event 만 그대로 hover 핸들러로 전달.
+  readonly dragController?: DragController;
 }
 
 export function AtomInstances({
@@ -72,6 +81,8 @@ export function AtomInstances({
   renderMode,
   onPointerOver,
   onPointerOut,
+  fadeOpacity,
+  dragController,
 }: AtomInstancesProps): React.ReactElement {
   const molId = molecule.id;
   const [, bump] = useState(0);
@@ -119,7 +130,53 @@ export function AtomInstances({
     return () => atomPoolRegistry.deleteAll(molId);
   }, [molId]);
 
+  // I3 — fadeOpacity 를 분자의 모든 element pool material 에 적용. pool 마다
+  // material 이 clone 되어 있어 (poolRegistry.ensure) 다른 분자에 누출되지 않음.
+  // layout effect 후에 실행되도록 useEffect (pool ensure 가 마운트 사이클에 선행).
+  useEffect(() => {
+    const op = fadeOpacity ?? 1;
+    for (const el of byElement.keys()) {
+      const pool = atomPoolRegistry.find(molId, el);
+      if (!pool) continue;
+      const mat = pool.mesh.material as THREE.Material;
+      mat.opacity = op;
+    }
+  }, [byElement, fadeOpacity, molId]);
+
   const meshes = [...byElement.keys()].map((el) => atomPoolRegistry.find(molId, el)?.mesh);
+
+  // I4 — drag begin: 픽된 atom 에 대해 컨트롤러에 위임 (start 시 select 도 갱신 — D6).
+  // onPointerDown: select (shift 토글) + drag begin. Window 리스너로 move/up 캡쳐
+  // (R3F primitive 의 onPointerMove 는 hover 와 분리하기 어려움 — 명세 §6.3 D4 권장).
+  const onPointerDown = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      const picked = getAtomIdFromIntersection(e);
+      selectFromPick(picked, e.shiftKey);
+      if (!picked || picked.kind !== 'atom') return;
+      if (!dragController) return;
+      const began = dragController.onPointerDown(picked, e.clientX, e.clientY);
+      if (!began) return;
+      const onMove = (ev: PointerEvent): void =>
+        dragController.onPointerMove(ev.clientX, ev.clientY);
+      const onUp = (): void => {
+        dragController.onPointerUp();
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onCancel);
+      };
+      const onCancel = (): void => {
+        dragController.onPointerCancel();
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onCancel);
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onCancel);
+    },
+    [dragController],
+  );
 
   return (
     <group>
@@ -130,6 +187,7 @@ export function AtomInstances({
             object={mesh}
             onPointerOver={onPointerOver}
             onPointerOut={onPointerOut}
+            onPointerDown={onPointerDown}
           />
         ) : null,
       )}

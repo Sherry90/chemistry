@@ -1,6 +1,9 @@
 // Phase 08 §6.2 (D9+D9a+P4) — InstancedMesh 풀 레지스트리 (모듈-레벨, viewport 내부 전용).
 // tail-only allocation + tail-swap on remove. free-list 없음. THREE.InstancedMesh 는
 // 생성 시 WebGL 컨텍스트 불요 (instanceMatrix = Float32Array) → jsdom 단위 테스트 가능.
+// Phase 15 §6.2 (I3) — fade 라이브 결선: pool 마다 material.clone() 으로 격리하여
+// 단일 분자 fade 가 다른 분자의 opacity 에 영향을 주지 않도록 한다. cloned material 은
+// transparent=true 로 강제 (opacity<1 시 alpha blending 활성 — three.js 기본 동작 보장).
 import * as THREE from 'three';
 import type { AtomId, BondId, MoleculeId } from '@/chemistry/compounds/ids';
 import type { ElementNumber } from '@/chemistry/elements/types';
@@ -30,7 +33,10 @@ export const atomPoolRegistry = {
     const k = atomKey(molId, element);
     let p = atomPools.get(k);
     if (!p) {
-      const mesh = new THREE.InstancedMesh(geometry, material, INITIAL_CAPACITY);
+      // I3 — pool 마다 material clone (단일 분자 fade 가 다른 분자에 누출되지 않도록).
+      const ownMaterial = material.clone();
+      ownMaterial.transparent = true;
+      const mesh = new THREE.InstancedMesh(geometry, ownMaterial, INITIAL_CAPACITY);
       mesh.count = 0;
       mesh.userData = { kind: 'atomPool', element, molId } satisfies AtomPoolUserData;
       p = {
@@ -130,7 +136,10 @@ export const bondPoolRegistry = {
   ): BondInstancePool {
     let p = bondPools.get(molId);
     if (!p) {
-      const mesh = new THREE.InstancedMesh(geometry, material, INITIAL_CAPACITY);
+      // I3 — pool 마다 material clone (단일 분자 fade 가 다른 분자에 누출되지 않도록).
+      const ownMaterial = material.clone();
+      ownMaterial.transparent = true;
+      const mesh = new THREE.InstancedMesh(geometry, ownMaterial, INITIAL_CAPACITY);
       mesh.count = 0;
       mesh.userData = { kind: 'bondPool', molId } satisfies BondPoolUserData;
       p = {

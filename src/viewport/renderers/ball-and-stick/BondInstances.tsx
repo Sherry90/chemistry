@@ -5,10 +5,13 @@
 //   - renderMode === 'space-filling' | 'wireframe' 또는 lodLevel === 'line' 인 경우는
 //     parent 가 비마운트 (LineBonds 가 대체). 본 컴포넌트는 prop 만 받고 동작.
 import type * as React from 'react';
-import { useEffect, useMemo, useLayoutEffect, useState } from 'react';
+import { useEffect, useMemo, useLayoutEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
+import type { ThreeEvent } from '@react-three/fiber';
 import type { Molecule, Atom } from '@/chemistry/compounds/types';
 import type { AtomId } from '@/chemistry/compounds/ids';
+import { getAtomIdFromIntersection } from '../../ids/picking';
+import { selectFromPick } from '../../interactions/usePointerSelect';
 import {
   bondPoolRegistry,
   allocBondSlots,
@@ -34,12 +37,15 @@ export interface BondInstancesProps {
   readonly molecule: Molecule;
   readonly lodLevel: LodLevel;
   readonly renderMode: RenderMode;
+  // Phase 15 §6.2 (I3) — exit fade × mount fade 합성 opacity (caller 합성).
+  readonly fadeOpacity?: number;
 }
 
 export function BondInstances({
   molecule,
   lodLevel,
   renderMode: _renderMode,
+  fadeOpacity,
 }: BondInstancesProps): React.ReactElement | null {
   // _renderMode — §5.4 spec props 충족용 prefix (mount/unmount 분기는 parent 가 수행).
   const molId = molecule.id;
@@ -104,6 +110,21 @@ export function BondInstances({
     return () => bondPoolRegistry.deleteAll(molId);
   }, [molId]);
 
+  // I3 — fadeOpacity 를 bond pool material 에 적용 (pool 마다 cloned, 격리 보장).
+  useEffect(() => {
+    const pool = bondPoolRegistry.find(molId);
+    if (!pool) return;
+    const mat = pool.mesh.material as THREE.Material;
+    mat.opacity = fadeOpacity ?? 1;
+  }, [fadeOpacity, molId, molecule]);
+
+  // I4 — bond click → selection (shift 토글).
+  const onPointerDown = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    const picked = getAtomIdFromIntersection(e);
+    selectFromPick(picked, e.shiftKey);
+  }, []);
+
   const mesh = bondPoolRegistry.find(molId)?.mesh;
-  return mesh ? <primitive object={mesh} /> : null;
+  return mesh ? <primitive object={mesh} onPointerDown={onPointerDown} /> : null;
 }

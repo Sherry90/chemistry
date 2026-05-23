@@ -1,6 +1,8 @@
 // Phase 08 §6.8 — ball-and-stick 단일 갈래 (atoms + bonds + aromatic + labels + hover).
 // Phase 14 §6.4 W3-C1 retrofit: lodLevel === 'line' 시 BondInstances → LineBonds 로 swap.
 //   AtomInstances 는 line 레벨에서도 소형 sphere 유지 (segments 6/3, atom picking 보존).
+// Phase 15 §6.2 (I3) — fadeOpacity (exit) × mountOpacity (enter, useFadeOnMount) 합성을
+//   여기서 단일화하여 자식에게 prop 으로 전달 (renderer 별 독립 clock 방지 — advisor).
 import type * as React from 'react';
 import { useState, useCallback, useMemo } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
@@ -22,13 +24,18 @@ import { LineBonds } from '../LineBonds';
 import { getAtomIdFromIntersection } from '../../ids/picking';
 import { resolveBackground } from '../../scene/Background';
 import type { HoverState, LodLevel } from '../../_shared/types';
+import type { DragController } from '../../interactions/usePointerDrag';
 
 export function BallAndStickRenderer({
   molecule,
   lod,
+  fadeOpacity,
+  dragController,
 }: {
   readonly molecule: Molecule;
   readonly lod: LodLevel;
+  readonly fadeOpacity?: number;
+  readonly dragController?: DragController;
 }): React.ReactElement {
   const [hover, setHover] = useState<HoverState | null>(null);
   const labelsOn = useUiStore(selectAtomLabelsOn);
@@ -51,6 +58,8 @@ export function BallAndStickRenderer({
   }, []);
   const onPointerOut = useCallback(() => setHover(null), []);
 
+  const op = fadeOpacity ?? 1;
+
   return (
     <group>
       <AtomInstances
@@ -59,14 +68,21 @@ export function BallAndStickRenderer({
         renderMode="ball-and-stick"
         onPointerOver={onPointerOver}
         onPointerOut={onPointerOut}
+        fadeOpacity={op}
+        {...(dragController ? { dragController } : {})}
       />
       {lod === 'line' ? (
-        <LineBonds molecules={lineMolecules} />
+        <LineBonds molecules={lineMolecules} fadeOpacity={op} />
       ) : (
-        <BondInstances molecule={molecule} lodLevel={lod} renderMode="ball-and-stick" />
+        <BondInstances
+          molecule={molecule}
+          lodLevel={lod}
+          renderMode="ball-and-stick"
+          fadeOpacity={op}
+        />
       )}
-      <AromaticOverlay molecule={molecule} />
-      {showLabels && <AtomLabels molecule={molecule} color={labelColor} />}
+      <AromaticOverlay molecule={molecule} fadeOpacity={op} />
+      {showLabels && <AtomLabels molecule={molecule} color={labelColor} fadeOpacity={op} />}
       {hover && hover.molId === molecule.id && (
         <HoverTooltip molecule={molecule} atomId={hover.atomId} />
       )}
