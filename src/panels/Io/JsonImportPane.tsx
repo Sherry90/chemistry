@@ -109,7 +109,12 @@ export function JsonImportPane({ onClose }: Props): React.ReactElement {
         />
       )}
       <div className="flex justify-end pt-2">
-        <Button variant="primary" disabled={!file || importing} onClick={() => void onImport()}>
+        <Button
+          variant="primary"
+          data-testid="io-import-submit"
+          disabled={!file || importing}
+          onClick={() => void onImport()}
+        >
           {importing && <Spinner size="sm" className="mr-2" />}
           {t('io.jsonImport.importButton')}
         </Button>

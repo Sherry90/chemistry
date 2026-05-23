@@ -65,7 +65,7 @@ export function ViewportGroup({ apiRef }: Props): React.ReactElement {
       <Popover>
         <PopoverTrigger asChild>
           <Tooltip content={t('toolbar.export')}>
-            <IconButton aria-label={t('toolbar.export')}>
+            <IconButton aria-label={t('toolbar.export')} data-testid="toolbar-export">
               <Download size={18} />
             </IconButton>
           </Tooltip>
@@ -74,6 +74,7 @@ export function ViewportGroup({ apiRef }: Props): React.ReactElement {
           <div className="flex min-w-40 flex-col gap-1">
             <button
               type="button"
+              data-testid="export-png"
               onClick={() => openIo('png-export')}
               className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-bg-panel-elevated"
             >
@@ -81,6 +82,7 @@ export function ViewportGroup({ apiRef }: Props): React.ReactElement {
             </button>
             <button
               type="button"
+              data-testid="export-json"
               onClick={() => openIo('json-export')}
               className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-bg-panel-elevated"
             >
@@ -88,6 +90,7 @@ export function ViewportGroup({ apiRef }: Props): React.ReactElement {
             </button>
             <button
               type="button"
+              data-testid="export-sdf"
               onClick={() => openIo('sdf-export')}
               className="flex items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-bg-panel-elevated"
             >
@@ -99,7 +102,11 @@ export function ViewportGroup({ apiRef }: Props): React.ReactElement {
 
       {/* Import button (JSON only). */}
       <Tooltip content={t('toolbar.import')}>
-        <IconButton aria-label={t('toolbar.import')} onClick={() => openIo('json-import')}>
+        <IconButton
+          aria-label={t('toolbar.import')}
+          data-testid="toolbar-import"
+          onClick={() => openIo('json-import')}
+        >
           <Upload size={18} />
         </IconButton>
       </Tooltip>

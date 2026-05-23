@@ -7,7 +7,7 @@ import { cn } from './_shared/classNames';
 
 export const TooltipProvider = RTooltip.Provider;
 
-export interface TooltipProps {
+export interface TooltipProps extends Omit<React.HTMLAttributes<HTMLElement>, 'content'> {
   readonly content: React.ReactNode;
   readonly children: React.ReactNode;
   readonly side?: 'top' | 'right' | 'bottom' | 'left';
@@ -15,12 +15,12 @@ export interface TooltipProps {
 }
 
 export const Tooltip = forwardRef<HTMLButtonElement, TooltipProps>(function Tooltip(
-  { content, children, side = 'top', delayDuration = 200 },
+  { content, children, side = 'top', delayDuration = 200, ...rest },
   ref,
 ) {
   return (
     <RTooltip.Root delayDuration={delayDuration}>
-      <RTooltip.Trigger ref={ref} asChild>
+      <RTooltip.Trigger ref={ref} asChild {...rest}>
         {children}
       </RTooltip.Trigger>
       <RTooltip.Portal>

@@ -40,10 +40,19 @@ export const selectMoleculeSnapshot =
     return m ? toSnapshot(m) : null;
   };
 
-/** Phase 13 §4.8 — JSON export 진입점. 모든 분자 (s.ids 순서) 의 snapshot. */
+/** Phase 13 §4.8 — JSON export 진입점. 모든 분자 (s.ids 순서) 의 snapshot.
+ *  Phase 15 §6.1 retrofit — WeakMap memo (state identity 키). 매 호출 새 배열
+ *  반환 시 Zustand `Object.is` 비교가 항상 false → 무한 re-render 루프 (S13 발견). */
+const _allSnapshotsCache = new WeakMap<MoleculeStoreState, ReadonlyArray<MoleculeSnapshot>>();
 export const selectAllMoleculeSnapshots = (
   s: MoleculeStoreState,
-): ReadonlyArray<MoleculeSnapshot> => s.ids.map((id) => toSnapshot(s.molecules[id]!));
+): ReadonlyArray<MoleculeSnapshot> => {
+  const cached = _allSnapshotsCache.get(s);
+  if (cached) return cached;
+  const result = s.ids.map((id) => toSnapshot(s.molecules[id]!));
+  _allSnapshotsCache.set(s, result);
+  return result;
+};
 
 // ── Phase 11 §4.7 retrofit — selectBondMetrics (standalone 순수 + WeakMap memo) ──
 

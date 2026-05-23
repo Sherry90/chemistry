@@ -75,6 +75,7 @@ export default function ConditionsPanel(): React.ReactElement {
         </div>
         <Slider
           id="temp-slider"
+          aria-label={t('conditions.temperatureLabel')}
           min={ranges.temperature.min}
           max={ranges.temperature.max}
           step={ranges.temperature.step}
@@ -99,6 +100,7 @@ export default function ConditionsPanel(): React.ReactElement {
         </div>
         <Slider
           id="pressure-slider"
+          aria-label={t('conditions.pressureLabel')}
           min={ranges.pressure.min}
           max={ranges.pressure.max}
           step={ranges.pressure.step}
@@ -126,6 +128,7 @@ export default function ConditionsPanel(): React.ReactElement {
           />
           <Slider
             id="ph-slider"
+            aria-label={t('conditions.phLabel')}
             min={0}
             max={14}
             step={1}
@@ -170,6 +173,7 @@ export default function ConditionsPanel(): React.ReactElement {
         <Button
           variant="primary"
           size="sm"
+          data-testid="conditions-run"
           disabled={reactantIds.length === 0 || isRunning}
           onClick={() => void onRun()}
         >

@@ -7,9 +7,11 @@ import { cn } from './_shared/classNames';
 export type SliderProps = React.ComponentPropsWithoutRef<typeof RSlider.Root>;
 
 export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
-  { className, ...props },
+  { className, 'aria-label': ariaLabel, 'aria-labelledby': ariaLabelledBy, ...props },
   ref,
 ) {
+  // Phase 15 §6.1 retrofit — Radix Slider 의 role=slider 는 Thumb 에 위치.
+  // axe aria-input-field-name (serious) 해소 위해 aria-label/labelledby 를 Thumb 로 전달.
   return (
     <RSlider.Root
       ref={ref}
@@ -20,6 +22,8 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
         <RSlider.Range className="absolute h-full rounded-full bg-accent" />
       </RSlider.Track>
       <RSlider.Thumb
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
         className={cn(
           'block h-4 w-4 rounded-full border border-border bg-bg-panel shadow',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',

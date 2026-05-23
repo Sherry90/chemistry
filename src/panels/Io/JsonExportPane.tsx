@@ -73,7 +73,7 @@ export function JsonExportPane({ onClose }: Props): React.ReactElement {
         />
       )}
       <div className="flex justify-end pt-2">
-        <Button variant="primary" onClick={onExport}>
+        <Button variant="primary" data-testid="io-json-export-submit" onClick={onExport}>
           {t('io.jsonExport.exportButton')}
         </Button>
       </div>

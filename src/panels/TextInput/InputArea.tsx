@@ -20,6 +20,7 @@ export function InputArea({ mode, raw, onChange, onEnterSubmit }: Props) {
     return (
       <textarea
         aria-label={ariaLabel}
+        data-testid="textinput-input"
         autoComplete="off"
         spellCheck={false}
         // eslint-disable-next-line jsx-a11y/no-autofocus
@@ -43,6 +44,7 @@ export function InputArea({ mode, raw, onChange, onEnterSubmit }: Props) {
   return (
     <Input
       aria-label={ariaLabel}
+      data-testid="textinput-input"
       autoComplete="off"
       spellCheck={false}
       // eslint-disable-next-line jsx-a11y/no-autofocus

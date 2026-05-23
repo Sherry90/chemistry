@@ -24,6 +24,11 @@ export function I18nProvider({ children }: { readonly children: ReactNode }) {
     void initI18n(initialLocaleRef.current).then(() => setReady(true));
   }, []);
 
+  // Phase 15 §6.5 I8 — <html lang> 동기. locale 변경 시 즉시 반영.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   const handleSetLocale = (l: Locale) => {
     localStorage.setItem(STORAGE_KEY, l);
     setLocaleState(l);

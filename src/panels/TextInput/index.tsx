@@ -100,7 +100,12 @@ export default function TextInputDialog(): React.ReactElement {
           <DialogClose asChild>
             <Button variant="ghost">{t('textInput.action.cancel')}</Button>
           </DialogClose>
-          <Button variant="primary" disabled={submitDisabled} onClick={onSubmit}>
+          <Button
+            variant="primary"
+            data-testid="textinput-submit"
+            disabled={submitDisabled}
+            onClick={onSubmit}
+          >
             {replaceOn ? t('textInput.action.replaceActive') : t('textInput.action.addToWorkspace')}
           </Button>
         </div>

@@ -36,9 +36,11 @@ export function ModalHost() {
   const isPeriodicTableOpen = useUiStore((s) => s.panels.isPeriodicTableOpen);
   const isCompoundBrowserOpen = useUiStore((s) => s.panels.isCompoundBrowserOpen);
   const isReactionResultOpen = useUiStore((s) => s.panels.isReactionResultOpen);
+  const isTextInputOpen = useUiStore((s) => s.panels.isTextInputOpen);
   const togglePeriodicTable = useUiStore((s) => s.actions.togglePeriodicTable);
   const toggleCompoundBrowser = useUiStore((s) => s.actions.toggleCompoundBrowser);
   const toggleReactionResult = useUiStore((s) => s.actions.toggleReactionResult);
+  const toggleTextInput = useUiStore((s) => s.actions.toggleTextInput);
 
   return (
     <>
@@ -56,6 +58,13 @@ export function ModalHost() {
         panelKey="reaction-result"
         open={isReactionResultOpen}
         onOpenChange={(o) => !o && toggleReactionResult(false)}
+      />
+      {/* Phase 15 §6.1 retrofit — phase-12 `text-input` panel 등록 후 ModalHost
+          미연결 (v1 bug). isTextInputOpen → Radix Dialog 양방향. */}
+      <ModalSlot
+        panelKey="text-input"
+        open={isTextInputOpen}
+        onOpenChange={(o) => !o && toggleTextInput(false)}
       />
     </>
   );

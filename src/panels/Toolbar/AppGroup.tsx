@@ -40,6 +40,7 @@ export function AppGroup(): React.ReactElement {
       <Tooltip content={t('toolbar.language')}>
         <IconButton
           aria-label={t('toolbar.language')}
+          data-testid="toolbar-language"
           onClick={() => setLocale(locale === 'ko' ? 'en' : 'ko')}
         >
           <Globe size={18} />

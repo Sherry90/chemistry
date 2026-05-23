@@ -67,7 +67,7 @@ export default function ReactionResultPanel(): React.ReactElement {
           <h2 className="text-lg font-semibold text-fg-primary">{t('reactionResult.title')}</h2>
           {isExperimental && <ExperimentalBadge />}
         </div>
-        <Button variant="primary" size="md" onClick={onAddAll}>
+        <Button variant="primary" size="md" data-testid="reaction-add-all" onClick={onAddAll}>
           {t('reactionResult.addProductsToWorkspace')}
         </Button>
       </header>

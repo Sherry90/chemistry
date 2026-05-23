@@ -39,6 +39,9 @@ export function parallelOffsetFactors(order: BondOrder): ReadonlyArray<number> {
       return [-1, 0, 1];
     case 'aromatic':
       return [0]; // 단일 cyl + dashed overlay (AromaticOverlay)
+    default:
+      // 안전망 — 유니온 외 값 (런타임 RDKit JSON 등) 진입 시 single 로 처리.
+      return [0];
   }
 }
 

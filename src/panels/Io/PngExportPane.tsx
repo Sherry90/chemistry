@@ -106,7 +106,12 @@ export function PngExportPane({ apiRef, onClose }: Props): React.ReactElement {
         />
       )}
       <div className="flex justify-end pt-2">
-        <Button variant="primary" disabled={exporting} onClick={() => void onExport()}>
+        <Button
+          variant="primary"
+          data-testid="io-png-export-submit"
+          disabled={exporting}
+          onClick={() => void onExport()}
+        >
           {exporting && <Spinner size="sm" className="mr-2" />}
           {t('io.pngExport.exportButton')}
         </Button>

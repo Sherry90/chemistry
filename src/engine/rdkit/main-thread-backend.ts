@@ -64,7 +64,19 @@ function extractParsedMol(mol: JSMol, source: InputSource): ParsedMol {
       });
 
       bonds = (firstMol.bonds ?? []).map((b): ParsedBond => {
-        const order = b.order === 1.5 ? 'aromatic' : (b.order as 1 | 2 | 3);
+        // RDKit MinimalLib commonchem JSON 의 bond.order 인코딩:
+        //   1=single, 2=double, 3=triple, 4=aromatic (and 1.5 legacy in some builds).
+        //   생략 시 default 1 (single) — RDKit JSON 에서 single bond 는 order key 자체를
+        //   생략하는 케이스가 있음 (phase-15 §6.1 retrofit 발견).
+        let order: 1 | 2 | 3 | 'aromatic';
+        if (b.order === 4 || b.order === 1.5) {
+          order = 'aromatic';
+        } else if (b.order === 2 || b.order === 3) {
+          order = b.order;
+        } else {
+          // 1, undefined, null, 또는 unknown → single 로 강건 처리.
+          order = 1;
+        }
         return {
           beginAtomIdx: b.atoms[0],
           endAtomIdx: b.atoms[1],

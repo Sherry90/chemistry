@@ -59,7 +59,11 @@ export function EditGroup({ apiRef }: Props): React.ReactElement {
         </IconButton>
       </Tooltip>
       <Tooltip content={t('toolbar.smilesInput')}>
-        <IconButton aria-label={t('toolbar.smilesInput')} onClick={onSmiles}>
+        <IconButton
+          aria-label={t('toolbar.smilesInput')}
+          data-testid="toolbar-smiles"
+          onClick={onSmiles}
+        >
           <Plus size={18} />
         </IconButton>
       </Tooltip>

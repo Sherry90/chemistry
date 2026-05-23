@@ -1,4 +1,8 @@
 import type { RDKitModule, RDKitLoader } from '@rdkit/rdkit';
+// Phase 15 §6.1 retrofit — Vite `?url` 임포트로 WASM 정적 자산 등록.
+// 평시 RDKit_minimal.js 는 `document.currentScript.src` 기준 상대 fetch,
+// Vite 번들 후 그 경로에 .wasm 미존재 → locateFile 콜백으로 우회.
+import rdkitWasmUrl from '@rdkit/rdkit/dist/RDKit_minimal.wasm?url';
 import type { RdkitInitError, RdkitStatus } from './types';
 
 type StatusListener = (status: RdkitStatus) => void;
@@ -38,7 +42,7 @@ export async function ensureRdkit(): Promise<void> {
       // RDKit_minimal.js sets module.exports = initRDKitModule
       const rdkitPkg = (await import('@rdkit/rdkit')) as unknown as { default: RDKitLoader };
       const initFn: RDKitLoader = rdkitPkg.default;
-      const mod = await initFn();
+      const mod = await initFn({ locateFile: () => rdkitWasmUrl });
       rdkitInstance = mod;
       broadcast({ phase: 'ready' });
     } catch (cause) {
