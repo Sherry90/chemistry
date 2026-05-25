@@ -207,7 +207,9 @@ describe('resolveCompoundByName', () => {
       ),
       http.get(`${BASE}/compound/cid/99995/SDF`, () => new HttpResponse(null, { status: 404 })),
     );
-    const result = await resolveCompoundByName('benzene');
+    // Phase 15 hotfix — query 가 확장 manifest entry (benzene CID 241) 와 충돌하지
+    // 않도록 unique stub name 사용 — manifest miss → PubChem name→CID 경로 검증 목적.
+    const result = await resolveCompoundByName('rare-pubchem-only-name-xyz');
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.cid).toBe(99995);

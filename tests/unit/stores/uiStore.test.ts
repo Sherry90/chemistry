@@ -28,6 +28,9 @@ beforeEach(() => {
   __resetUiInternals();
   hardReset(useUiStore, makeInitialUiState);
   vi.clearAllMocks();
+  // Phase 15 hotfix — name mode now consults searchCompoundManifest first.
+  // Default to 0 hits so existing tests fall through to resolveCompoundByName mock.
+  searchCompoundManifest.mockReturnValue([]);
 });
 
 describe('uiStore — global loading', () => {
