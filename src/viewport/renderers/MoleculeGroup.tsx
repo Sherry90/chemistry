@@ -17,6 +17,7 @@ import { AtomInstances } from './ball-and-stick/AtomInstances';
 import { BondInstances } from './ball-and-stick/BondInstances';
 import { AromaticOverlay } from './ball-and-stick/AromaticOverlay';
 import { LineBonds } from './LineBonds';
+import { SelectionHalo } from './AtomHighlight';
 import { useLodContext } from './lod/LodContext';
 import { useAtomMatrixSubscription } from '../subscriptions/usePositionSubscription';
 import { useFadeOnMount } from '../animations/useFadeOnMount';
@@ -133,6 +134,8 @@ export function MoleculeGroup({
           }
         }
       })()}
+      {/* Phase 15 hotfix — 선택된 atom 가시 피드백 (모든 renderMode 공통). */}
+      <SelectionHalo molecule={molecule} renderMode={renderMode} />
     </group>
   );
 }

@@ -20,6 +20,7 @@ import { BondInstances } from './BondInstances';
 import { AromaticOverlay } from './AromaticOverlay';
 import { AtomLabels } from './AtomLabels';
 import { HoverTooltip } from './HoverTooltip';
+import { HoverHalo } from '../AtomHighlight';
 import { LineBonds } from '../LineBonds';
 import { getAtomIdFromIntersection } from '../../ids/picking';
 import { resolveBackground } from '../../scene/Background';
@@ -86,6 +87,13 @@ export function BallAndStickRenderer({
       {hover && hover.molId === molecule.id && (
         <HoverTooltip molecule={molecule} atomId={hover.atomId} />
       )}
+      {/* Phase 15 hotfix — hover atom 가시 피드백 (ball-and-stick 한정 — 다른
+          renderMode 는 hover 상태 미보유). */}
+      <HoverHalo
+        molecule={molecule}
+        renderMode="ball-and-stick"
+        atomId={hover && hover.molId === molecule.id ? hover.atomId : null}
+      />
     </group>
   );
 }
