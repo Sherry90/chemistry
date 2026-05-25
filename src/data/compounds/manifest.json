@@ -1,20 +1,20 @@
 {
-  "version": "2026-05-06T00:00:00Z",
-  "totalCompounds": 5,
+  "version": "2026-05-26T00:00:00Z",
+  "totalCompounds": 30,
   "categories": {
     "inorganic-common": { "chunks": ["inorganic-common.json"], "count": 5 },
-    "salts-and-ions": { "chunks": [], "count": 0 },
-    "acids-and-bases": { "chunks": [], "count": 0 },
-    "alkanes": { "chunks": [], "count": 0 },
-    "alkenes-alkynes": { "chunks": [], "count": 0 },
-    "alcohols": { "chunks": [], "count": 0 },
-    "carboxylic-acids-esters": { "chunks": [], "count": 0 },
-    "aldehydes-ketones": { "chunks": [], "count": 0 },
+    "salts-and-ions": { "chunks": [], "count": 3 },
+    "acids-and-bases": { "chunks": [], "count": 5 },
+    "alkanes": { "chunks": [], "count": 4 },
+    "alkenes-alkynes": { "chunks": [], "count": 2 },
+    "alcohols": { "chunks": [], "count": 2 },
+    "carboxylic-acids-esters": { "chunks": [], "count": 1 },
+    "aldehydes-ketones": { "chunks": [], "count": 2 },
     "amines-amides": { "chunks": [], "count": 0 },
-    "aromatics": { "chunks": [], "count": 0 },
+    "aromatics": { "chunks": [], "count": 3 },
     "heterocycles": { "chunks": [], "count": 0 },
-    "biomolecules-basic": { "chunks": [], "count": 0 },
-    "pharma-illustrative": { "chunks": [], "count": 0 },
+    "biomolecules-basic": { "chunks": [], "count": 2 },
+    "pharma-illustrative": { "chunks": [], "count": 1 },
     "everyday-compounds": { "chunks": [], "count": 0 }
   },
   "entries": [
@@ -38,7 +38,7 @@
       "chunk": "inorganic-common.json",
       "priority": 1,
       "molecularWeight": 44.01,
-      "searchTokens": ["carbon dioxide", "이산화탄소", "co2", "carbonic anhydride"]
+      "searchTokens": ["carbon dioxide", "이산화탄소", "co2", "carbonic anhydride", "탄산가스"]
     },
     {
       "cid": 222,
@@ -72,6 +72,296 @@
       "priority": 4,
       "molecularWeight": 28.014,
       "searchTokens": ["nitrogen", "질소", "n2", "dinitrogen", "molecular nitrogen"]
+    },
+    {
+      "cid": 783,
+      "name": { "ko": "수소", "en": "Hydrogen" },
+      "formula": "H2",
+      "inchiKey": "UFHFLCQGNIYNRP-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 5,
+      "molecularWeight": 2.016,
+      "searchTokens": ["hydrogen", "수소", "h2", "dihydrogen"]
+    },
+    {
+      "cid": 784,
+      "name": { "ko": "과산화수소", "en": "Hydrogen peroxide" },
+      "formula": "H2O2",
+      "inchiKey": "MHAJPDPJQMAIIY-UHFFFAOYSA-N",
+      "category": "inorganic-common",
+      "chunk": "inorganic-common.json",
+      "priority": 6,
+      "molecularWeight": 34.014,
+      "searchTokens": ["hydrogen peroxide", "과산화수소", "h2o2", "옥시풀"]
+    },
+    {
+      "cid": 5234,
+      "name": { "ko": "염화나트륨", "en": "Sodium chloride" },
+      "formula": "NaCl",
+      "inchiKey": "FAPWRFPIFSIZLT-UHFFFAOYSA-M",
+      "category": "salts-and-ions",
+      "chunk": "inorganic-common.json",
+      "priority": 10,
+      "molecularWeight": 58.44,
+      "searchTokens": ["sodium chloride", "염화나트륨", "소금", "nacl", "salt", "table salt"]
+    },
+    {
+      "cid": 14798,
+      "name": { "ko": "수산화나트륨", "en": "Sodium hydroxide" },
+      "formula": "NaOH",
+      "inchiKey": "HEMHJVSKTPXQMS-UHFFFAOYSA-M",
+      "category": "acids-and-bases",
+      "chunk": "inorganic-common.json",
+      "priority": 11,
+      "molecularWeight": 39.997,
+      "searchTokens": ["sodium hydroxide", "수산화나트륨", "가성소다", "양잿물", "naoh", "lye"]
+    },
+    {
+      "cid": 10112,
+      "name": { "ko": "탄산칼슘", "en": "Calcium carbonate" },
+      "formula": "CaCO3",
+      "inchiKey": "VTYYLEPIZMXCLO-UHFFFAOYSA-L",
+      "category": "salts-and-ions",
+      "chunk": "inorganic-common.json",
+      "priority": 12,
+      "molecularWeight": 100.087,
+      "searchTokens": ["calcium carbonate", "탄산칼슘", "caco3", "석회석", "limestone"]
+    },
+    {
+      "cid": 313,
+      "name": { "ko": "염산", "en": "Hydrochloric acid" },
+      "formula": "HCl",
+      "inchiKey": "VEXZGXHMUGYJMC-UHFFFAOYSA-N",
+      "category": "acids-and-bases",
+      "chunk": "inorganic-common.json",
+      "priority": 13,
+      "molecularWeight": 36.461,
+      "searchTokens": ["hydrochloric acid", "염산", "hcl", "hydrogen chloride", "염화수소"]
+    },
+    {
+      "cid": 1118,
+      "name": { "ko": "황산", "en": "Sulfuric acid" },
+      "formula": "H2SO4",
+      "inchiKey": "QAOWNCQODCNURD-UHFFFAOYSA-N",
+      "category": "acids-and-bases",
+      "chunk": "inorganic-common.json",
+      "priority": 14,
+      "molecularWeight": 98.079,
+      "searchTokens": ["sulfuric acid", "황산", "h2so4", "oil of vitriol"]
+    },
+    {
+      "cid": 944,
+      "name": { "ko": "질산", "en": "Nitric acid" },
+      "formula": "HNO3",
+      "inchiKey": "GRYLNZFGIOXLOG-UHFFFAOYSA-N",
+      "category": "acids-and-bases",
+      "chunk": "inorganic-common.json",
+      "priority": 15,
+      "molecularWeight": 63.013,
+      "searchTokens": ["nitric acid", "질산", "hno3"]
+    },
+    {
+      "cid": 297,
+      "name": { "ko": "메테인", "en": "Methane" },
+      "formula": "CH4",
+      "inchiKey": "VNWKTOKETHGBQD-UHFFFAOYSA-N",
+      "category": "alkanes",
+      "chunk": "inorganic-common.json",
+      "priority": 20,
+      "molecularWeight": 16.043,
+      "searchTokens": ["methane", "메탄", "메테인", "ch4", "marsh gas", "천연가스"]
+    },
+    {
+      "cid": 6324,
+      "name": { "ko": "에테인", "en": "Ethane" },
+      "formula": "C2H6",
+      "inchiKey": "OTMSDBZUPAUEDD-UHFFFAOYSA-N",
+      "category": "alkanes",
+      "chunk": "inorganic-common.json",
+      "priority": 21,
+      "molecularWeight": 30.07,
+      "searchTokens": ["ethane", "에탄", "에테인", "c2h6"]
+    },
+    {
+      "cid": 6334,
+      "name": { "ko": "프로페인", "en": "Propane" },
+      "formula": "C3H8",
+      "inchiKey": "ATUOYWHBWRKTHZ-UHFFFAOYSA-N",
+      "category": "alkanes",
+      "chunk": "inorganic-common.json",
+      "priority": 22,
+      "molecularWeight": 44.097,
+      "searchTokens": ["propane", "프로판", "프로페인", "c3h8", "lpg"]
+    },
+    {
+      "cid": 7843,
+      "name": { "ko": "뷰테인", "en": "Butane" },
+      "formula": "C4H10",
+      "inchiKey": "IJDNQMDRQITEOD-UHFFFAOYSA-N",
+      "category": "alkanes",
+      "chunk": "inorganic-common.json",
+      "priority": 23,
+      "molecularWeight": 58.123,
+      "searchTokens": ["butane", "부탄", "뷰테인", "c4h10", "n-butane"]
+    },
+    {
+      "cid": 6325,
+      "name": { "ko": "에텐", "en": "Ethylene" },
+      "formula": "C2H4",
+      "inchiKey": "VGGSQFUCUMXWEO-UHFFFAOYSA-N",
+      "category": "alkenes-alkynes",
+      "chunk": "inorganic-common.json",
+      "priority": 30,
+      "molecularWeight": 28.054,
+      "searchTokens": ["ethylene", "에틸렌", "에텐", "ethene", "c2h4"]
+    },
+    {
+      "cid": 6326,
+      "name": { "ko": "에타인", "en": "Acetylene" },
+      "formula": "C2H2",
+      "inchiKey": "HSFWRNGVRCDJHI-UHFFFAOYSA-N",
+      "category": "alkenes-alkynes",
+      "chunk": "inorganic-common.json",
+      "priority": 31,
+      "molecularWeight": 26.038,
+      "searchTokens": ["acetylene", "아세틸렌", "에타인", "ethyne", "c2h2"]
+    },
+    {
+      "cid": 887,
+      "name": { "ko": "메탄올", "en": "Methanol" },
+      "formula": "CH4O",
+      "inchiKey": "OKKJLVBELUTLKV-UHFFFAOYSA-N",
+      "category": "alcohols",
+      "chunk": "inorganic-common.json",
+      "priority": 40,
+      "molecularWeight": 32.042,
+      "searchTokens": ["methanol", "메탄올", "ch3oh", "methyl alcohol", "목정", "wood alcohol"]
+    },
+    {
+      "cid": 702,
+      "name": { "ko": "에탄올", "en": "Ethanol" },
+      "formula": "C2H6O",
+      "inchiKey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
+      "category": "alcohols",
+      "chunk": "inorganic-common.json",
+      "priority": 41,
+      "molecularWeight": 46.069,
+      "searchTokens": ["ethanol", "에탄올", "c2h5oh", "ethyl alcohol", "주정", "알코올"]
+    },
+    {
+      "cid": 176,
+      "name": { "ko": "아세트산", "en": "Acetic acid" },
+      "formula": "C2H4O2",
+      "inchiKey": "QTBSBXVTEAMEQO-UHFFFAOYSA-N",
+      "category": "carboxylic-acids-esters",
+      "chunk": "inorganic-common.json",
+      "priority": 50,
+      "molecularWeight": 60.052,
+      "searchTokens": [
+        "acetic acid",
+        "아세트산",
+        "초산",
+        "식초",
+        "ch3cooh",
+        "vinegar",
+        "ethanoic acid"
+      ]
+    },
+    {
+      "cid": 180,
+      "name": { "ko": "아세톤", "en": "Acetone" },
+      "formula": "C3H6O",
+      "inchiKey": "CSCPPACGZOOCGX-UHFFFAOYSA-N",
+      "category": "aldehydes-ketones",
+      "chunk": "inorganic-common.json",
+      "priority": 60,
+      "molecularWeight": 58.08,
+      "searchTokens": ["acetone", "아세톤", "propanone", "c3h6o", "(ch3)2co", "디메틸케톤"]
+    },
+    {
+      "cid": 712,
+      "name": { "ko": "포름알데하이드", "en": "Formaldehyde" },
+      "formula": "CH2O",
+      "inchiKey": "WSFSSNUMVMOOMR-UHFFFAOYSA-N",
+      "category": "aldehydes-ketones",
+      "chunk": "inorganic-common.json",
+      "priority": 61,
+      "molecularWeight": 30.026,
+      "searchTokens": [
+        "formaldehyde",
+        "포름알데하이드",
+        "포름알데히드",
+        "ch2o",
+        "methanal",
+        "포르말린"
+      ]
+    },
+    {
+      "cid": 241,
+      "name": { "ko": "벤젠", "en": "Benzene" },
+      "formula": "C6H6",
+      "inchiKey": "UHOVQNZJYSORNB-UHFFFAOYSA-N",
+      "category": "aromatics",
+      "chunk": "inorganic-common.json",
+      "priority": 70,
+      "molecularWeight": 78.114,
+      "searchTokens": ["benzene", "벤젠", "c6h6", "benzol"]
+    },
+    {
+      "cid": 1140,
+      "name": { "ko": "톨루엔", "en": "Toluene" },
+      "formula": "C7H8",
+      "inchiKey": "YXFVVABEGXRONW-UHFFFAOYSA-N",
+      "category": "aromatics",
+      "chunk": "inorganic-common.json",
+      "priority": 71,
+      "molecularWeight": 92.141,
+      "searchTokens": ["toluene", "톨루엔", "c7h8", "methylbenzene", "메틸벤젠"]
+    },
+    {
+      "cid": 996,
+      "name": { "ko": "페놀", "en": "Phenol" },
+      "formula": "C6H6O",
+      "inchiKey": "ISWSIDIOOBJBQZ-UHFFFAOYSA-N",
+      "category": "aromatics",
+      "chunk": "inorganic-common.json",
+      "priority": 72,
+      "molecularWeight": 94.113,
+      "searchTokens": ["phenol", "페놀", "c6h5oh", "carbolic acid", "석탄산"]
+    },
+    {
+      "cid": 5793,
+      "name": { "ko": "포도당", "en": "Glucose" },
+      "formula": "C6H12O6",
+      "inchiKey": "WQZGKKKJIJFFOK-GASJEMHNSA-N",
+      "category": "biomolecules-basic",
+      "chunk": "inorganic-common.json",
+      "priority": 80,
+      "molecularWeight": 180.156,
+      "searchTokens": ["glucose", "포도당", "글루코스", "c6h12o6", "dextrose", "혈당"]
+    },
+    {
+      "cid": 2519,
+      "name": { "ko": "카페인", "en": "Caffeine" },
+      "formula": "C8H10N4O2",
+      "inchiKey": "RYYVLZVUVIJVGH-UHFFFAOYSA-N",
+      "category": "biomolecules-basic",
+      "chunk": "inorganic-common.json",
+      "priority": 81,
+      "molecularWeight": 194.194,
+      "searchTokens": ["caffeine", "카페인", "c8h10n4o2", "1,3,7-trimethylxanthine", "커피"]
+    },
+    {
+      "cid": 2244,
+      "name": { "ko": "아스피린", "en": "Aspirin" },
+      "formula": "C9H8O4",
+      "inchiKey": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N",
+      "category": "pharma-illustrative",
+      "chunk": "inorganic-common.json",
+      "priority": 90,
+      "molecularWeight": 180.158,
+      "searchTokens": ["aspirin", "아스피린", "c9h8o4", "acetylsalicylic acid", "아세틸살리실산"]
     }
   ]
 }

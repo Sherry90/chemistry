@@ -1,10 +1,13 @@
 const BASE = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
 
+// Phase 15 hotfix — PubChem REST API 가 2025 이후 'CanonicalSMILES'/'IsomericSMILES'
+// 를 'SMILES'/'ConnectivitySMILES' 로 변경. 본 URL 은 신규 필드명 사용.
+// schemas/normalize 는 legacy 필드도 fallback 으로 수용 (fixture/cache 호환).
 const PROPERTY_FIELDS = [
   'MolecularFormula',
   'MolecularWeight',
-  'CanonicalSMILES',
-  'IsomericSMILES',
+  'SMILES',
+  'ConnectivitySMILES',
   'InChI',
   'InChIKey',
   'IUPACName',

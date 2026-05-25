@@ -14,6 +14,10 @@ export interface PubChemPropertyRow {
   readonly CID: number;
   readonly MolecularFormula: string;
   readonly MolecularWeight: string | number;
+  // Phase 15 hotfix — PubChem 2025+ 필드 (SMILES/ConnectivitySMILES) 신규 추가.
+  // legacy 필드 (CanonicalSMILES/IsomericSMILES) 는 캐시/fixture 호환용 fallback.
+  readonly SMILES?: string;
+  readonly ConnectivitySMILES?: string;
   readonly CanonicalSMILES?: string;
   readonly IsomericSMILES?: string;
   readonly InChI?: string;
@@ -49,7 +53,10 @@ export async function normalizePubChemResponse(
     };
   }
 
-  const rawSmiles = row.IsomericSMILES ?? row.CanonicalSMILES;
+  // Phase 15 hotfix — 신규 SMILES → ConnectivitySMILES → legacy 순.
+  // SMILES 가 stereo 포함 (구 IsomericSMILES 등가), ConnectivitySMILES 는 connectivity-only.
+  const rawSmiles =
+    row.SMILES ?? row.ConnectivitySMILES ?? row.IsomericSMILES ?? row.CanonicalSMILES;
   if (!rawSmiles) {
     return {
       ok: false,

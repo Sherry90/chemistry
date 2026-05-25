@@ -1,9 +1,13 @@
 import { z } from 'zod';
 
+// Phase 15 hotfix — PubChem 2025+ 신규 필드 (SMILES/ConnectivitySMILES) +
+// legacy 필드 (CanonicalSMILES/IsomericSMILES) 동시 수용.
 export const PubChemPropertyRowSchema = z.object({
   CID: z.number(),
   MolecularFormula: z.string(),
   MolecularWeight: z.union([z.string(), z.number()]),
+  SMILES: z.string().optional(),
+  ConnectivitySMILES: z.string().optional(),
   CanonicalSMILES: z.string().optional(),
   IsomericSMILES: z.string().optional(),
   InChI: z.string().optional(),

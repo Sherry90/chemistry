@@ -233,9 +233,23 @@ export const useUiStore = createAppStore<UiStore>('uiStore', (set, get) => ({
             else value = ok;
           }
         } else {
-          const r = await resolveCompoundByName(query, { signal: controller.signal });
-          if (r.ok) value = [r.value];
-          else error = r.error;
+          // Phase 15 hotfix — name mode 가 다중 결과를 반환하도록 변경.
+          // 기존: resolveCompoundByName 이 limit:1 manifest hit 또는 PubChem 단일 CID.
+          // 변경: manifest 다중 hit (한글/부분 일치 포함) 을 모두 보여주고, manifest
+          // 비어 있을 때만 PubChem English name 단일 lookup fallback.
+          const entries = searchCompoundManifest({ query, limit: 20 });
+          if (entries.length > 0) {
+            const resolved = await Promise.all(
+              entries.map((e) => getCompoundByCid(e.cid, { signal: controller.signal })),
+            );
+            const ok = resolved.flatMap((r) => (r.ok ? [r.value] : []));
+            if (ok.length === 0) error = notFound('name', query);
+            else value = ok;
+          } else {
+            const r = await resolveCompoundByName(query, { signal: controller.signal });
+            if (r.ok) value = [r.value];
+            else error = r.error;
+          }
         }
 
         // 가장 최신 호출만 commit (stale guard).
