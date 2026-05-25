@@ -147,11 +147,15 @@ export async function normalizePubChemResponse(
   return { ok: true, value: compound };
 }
 
+// Phase 15 hotfix — build-time curation script (scripts/pubchem-fetch) 의 row
+// 모델. 2025+ PubChem 신규 필드 (SMILES/ConnectivitySMILES) + legacy 모두 수용.
 export interface PubchemProperties {
   readonly CID: number;
   readonly MolecularFormula: string;
   readonly MolecularWeight: number;
-  readonly CanonicalSMILES: string;
+  readonly SMILES?: string;
+  readonly ConnectivitySMILES?: string;
+  readonly CanonicalSMILES?: string;
   readonly IsomericSMILES?: string;
   readonly InChI?: string;
   readonly InChIKey?: string;

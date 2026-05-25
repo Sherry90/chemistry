@@ -5,11 +5,13 @@ export function nameTocidUrl(name: string): string {
 }
 
 export function propertiesUrl(cids: ReadonlyArray<number>): string {
+  // Phase 15 hotfix — PubChem 2025+ API 필드명 변경 (CanonicalSMILES → SMILES,
+  // IsomericSMILES → ConnectivitySMILES). runtime endpoints.ts 와 동일.
   const fields = [
     'MolecularFormula',
     'MolecularWeight',
-    'CanonicalSMILES',
-    'IsomericSMILES',
+    'SMILES',
+    'ConnectivitySMILES',
     'InChI',
     'InChIKey',
     'IUPACName',
